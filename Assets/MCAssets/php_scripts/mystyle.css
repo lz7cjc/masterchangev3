@@ -1,0 +1,43 @@
+p1 {
+  text-align: center;
+  color: green;
+  font-family: Arial, Helvetica, sans-serif;
+
+
+}
+p2 {
+  text-align: left;
+  color: grey;
+  
+  font-style: normal;
+  font-family: Arial, Helvetica, sans-serif;
+
+}
+p3 {
+  text-align: left;
+  color: grey;
+  font-style: oblique;
+ 
+  font-family: Arial, Helvetica, sans-serif;
+
+}
+p4 {
+  text-align: left;
+  color: blue;
+  font-family: Arial, Helvetica, sans-serif;
+
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #ccffdd;
+    color: red;
+}

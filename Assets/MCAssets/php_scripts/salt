@@ -1,0 +1,19 @@
+//testing password hash salt
+<?php
+
+$password = "testing"
+
+
+
+$salt = "\$5\$rounds=5000\$" . "safetycharacters" . $phppassword . "\$";
+echo $salt;
+
+$hash = crypt($password, $salt) . "</br>";
+echo "hash: " . $hash . "<br>;
+
+ if (password_verify($password , $hash))
+ {
+
+ 	echo $password;
+ }
+ ?>

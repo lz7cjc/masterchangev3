@@ -1,0 +1,115 @@
+<?php
+
+<?php
+// Add these lines at the very top of aigeneratecontent.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Log incoming requests
+error_log("Request received: " . print_r($_POST, true));
+
+// Rest of your existing code...
+
+
+require("dbconnect.php");
+
+$userid = $_POST["userid"];
+$contenttype = $_POST["contenttype"];
+
+// Get user's behavior data using your existing SQL structure
+$sql = "Select Distinct
+    bt.behaviourname,
+    h.habit_name,
+    h.amount,
+    h.yesorno,
+    h.duration
+From
+    userhabits h
+    Inner Join users u On u.User_ID = h.user_id
+    Inner Join user_behaviour ub On ub.userid = u.User_ID
+    Inner Join behaviourtype bt On bt.id = ub.behaviourtypeid
+Where
+    u.User_ID = ? And ub.interested = true
+ORDER BY RAND()
+LIMIT 1";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $userid);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    
+    // Build AI prompt based on behavior data
+    $prompt = "Generate a tip";
+    if ($contenttype == 1 || $contenttype == 3) {
+        $prompt .= " with title";
+    }
+    
+    $prompt .= " about " . $row['behaviourname'] . " for someone who:";
+    if ($row['amount']) {
+        $prompt .= "\n- " . $row['habit_name'] . ": " . $row['amount'];
+    }
+    if ($row['duration']) {
+        $prompt .= "\n- Duration: " . $row['duration'] . " years";
+    }
+    if ($row['yesorno'] !== null) {
+        $prompt .= "\n- " . $row['habit_name'] . ": " . ($row['yesorno'] ? "Yes" : "No");
+    }
+
+    // Call OpenAI API
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    $data = array(
+        'model' => 'gpt-3.5-turbo',
+        'messages' => array(
+            array(
+                'role' => 'system',
+                'content' => 'You are a personalized content generator.'
+            ),
+            array(
+                'role' => 'user',
+                'content' => $prompt
+            )
+        ),
+        'max_tokens' => getMaxTokens($contenttype),
+        'temperature' => 0.7
+    );
+
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Content-Type: application/json',
+   
+    ));
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response) {
+        $aiResponse = json_decode($response, true);
+        if (isset($aiResponse['choices'][0]['message']['content'])) {
+            $content = $aiResponse['choices'][0]['message']['content'];
+            $dbdata = array(array('ContentBody' => $content));
+            echo json_encode(array('data' => $dbdata));
+            exit;
+        }
+    }
+}
+
+// If anything fails, return "0 results" to trigger fallback
+echo "0 results";
+
+function getMaxTokens($contentType) {
+    switch ($contentType) {
+        case 1: return 350; // Short tip with title
+        case 2: return 200; // No title
+        case 3: return 500; // Large tip with title
+        case 4: return 350; // Medium tip without title
+        default: return 200;
+    }
+}
+
+$conn->close();
+?>

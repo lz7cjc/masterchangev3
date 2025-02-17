@@ -1,0 +1,5 @@
+PlayerControls is for 360 scenes
+Needs the PlayerControls.inputactions component
+Attached to the player object then reference scene to stop the camera from moving
+
+UIInputController is for the 2d scenes

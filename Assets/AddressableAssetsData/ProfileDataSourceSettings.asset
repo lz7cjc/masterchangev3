@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e3976da977cb49238499ea3b4c237ae, type: 3}
+  m_Name: ProfileDataSourceSettings
+  m_EditorClassIdentifier: 
+  profileGroupTypes:
+  - m_GroupTypePrefix: Automatic
+    m_Variables:
+    - m_Suffix: BuildPath
+      m_Value: CCDBuildData/ManagedEnvironment/ManagedBucket/ManagedBadge
+    - m_Suffix: EnvironmentName
+      m_Value: production
+    - m_Suffix: LoadPath
+      m_Value: https://7638582f-b285-4d41-9627-3d2ba5990e0f.client-api.unity3dusercontent.com/client_api/v1/environments/{CcdManager.EnvironmentName}/buckets/{CcdManager.BucketId}/release_by_badge/{CcdManager.Badge}/entry_by_path/content/?path=
+  - m_GroupTypePrefix: Built-In
+    m_Variables:
+    - m_Suffix: BuildPath
+      m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
+    - m_Suffix: LoadPath
+      m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
+  - m_GroupTypePrefix: CCD.7638582f-b285-4d41-9627-3d2ba5990e0f.7bd4f710-02c6-4d42-a8c6-fde57ed1cedd.de5ad450-611a-42d6-a853-77b7095c5728.latest
+    m_Variables:
+    - m_Suffix: BuildPath
+      m_Value: CCDBuildData/7bd4f710-02c6-4d42-a8c6-fde57ed1cedd/de5ad450-611a-42d6-a853-77b7095c5728/latest
+    - m_Suffix: CcdBadgeName
+      m_Value: latest
+    - m_Suffix: CcdBucketId
+      m_Value: de5ad450-611a-42d6-a853-77b7095c5728
+    - m_Suffix: CcdBucketName
+      m_Value: MasterChangeAssets
+    - m_Suffix: Environmentid
+      m_Value: 7bd4f710-02c6-4d42-a8c6-fde57ed1cedd
+    - m_Suffix: Environmentname
+      m_Value: production
+    - m_Suffix: LoadPath
+      m_Value: https://7638582f-b285-4d41-9627-3d2ba5990e0f.client-api.unity3dusercontent.com/client_api/v1/environments/production/buckets/de5ad450-611a-42d6-a853-77b7095c5728/release_by_badge/latest/entry_by_path/content/?path=
+    - m_Suffix: PromoteOnly
+      m_Value: False
+  environments:
+  - id: 7bd4f710-02c6-4d42-a8c6-fde57ed1cedd
+    projectId: 7638582f-b285-4d41-9627-3d2ba5990e0f
+    projectGenesisId: 7638582f-b285-4d41-9627-3d2ba5990e0f
+    name: production
+    isDefault: 1
+  currentEnvironment:
+    id: 
+    projectId: 
+    projectGenesisId: 
+    name: 
+    isDefault: 0

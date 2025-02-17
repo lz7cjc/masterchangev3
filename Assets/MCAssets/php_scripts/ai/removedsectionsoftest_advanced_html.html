@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Content Generation Test Suite</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 0 20px; 
+            line-height: 1.6;
+        }
+        .config-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], 
+        input[type="number"],
+        input[type="url"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .remove-btn {
+            background: #f44336;
+        }
+        .remove-btn:hover {
+            background: #da190b;
+        }
+        #results {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            border: 1px solid #ddd;
+            min-height: 200px;
+        }
+        .content-type {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .help-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 2px;
+        }
+        .tabs {
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: #e9ecef;
+            border: none;
+            padding: 10px 20px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Advanced Content Generation Test Suite</h1>
+    
+    <div class="tabs">
+        <button class="tab-button active" onclick="showTab('basic')">Basic Settings</button>
+    </div>
+    
+    <!-- Basic Settings Tab -->
+    <div id="basic" class="tab-content active">
+        <div class="config-section">
+            <h2>Basic Configuration</h2>
+            
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="number" id="userId" value="373" min="1">
+                <div class="help-text">Enter a valid user ID from your database</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Content Types:</label>
+                <div id="contentTypes">
+                    <div class="content-type">
+                        <input type="number" value="2" min="1" max="4">
+                        <span>Type 1</span>
+                        <div class="help-text">1: Short with title, 2: No title, 3: Large with title, 4: Medium no title</div>
+                        <button class="remove-btn" onclick="removeContentType(this)">Remove</button>
+                    </div>
+                </div>
+                <button onclick="addContentType()">Add Content Type</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Section: View Prompts -->
+    <div class="config-section">
+        <h2>View Prompts</h2>
+        <div class="form-group">
+            <label for="viewUserId">User ID:</label>
+            <input type="number" id="viewUserId" value="1" min="1">
+        </div>
+        <div class="form-group">
+            <label for="viewContentType">Content Type:</label>
+            <input type="number" id="viewContentType" value="2" min="1" max="4">
+        </div>
+        <div class="form-group">
+            <label for="numPrompts">Number of Prompts:</label>
+            <input type="number" id="numPrompts" value="5" min="1">
+        </div>
+        <div class="form-group">
+            <label for="numDetails">Number of Details:</label>
+            <input type="number" id="numDetails" value="3" min="1">
+        </div>
+        <button onclick="viewPrompts()">View Prompts</button>
+    </div>
+
+    <!-- New Section: End-to-End Test -->
+    <div class="config-section">
+        <h2>End-to-End Test</h2>
+        <button onclick="runEndToEndTest()">Run End-to-End Test</button>
+    </div>
+
+    <button onclick="clearResults()" class="remove-btn">Clear Results</button>
+    <button onclick="runCheckDb()">Check Database</button>
+    
+    <div class="config-section">
+        <h2>Test Results:</h2>
+        <pre id="results">Results will appear here...</pre>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function addContentType() {
+            const container = document.getElementById('contentTypes');
+            const typeCount = container.children.length + 1;
+            
+            const div = document.createElement('div');
+            div.className = 'content-type';
+            div.innerHTML = `
+                <input type="number" value="2" min="1" max="4">
+                <span>Type ${typeCount}</span>
+                <div class="help-text">1: Short with title, 2: No title, 3: Large with title, 4: Medium no title</div>
+                <button class="remove-btn" onclick="removeContentType(this)">Remove</button>
+            `;
+            
+            container.appendChild(div);
+        }
+
+        function removeContentType(button) {
+            button.parentElement.remove();
+            updateTypeNumbers();
+        }
+
+        function updateTypeNumbers() {
+            document.querySelectorAll('.content-type span').forEach((span, index) => {
+                span.textContent = `Type ${index + 1}`;
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('results').textContent = 'Results will appear here...';
+            // Clear the error log file
+            fetch('/php_scripts/ai/clear_log.php', {
+                method: 'POST'
+            });
+        }
+
+        async function runTest() {
+            const results = document.getElementById('results');
+            const config = getTestConfig();
+            results.textContent = 'Running test...\n\n';
+            results.textContent += 'Configuration:\n';
+            results.textContent += JSON.stringify(config, null, 2) + '\n\n';
+
+            try {
+                results.textContent += 'Sending request to test_handler.php...\n';
+                
+                const response = await fetch('/php_scripts/ai/test_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                results.textContent += `Response status: ${response.status}\n`;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const text = await response.text();
+                results.textContent += '\nResponse received:\n';
+                results.textContent += text;
+                
+            } catch (error) {
+                results.textContent += '\nError running test: ' + error.message + '\n';
+                results.textContent += 'Check the browser console for more details\n';
+                console.error('Full error:', error);
+            }
+        }
+
+        function getTestConfig() {
+            return {
+                userId: document.getElementById('userId').value,
+                contentTypes: Array.from(
+                    document.querySelectorAll('#contentTypes input')
+                ).map(input => parseInt(input.value)),
+                numDetails: document.getElementById('numDetails').value // Add this line
+            };
+        }
+
+        async function runCheckDb() {
+            const results = document.getElementById('results');
+            results.textContent = 'Checking database...\n\n';
+
+            try {
+                const response = await fetch('/php_scripts/ai/check_db.php', {
+                    method: 'GET',
+                });
+
+                results.textContent += `Response status: ${response.status}\n`;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const text = await response.text();
+                results.textContent += '\nResponse received:\n';
+                results.textContent += text;
+
+            } catch (error) {
+                results.textContent += '\nError checking database: ' + error.message + '\n';
+                results.textContent += 'Check the browser console for more details\n';
+                console.error('Full error:', error);
+            }
+        }
+
+        async function viewPrompts() {
+            const results = document.getElementById('results');
+            const userId = document.getElementById('viewUserId').value;
+            const contentType = document.getElementById('viewContentType').value;
+            const numPrompts = document.getElementById('numPrompts').value;
+            const numDetails = document.getElementById('numDetails').value;
+
+            results.textContent = 'Fetching prompts...\n\n';
+
+            try {
+                const response = await fetch('/php_scripts/ai/view_prompts.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, contentType, numPrompts, numDetails })
+                });
+
+                results.textContent += `Response status: ${response.status}\n`;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                results.textContent += '\nPrompts received:\n';
+
+                // Clear previous results
+                results.innerHTML = '';
+
+                // Display prompts in a human-readable format
+                data.prompts.forEach((prompt, index) => {
+                    const promptElement = document.createElement('div');
+                    promptElement.className = 'prompt';
+                    promptElement.innerHTML = `<strong>Prompt ${index + 1}:</strong><br>${prompt.replace(/\n/g, '<br>')}`;
+                    results.appendChild(promptElement);
+                });
+
+            } catch (error) {
+                results.textContent += '\nError fetching prompts: ' + error.message + '\n';
+                results.textContent += 'Check the browser console for more details\n';
+                console.error('Full error:', error);
+            }
+        }
+
+        async function runEndToEndTest() {
+            const results = document.getElementById('results');
+            const config = getTestConfig();
+
+            results.textContent = 'Running end-to-end test...\n\n';
+            results.textContent += 'Configuration:\n';
+            results.textContent += JSON.stringify(config, null, 2) + '\n\n';
+
+            try {
+                const response = await fetch('/php_scripts/ai/aigeneratecontent_debug.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                results.textContent += `Response status: ${response.status}\n`;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const text = await response.text();
+                results.textContent += '\nResponse received:\n';
+                results.textContent += text;
+
+            } catch (error) {
+                results.textContent += '\nError running end-to-end test: ' + error.message + '\n';
+                results.textContent += 'Check the browser console for more details\n';
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+
+</body>
+</html>

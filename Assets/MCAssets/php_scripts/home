@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="mystyle.css">
+  <title></title>
+</head>
+<body >
+	<table border=1>
+		
+		<tr>
+			<td>
+
+<p1>
+	<a href="contentviewbehaviours.php">View Behaviours</a>
+</p1>
+</td>
+</tr>
+<tr>
+	<td>
+<p1>
+	<a href="contentviewhabits.php">View Habits</a>
+</p1>
+</td>
+</tr>
+<br>
+<tr>
+	<td>
+<p1>
+	<a href="addcontent.php">Add New Content</a>
+</p1>
+</td>
+</tr>
+
+	</table>
+
+</body>
+</html>

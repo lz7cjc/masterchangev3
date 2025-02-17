@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2226497213215874866
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2226497213215874253}
+  m_Layer: 0
+  m_Name: CardBoard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2226497213215874253
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2226497213215874866}
+  m_LocalRotation: {x: -0.34312794, y: -0.39850557, z: -0.17885421, w: 0.8315454}
+  m_LocalPosition: {x: 12.996581, y: -0.68, z: -1.2800868}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 2226497212775635803}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: -45.496002, y: -50.389004, z: -1.96}
+--- !u!1001 &2226497212775667283
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 2226497213215874253}
+    m_Modifications:
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.64
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.62
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 027d430a2eedafc48aed783588b61cd6, type: 3}
+--- !u!4 &2226497212775635803 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 494856, guid: 027d430a2eedafc48aed783588b61cd6,
+    type: 3}
+  m_PrefabInstance: {fileID: 2226497212775667283}
+  m_PrefabAsset: {fileID: 0}

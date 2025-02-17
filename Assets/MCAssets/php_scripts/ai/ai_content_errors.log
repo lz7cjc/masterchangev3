@@ -1,0 +1,142 @@
+[17-Feb-2025 11:56:49 UTC] Input Parameters: userId = 373, contentLength = 100, numPrompts = 5, numDetails = 3
+[17-Feb-2025 11:56:49 UTC] SQL Query executed. Number of rows returned: 5
+[17-Feb-2025 11:56:49 UTC] Generated Prompts: Array
+(
+    [0] => Generate a tip of between 100 plus or minus 50 characters about Obesity for someone who:
+- Frequency of exercise: 26 (Hours of exercise a week)
+- Stress Relief: Mindfulness
+    [1] => Generate a tip of between 100 plus or minus 50 characters about Smoking Cessation for someone who:
+- After Waking, How Long Do You Wait Before Having Your First Cigarette: More than 30 minutes
+    [2] => Generate a tip of between 100 plus or minus 50 characters about Smoking Cessation for someone who:
+- Smoking Habits: 32 (Number of cigarettes smoked a day)
+- Smoking Habits: 17 (Number of Years Smoking)
+    [3] => Generate a tip of between 100 plus or minus 50 characters about Smoking Cessation for someone who:
+- Smoking Habits: 3 (Number of Previous Quit Attempts)
+- After Waking, How Long Do You Wait Before Having Your First Cigarette: More than 30 minutes
+    [4] => Generate a tip of between 100 plus or minus 50 characters about Obesity for someone who:
+- No specific details available.
+)
+
+[17-Feb-2025 11:56:53 UTC] Received input: Array
+(
+    [userid] => 373
+    [contentLength] => 100
+    [numDetails] => 3
+)
+
+[17-Feb-2025 11:56:53 UTC] Executing SQL query: SELECT DISTINCT
+    bt.Behaviour_Type AS behaviourname,
+    h.label AS habit_name,
+    uh.amount,
+    uh.yesorno,
+    YEAR(CURDATE()) - YEAR(uh.datetime) AS duration
+FROM
+    userhabits uh
+    INNER JOIN users u ON u.User_ID = uh.user_id
+    INNER JOIN user_behaviour ub ON ub.userid = u.User_ID
+    INNER JOIN behaviour_type bt ON bt.BehaviourType_ID = ub.behaviourtypeid
+    INNER JOIN habits h ON h.Habit_ID = uh.habit_id
+WHERE
+    u.User_ID = ?
+ORDER BY RAND()
+[17-Feb-2025 11:56:53 UTC] Database query successful. Found behavior data: Array
+(
+    [behaviourname] => Obesity
+    [habit_name] => Smoking Habits
+    [amount] => 17
+    [yesorno] => 
+    [duration] => 1
+)
+
+[17-Feb-2025 11:56:53 UTC] Generated prompt: Generate a helpful tip of between 100 plus or minus 50 characters about Obesity for someone who has the following details:
+- Habit Name: Smoking Habits
+- Amount: 17
+- Duration: 1 years
+[17-Feb-2025 11:56:53 UTC] OpenAI API request data: {"model":"gpt-3.5-turbo","messages":[{"role":"system","content":"You are a personalized content generator."},{"role":"user","content":"Generate a helpful tip of between 100 plus or minus 50 characters about Obesity for someone who has the following details:\n- Habit Name: Smoking Habits\n- Amount: 17\n- Duration: 1 years"}],"max_tokens":25,"temperature":0.7}
+[17-Feb-2025 11:56:54 UTC] OpenAI API Response Code: 200
+[17-Feb-2025 11:56:54 UTC] OpenAI API Response: {
+  "id": "chatcmpl-B1u22HrWrcrqvIdcs4u53pyFNDvtr",
+  "object": "chat.completion",
+  "created": 1739793414,
+  "model": "gpt-3.5-turbo-0125",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Avoid using food as a substitute for smoking. Find healthier coping mechanisms to manage cravings and prevent weight gain.",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 62,
+    "completion_tokens": 22,
+    "total_tokens": 84,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": null
+}
+
+[17-Feb-2025 11:56:54 UTC] Full OpenAI API Response: Array
+(
+    [id] => chatcmpl-B1u22HrWrcrqvIdcs4u53pyFNDvtr
+    [object] => chat.completion
+    [created] => 1739793414
+    [model] => gpt-3.5-turbo-0125
+    [choices] => Array
+        (
+            [0] => Array
+                (
+                    [index] => 0
+                    [message] => Array
+                        (
+                            [role] => assistant
+                            [content] => Avoid using food as a substitute for smoking. Find healthier coping mechanisms to manage cravings and prevent weight gain.
+                            [refusal] => 
+                        )
+
+                    [logprobs] => 
+                    [finish_reason] => stop
+                )
+
+        )
+
+    [usage] => Array
+        (
+            [prompt_tokens] => 62
+            [completion_tokens] => 22
+            [total_tokens] => 84
+            [prompt_tokens_details] => Array
+                (
+                    [cached_tokens] => 0
+                    [audio_tokens] => 0
+                )
+
+            [completion_tokens_details] => Array
+                (
+                    [reasoning_tokens] => 0
+                    [audio_tokens] => 0
+                    [accepted_prediction_tokens] => 0
+                    [rejected_prediction_tokens] => 0
+                )
+
+        )
+
+    [service_tier] => default
+    [system_fingerprint] => 
+)
+
+[17-Feb-2025 11:56:54 UTC] Successfully generated and returned content

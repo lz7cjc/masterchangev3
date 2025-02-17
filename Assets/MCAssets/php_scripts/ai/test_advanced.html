@@ -225,13 +225,13 @@
             }
         }
 
-        function getTestConfig() {
-            return {
-                userId: document.getElementById('userId').value,
-                contentLength: document.getElementById('contentLength').value,
-                numDetails: document.getElementById('numDetails').value
-            };
-        }
+function getTestConfig() {
+    return {
+        userid: document.getElementById('userId').value,
+        contentLength: document.getElementById('contentLength').value,
+        numDetails: document.getElementById('numDetails').value
+    };
+}
 
         async function runCheckDb() {
             const results = document.getElementById('results');
@@ -319,39 +319,55 @@
             }).join('<br>');
         }
 
-        async function runEndToEndTest() {
-            const results = document.getElementById('results');
-            const config = getTestConfig();
+async function runEndToEndTest() {
+    const results = document.getElementById('results');
+    const config = getTestConfig();
 
-            results.textContent = 'Running end-to-end test...\n\n';
-            results.textContent += 'Configuration:\n';
-            results.textContent += JSON.stringify(config, null, 2) + '\n\n';
+    results.textContent = 'Running end-to-end test...\n\n';
+    results.textContent += 'Configuration:\n';
+    results.textContent += JSON.stringify(config, null, 2) + '\n\n';
 
-            try {
-                const response = await fetch('/php_scripts/ai/aigeneratecontent_debug.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(config)
-                });
+    try {
+        const response = await fetch('/php_scripts/ai/aigeneratecontent.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(config)
+        });
 
-                results.textContent += `Response status: ${response.status}\n`;
+        results.textContent += `Response status: ${response.status}\n`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const text = await response.text();
-                results.textContent += '\nResponse received:\n';
-                results.textContent += text;
-
-            } catch (error) {
-                results.textContent += '\nError running end-to-end test: ' + error.message + '\n';
-                results.textContent += 'Check the browser console for more details\n';
-                console.error('Full error:', error);
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
+        results.textContent += '\nResponse received:\n';
+        results.textContent += JSON.stringify(data, null, 2);
+
+        // Display the generated content and prompt
+        if (data.data && data.data.length > 0) {
+            results.textContent += '\nGenerated Content:\n';
+            data.data.forEach(item => {
+                results.textContent += item.ContentBody + '\n';
+            });
+        }
+
+        if (data.prompt) {
+            results.textContent += '\nPrompt Sent to API:\n';
+            results.textContent += data.prompt + '\n';
+        }
+
+    } catch (error) {
+        results.textContent += '\nError running end-to-end test: ' + error.message + '\n';
+        results.textContent += 'Check the browser console for more details\n';
+        console.error('Full error:', error);
+    }
+}
+
+
+
     </script>
 
 </body>

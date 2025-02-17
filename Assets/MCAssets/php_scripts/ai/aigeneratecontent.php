@@ -13,6 +13,10 @@ if (!file_exists($dbconnect_path)) {
 }
 
 require($dbconnect_path);
+require(__DIR__ . '/configuration.php'); // Include the configuration file
+
+$config = new JConfig(); // Create an instance of the configuration class
+$api_key = $config->api_key; // Get the API key from the configuration
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -128,7 +132,6 @@ try {
 
         error_log("Generated prompt: " . $prompt);
 
-      
         $ch = curl_init('https://api.openai.com/v1/chat/completions');
         $data = array(
             'model' => 'gpt-3.5-turbo',
@@ -151,7 +154,9 @@ try {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $api_key // Use the API key from the configuration
         ));
 
         $response = curl_exec($ch);

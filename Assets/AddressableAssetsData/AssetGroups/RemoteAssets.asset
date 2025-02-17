@@ -27,6 +27,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Water
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f263a9dd6bb45bf4fa11415313acaf8c
+    m_Address: Assets/MCAssets/Prefabs/TipboardPrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TipsFromAI
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 659159e8bcb3d964bb49be404843151a, type: 2}
   m_SchemaSet:

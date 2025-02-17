@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: de4b0f2903ac5a041a4b13b3bbfc206d
   m_currentHash:
     serializedVersion: 2
-    Hash: 067d32f9f9808b57e257eb6195fb859b
+    Hash: 473b38344795fb9d3d964b6f703bbdb7
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_CatalogRequestsTimeout: 30
@@ -102,6 +102,7 @@ MonoBehaviour:
     - default
     - Water
     - Cottage
+    - TipsFromAI
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 07cc94bc411554a43ba647960a806b58, type: 2}

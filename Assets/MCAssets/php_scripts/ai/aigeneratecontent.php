@@ -43,8 +43,9 @@ error_log("Received input: " . print_r($input, true));
 
 // Validate input parameters
 $userid = isset($input['userid']) ? intval($input['userid']) : null;
-$contentLength = isset($input['contentLength']) ? intval($input['contentLength']) : 100;
+$contentLengths = isset($input['contentLengths']) ? $input['contentLengths'] : [100];
 $numTips = isset($input['numTips']) ? intval($input['numTips']) : 1; // Default to 1 tip
+$numTipboards = count($contentLengths);
 
 if (!$userid) {
     error_log("Error: Missing required parameters");
@@ -57,9 +58,10 @@ if (!$userid) {
 $sql = "SELECT DISTINCT
     bt.Behaviour_Type AS behaviourname,
     h.label AS habit_name,
+    h.description AS habit_description,
     uh.amount,
     uh.yesorno,
-    YEAR(CURDATE()) - YEAR(uh.datetime) AS duration
+    uh.habit_id
 FROM
     userhabits uh
     INNER JOIN users u ON u.User_ID = uh.user_id
@@ -68,7 +70,9 @@ FROM
     INNER JOIN habits h ON h.Habit_ID = uh.habit_id
 WHERE
     u.User_ID = ?
-ORDER BY RAND()";
+    AND (uh.yesorno = 1 OR (SELECT MAX(amount) FROM userhabits WHERE habit_id = uh.habit_id) > 0)
+ORDER BY RAND()
+LIMIT ?";
 
 error_log("Executing SQL query: " . $sql);
 
@@ -78,7 +82,7 @@ try {
         throw new Exception("Prepare failed: " . $conn->error);
     }
 
-    $stmt->bind_param("i", $userid);
+    $stmt->bind_param("ii", $userid, $numTipboards);
     if (!$stmt->execute()) {
         throw new Exception("Execute failed: " . $stmt->error);
     }
@@ -92,25 +96,47 @@ try {
 
     if (count($rows) > 0) {
         $tips = [];
+        $prompts = [];
         for ($i = 0; $i < $numTips; $i++) {
             $row = $rows[array_rand($rows)];
+            $contentLength = $contentLengths[$i % count($contentLengths)];
 
             error_log("Database query successful. Found behavior data: " . print_r($row, true));
 
             // Build AI prompt
-            $prompt = "Generate a helpful tip of between $contentLength plus or minus 50 characters about " . $row['behaviourname'] . " for someone who has the following details:";
+            $prompt = "Generate a helpful tip of approximately $contentLength characters (plus or minus 50 characters) about " . $row['behaviourname'] . " for someone who has the following details. Do not include any of the original prompt details in the response:";
             $details = [
-                "Habit Name: " . $row['habit_name'],
-                "Amount: " . ($row['amount'] ?? 'N/A'),
-                "Duration: " . ($row['duration'] ?? 'N/A') . " years",
-                "Suffers from: " . ($row['yesorno'] ? "Yes" : "No")
+                "Habit Name: " . $row['habit_name']
             ];
+
+            if ($row['habit_id'] == 75) {
+                if ($row['amount'] >= 0 && $row['amount'] < 25) {
+                    $row['habit_description'] = "For myself";
+                } elseif ($row['amount'] >= 25 && $row['amount'] < 75) {
+                    $row['habit_description'] = "A mix of for myself and others";
+                } elseif ($row['amount'] >= 75 && $row['amount'] <= 100) {
+                    $row['habit_description'] = "For others";
+                }
+                error_log("Description for habit_id 75: " . $row['habit_description']);
+            }
+
+            $details[] = "Description: " . $row['habit_description'];
+
+            if ($row['habit_id'] != 75 && $row['amount'] !== null) {
+                $details[] = "Amount: " . $row['amount'];
+            }
+
+            if ($row['yesorno'] !== null) {
+                $details[] = "Suffers from: " . ($row['yesorno'] ? "Yes" : "No");
+            }
 
             foreach ($details as $detail) {
                 $prompt .= "\n- " . $detail;
             }
 
-            error_log("Generated prompt: " . $prompt);
+            // Log the prompt as it is sent to the API
+            error_log("[AITips] APIPrompt: " . $prompt);
+            $prompts[] = $prompt;
 
             $ch = curl_init('https://api.openai.com/v1/chat/completions');
             $data = array(
@@ -125,7 +151,7 @@ try {
                         'content' => $prompt
                     )
                 ),
-                'max_tokens' => ceil($contentLength / 4),
+                'max_tokens' => ceil(($contentLength + 50) / 4), // Adjust max tokens to allow for the length range
                 'temperature' => 0.7
             );
 
@@ -165,7 +191,7 @@ try {
 
         // Clear any buffered output before sending response
         ob_clean();
-        echo json_encode(['tips' => $tips]);
+        echo json_encode(['tips' => $tips, 'prompts' => $prompts]);
         error_log("Successfully generated and returned content");
         exit();
     } else {

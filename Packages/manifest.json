@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.google.xr.cardboard": "file:C:/Users/nick/Downloads/cardboard-xr-plugin-master/cardboard-xr-plugin-master",
     "com.unity.addressables": "2.2.2",
     "com.unity.inputsystem": "1.11.2",
     "com.unity.multiplayer.center": "1.0.0",

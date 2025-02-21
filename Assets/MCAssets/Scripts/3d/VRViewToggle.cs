@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using System.Collections; // Add this to resolve IEnumerator
+
 public class VRViewToggle : MonoBehaviour
 {
     private int vrMode;

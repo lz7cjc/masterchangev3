@@ -4,7 +4,38 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/pickformat.unity
+    guid: c897cdd7ceddafa4983bb32a04e3abde
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/dashboard.unity
+    guid: bff6256e1b79b564fb5f9bea82f582c8
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/everything.unity
+    guid: bf26f159466b5c345a24ff7a4b4d6533
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/FirstVisit2d.unity
+    guid: d4758ab2da95adb45bddea7723517f63
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/register.unity
+    guid: fa3323ec5640a0a4683584f2be07a6f5
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/switchto360.unity
+    guid: bfd68b82fbf8843469345749558d998c
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/3D/mainVR.unity
+    guid: da3d328a0d1203445bfea89ad1694bbf
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/3D/MCVideoPlayer.unity
+    guid: 896af7e935da07f428af030d7361ab6b
+  - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/switchtovr.unity
+    guid: 7d075f1906de6614da7f30a78abbcbe4
+  - enabled: 1
+    path: Assets/MCAssets/MC360Video/360VideoApp.unity
+    guid: e4dd21c736fb67242b545e46107da794
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 0782194debc9a544dbf0ad424e6f0944, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e4d40cac255e863438fc3792a2d2880b, type: 2}
   m_UseUCBPForAssetBundles: 0

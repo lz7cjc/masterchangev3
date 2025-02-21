@@ -9,7 +9,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public class AITips : MonoBehaviour
 {
     [SerializeField] private string apiUrl = "https://masterchange.today/php_scripts/ai/aigeneratecontent.php";
-    [SerializeField] private int contentLength = 100;
+    [SerializeField] private int baseContentLength = 100;
     [SerializeField] private TextMeshPro resultText;
     [SerializeField] private AssetReference tipboardPrefab;
 
@@ -37,11 +37,18 @@ public class AITips : MonoBehaviour
         tipboards.AddRange(GameObject.FindGameObjectsWithTag("TipBoard"));
         Debug.Log("[AITips] Found " + tipboards.Count + " tipboards in the scene.");
 
+        // Generate a list of unique content lengths
+        List<int> contentLengths = new List<int>();
+        for (int i = 0; i < tipboards.Count; i++)
+        {
+            contentLengths.Add(baseContentLength + i * 10); // Example: increment content length by 10 for each tipboard
+        }
+
         // Create the configuration object
         var config = new Config
         {
             userid = userId,
-            contentLength = contentLength,
+            contentLengths = contentLengths,
             numTips = tipboards.Count
         };
 
@@ -74,7 +81,14 @@ public class AITips : MonoBehaviour
             // Parse the JSON response
             var response = JsonUtility.FromJson<APIResponse>(request.downloadHandler.text);
             List<string> tips = response.tips;
+            List<string> prompts = response.prompts;
             Debug.Log("[AITips] Tips received: " + string.Join(", ", tips));
+
+            // Log the prompt for each tip received
+            for (int i = 0; i < prompts.Count; i++)
+            {
+                Debug.Log("[AITips] APIPrompt: " + prompts[i]);
+            }
 
             // Populate existing tipboards with tips
             for (int i = 0; i < tipboards.Count && i < tips.Count; i++)
@@ -96,7 +110,7 @@ public class AITips : MonoBehaviour
     private class Config
     {
         public int userid;
-        public int contentLength;
+        public List<int> contentLengths;
         public int numTips;
     }
 
@@ -104,5 +118,6 @@ public class AITips : MonoBehaviour
     private class APIResponse
     {
         public List<string> tips;
+        public List<string> prompts;
     }
 }

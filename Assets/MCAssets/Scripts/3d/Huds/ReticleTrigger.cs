@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 public class ReticleTrigger : MonoBehaviour
 {
@@ -22,12 +21,10 @@ public class ReticleTrigger : MonoBehaviour
     private bool mouseHover = false;
     [SerializeField] private int delay = 3;
 
-
     [SerializeField] private hudCountdown hudCountdown;
 
     private void Start()
     {
-
         if (mainCamera != null)
         {
             Debug.Log("Start Camera found: " + mainCamera.name);
@@ -74,7 +71,6 @@ public class ReticleTrigger : MonoBehaviour
 
             //triggering
             else if (Counter >= Delay)
-
             {
                 if (mainCamera != null)
                 {
@@ -91,14 +87,8 @@ public class ReticleTrigger : MonoBehaviour
                 {
                     RotateCamera();
                     StartRotationAfterDelay();
-
                 }
-
             }
-
-
-
-
         }
     }
 
@@ -107,13 +97,10 @@ public class ReticleTrigger : MonoBehaviour
     /// </summary>
     public void OnReticleEnter()
     {
-        
-            Debug.Log("reticletrigger enter");
-            mouseHover = true;
-            isRotating = true;
-            currentTarget = gameObject; // Lock the current interactive object
-           
-       
+        Debug.Log("reticletrigger enter");
+        mouseHover = true;
+        isRotating = true;
+        currentTarget = gameObject; // Lock the current interactive object
     }
 
     /// <summary>
@@ -146,7 +133,6 @@ public class ReticleTrigger : MonoBehaviour
 
     private void RotateCamera()
     {
-
         if (mainCamera != null)
         {
             Debug.Log("Camera found: " + mainCamera.name);

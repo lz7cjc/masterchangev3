@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.XR;
 using UnityEngine.XR.Management;
 
 public class togglingXR : MonoBehaviour

@@ -1,11 +1,11 @@
 using System.Runtime.CompilerServices;
-using UnityEditor.SceneManagement;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
-using Unity.Android.Gradle.Manifest;
+// using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters; // Commented out as it might be deprecated
+// using Unity.Android.Gradle.Manifest; // Commented out as it might not exist
 
 // called from smoking/alcohol HUD button to determine where to enter the userjourney
 public class BCTUserJourneyLaunch : MonoBehaviour

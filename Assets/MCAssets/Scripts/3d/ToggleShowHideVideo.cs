@@ -22,9 +22,9 @@ public class ToggleShowHideVideo : MonoBehaviour
     public bool hasText = true;
     private GameObject cameraTarget;
     [SerializeField] private StartUp StartUp;
-    private riroStopGo riroStopGo;
+    [SerializeField] private RiroStopGoV2 riroStopGoV2;
     private Rigidbody player;
-    private floorceilingmove floorceilingmove;
+   // private floorceilingmove floorceilingmove;
     public void Start()
     {
 
@@ -41,7 +41,7 @@ public class ToggleShowHideVideo : MonoBehaviour
             //Debug.Log("xxx setting mousehover");
             counter += Time.deltaTime;  
            
-                floorceilingmove.stopTheCamera();
+                //floorceilingmove.stopTheCamera();
 
             if (counter >= 3)
             {
@@ -61,25 +61,26 @@ public class ToggleShowHideVideo : MonoBehaviour
                 if (riroAmount >= 50)
                 {
                     PlayerPrefs.DeleteKey("stopFilm");
-            //        Debug.Log("eeeee");
+                   Debug.Log("eeeee" + riroAmount);
                     PlayerPrefs.SetString("VideoUrl", VideoUrlLink);
-           //         print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
-                                  
-              //      player.useGravity = false;
+                    SceneManager.LoadScene("360VideoApp");
+                    //         print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
+
+                    //      player.useGravity = false;
                 }
 
                 else
                 {
-             //       Debug.Log("111eeeee");
+               Debug.Log("111eeeee" + riroAmount);
                     PlayerPrefs.SetInt("stopFilm", 0);
                    
-                    riroStopGo.doNotPass(0);
+                    riroStopGoV2.doNotPass(0);
                     
                 //    player.MovePosition(cameraTarget.transform.position);
                 //    player.transform.SetParent(cameraTarget.transform);
 
                 }
-                SceneManager.LoadScene("videoplayer");
+                
                 //showhide3d = FindObjectOfType<showhide3d>();
                 //showhide3d.ResetScene();
             }

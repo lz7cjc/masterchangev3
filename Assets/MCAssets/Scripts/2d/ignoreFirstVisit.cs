@@ -6,45 +6,46 @@ using UnityEngine.SceneManagement;
 
 public class ignoreFirstVisit : MonoBehaviour
 {
-    
     public Toggle hideScreen;
     int HideStartScreen;
-   
+
     // Start is called before the first frame update
     void Start()
     {
-        //PlayerPrefs.SetInt("firstScreenHide", 0);
+        // Assign the Toggle component in code
+        hideScreen = GameObject.Find("HideScreen_tgl").GetComponent<Toggle>();
+
+        if (hideScreen == null)
+        {
+            Debug.LogError("HideScreen Toggle is not assigned.");
+            return;
+        }
+
+        // Add listener to the Toggle to call changeToggle method when the state changes
+        hideScreen.onValueChanged.AddListener(delegate { changeToggle(); });
+
+        // Get the current value of IntroScreen from PlayerPrefs
         HideStartScreen = PlayerPrefs.GetInt("IntroScreen");
         Debug.Log("gethideScreen in start ()" + HideStartScreen);
 
-        if (HideStartScreen == 1) 
+        if (HideStartScreen == 1)
         {
             SceneManager.LoadScene("dashboard");
         }
-        
-
     }
 
     public void changeToggle()
     {
-
- //       Debug.Log("in update hidescreen value" + hideScreen);
         if (hideScreen.isOn)
         {
             HideStartScreen = 1;
-
         }
-
         else
         {
             HideStartScreen = 0;
         }
 
- //       Debug.Log("HideStartScreen" + HideStartScreen);
-
         PlayerPrefs.SetInt("IntroScreen", HideStartScreen);
+        Debug.Log("HideStartScreen set to " + HideStartScreen);
     }
-
-// Update is called once per frame
- 
 }

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bb0c97e2766ec994a80f41c3440323b5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 9887
+  packageName: Medieval Signs
+  packageVersion: 3.0
+  assetPath: Assets/Medieval Signs/Sign Symbols/Materials/symbol_armor.mat
+  uploadId: 696328

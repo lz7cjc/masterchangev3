@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7a2962f8fb4f38c47963bef3a5123186
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 9887
+  packageName: Medieval Signs
+  packageVersion: 3.0
+  assetPath: Assets/Medieval Signs/Meshes/Materials/post.mat
+  uploadId: 696328

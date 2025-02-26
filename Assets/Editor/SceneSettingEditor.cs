@@ -77,7 +77,7 @@ public static class SceneSettingsEditor
                 if (bgSprite != null)
                 {
                     panelImage.sprite = bgSprite;
-                    panelImage.type = Image.Type.Sliced; // Use sliced for panels if it's a 9-slice sprite
+                    panelImage.type = Image.Type.Simple; // Use simple type for panels if it doesn't have a border
                     panelImage.color = Color.white; // Full opacity
                 }
                 else
@@ -86,22 +86,6 @@ public static class SceneSettingsEditor
                     panelImage.color = new Color(1, 1, 1, 0); // Transparent if sprite not found
                 }
             }
-
-            // Add the required ChangesceneInc.cs script
-            if (panelObj.GetComponent<ChangesceneInc>() == null)
-            {
-                panelObj.AddComponent<ChangesceneInc>();
-            }
-
-            // =========================================================
-            // PLACEHOLDER 1: ADD CUSTOM SCRIPT HERE
-            // Example: panelObj.AddComponent<YourCustomScript1>();
-            // =========================================================
-
-            // =========================================================
-            // PLACEHOLDER 2: ADD CUSTOM SCRIPT HERE
-            // Example: panelObj.AddComponent<YourCustomScript2>();
-            // =========================================================
 
             Debug.Log($"Updated Panel for Canvas: {canvas.name}");
         }

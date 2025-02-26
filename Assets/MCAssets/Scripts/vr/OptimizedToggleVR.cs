@@ -15,13 +15,19 @@ public class OptimizedToggleVR : MonoBehaviour
     private void Start()
     {
         // Check if XR Plugin Management is set up
-        if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
+        if (XRGeneralSettings.Instance == null)
         {
-            Debug.LogError("XRGeneralSettings or XRManager is missing. Ensure XR Plugin Management is set up.");
+            Debug.LogError("XRGeneralSettings is missing. Ensure XR Plugin Management is set up.");
             return;
         }
 
         xrManager = XRGeneralSettings.Instance.Manager;
+        if (xrManager == null)
+        {
+            Debug.LogError("XRManager is missing. Ensure XR Plugin Management is set up.");
+            return;
+        }
+
         mainCamera = Camera.main;
 
         // Check PlayerPrefs to determine if VR should be enabled
@@ -39,6 +45,19 @@ public class OptimizedToggleVR : MonoBehaviour
         {
             StopXR();
         }
+
+        // Save the state to PlayerPrefs
+        PlayerPrefs.SetInt("toggletovr", enableVR ? 1 : 0);
+    }
+
+    public void StartVR()
+    {
+        StartCoroutine(StartXR());
+    }
+
+    public void StopVR()
+    {
+        StopXR();
     }
 
     private IEnumerator StartXR()

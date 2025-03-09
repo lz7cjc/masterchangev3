@@ -8,7 +8,7 @@ public class VideoLoader : MonoBehaviour
     void Start()
     {
         Debug.Log("videoplayer url 1");
-        string url = PlayerPrefs.GetString("videourl", "");
+        string url = PlayerPrefs.GetString("VideoUrl", "");
         Debug.Log("videoplayer url 2" + url);
         if (!string.IsNullOrEmpty(url))
         {

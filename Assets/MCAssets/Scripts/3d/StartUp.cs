@@ -98,8 +98,11 @@ public class StartUp : MonoBehaviour
         Debug.Log($"SetPlayerToTarget");
         if (target != null && player != null)
         {
-            player.transform.position = target.transform.position;
+            // Move the player to the target location and set it as a child of the target
             player.transform.SetParent(target.transform);
+            player.transform.localPosition = Vector3.zero;
+            player.transform.localRotation = Quaternion.identity;
+            player.transform.localScale = Vector3.one;
             player.isKinematic = true;
             player.linearVelocity = Vector3.zero;
             player.angularVelocity = Vector3.zero;

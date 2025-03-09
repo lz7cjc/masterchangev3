@@ -11,19 +11,12 @@ public class showHideHUDcat : MonoBehaviour
     /// <summary>
     /// //display the zones sub menu on the mainvr hud////////
     /// </summary>
-    public GameObject secondaryNavs;
+    //public GameObject secondaryNavs;
     public bool mousehover = false;
-    // public GameObject altImage;
     public float Counter = 0;
-    // public bool turnoff;
-    public GameObject zones;
-    //   public GameObject hudMove;
-    //  public GameObject hud;
+    public GameObject level3; 
     public bool turnon = true; // Changed to public
 
-    //public SpriteRenderer spriteRenderer;
-    //public Sprite newSprite;
-    //public Sprite oldSprite;
     public float delay = 3;
     [SerializeField] private hudCountdown hudCountdown;
 
@@ -52,21 +45,19 @@ public class showHideHUDcat : MonoBehaviour
 
                 if (turnon)
                 {
-                    Debug.Log("Marker: Activating zones and secondaryNavs");
-                    zones.SetActive(true);
-                    secondaryNavs.SetActive(true);
+                   // Debug.Log("Marker: Activating zones and secondaryNavs");
+                    level3.SetActive(true);
                     turnon = false;
                 }
                 else
                 {
-                    Debug.Log("Marker: Deactivating zones and secondaryNavs");
-                    zones.SetActive(false);
-                    secondaryNavs.SetActive(false);
+                   // Debug.Log("Marker: Deactivating zones and secondaryNavs");
+                    level3.SetActive(false);
                     turnon = true;
                 }
 
                 hudCountdown.resetCountdown();
-                Debug.Log($"Marker: Update - turnon: {turnon}, zones active: {zones.activeSelf}, secondaryNavs active: {secondaryNavs.activeSelf}");
+               // Debug.Log($"Marker: Update - turnon: {turnon}, secondaryNavs active: {level3.activeSelf}");
             }
         }
     }
@@ -74,7 +65,7 @@ public class showHideHUDcat : MonoBehaviour
     // mouse Enter event
     public void MouseHoverChangeScene()
     {
-        Debug.Log("Marker: MouseHoverChangeScene called");
+       // Debug.Log("Marker: MouseHoverChangeScene called");
         mousehover = true;
         Counter = 0;
     }
@@ -82,7 +73,7 @@ public class showHideHUDcat : MonoBehaviour
     // mouse Exit Event
     public void MouseExit()
     {
-        Debug.Log("Marker: MouseExit called");
+     //   Debug.Log("Marker: MouseExit called");
         ToggleActiveIcons.DefaultIcon();
         hudCountdown.resetCountdown();
         mousehover = false;
@@ -92,28 +83,27 @@ public class showHideHUDcat : MonoBehaviour
     // Method to reset the state when the HUD is closed
     public void ResetHUDState()
     {
-        Debug.Log("Marker: ResetHUDState called");
+     //   Debug.Log("Marker: ResetHUDState called");
         turnon = true;
-        zones.SetActive(false);
-        secondaryNavs.SetActive(false);
-        Debug.Log($"Marker: ResetHUDState - turnon: {turnon}, zones active: {zones.activeSelf}, secondaryNavs active: {secondaryNavs.activeSelf}");
+        level3.SetActive(false);
+       
+    //    Debug.Log($"Marker: ResetHUDState - turnon: {turnon}, zones active: {level3.activeSelf}");
     }
 
     // Method to open the HUD
     public void OpenHUD()
     {
-        Debug.Log("Marker: OpenHUD called");
-        Debug.Log($"Marker: OpenHUD - zones active: {zones.activeSelf}, secondaryNavs active: {secondaryNavs.activeSelf}");
+      //  Debug.Log("Marker: OpenHUD called");
+     //   Debug.Log($"Marker: OpenHUD - zones active: {level3.activeSelf}");
         // Add any additional logic for opening the HUD here
     }
 
     // Method to close the HUD
     public void CloseHUD()
     {
-        Debug.Log("Marker: CloseHUD called");
-        Debug.Log($"Marker: CloseHUD - zones active: {zones.activeSelf}, secondaryNavs active: {secondaryNavs.activeSelf}");
+      //  Debug.Log("Marker: CloseHUD called");
+     //   Debug.Log($"Marker: CloseHUD - zones active: {level3.activeSelf}");
         ResetHUDState();
         // Add any additional logic for closing the HUD here
     }
 }
-

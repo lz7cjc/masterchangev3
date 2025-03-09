@@ -7,12 +7,12 @@ public class showHideHUD : MonoBehaviour
     public float Counter = 0;
     public float waitFor;
     public static bool showing = false;
-    public GameObject hudprimary;
-    public GameObject hudPrimaryNav;
-    public GameObject hudSecondaryNav;
+    public GameObject openCloseLevel1;
+     public GameObject mainIconsLevel2;
+    public GameObject locationsLevel3;
     public GameObject turnHudOn;
     public GameObject turnHudOff;
-    public GameObject hudZones;
+    
     
   //  [SerializeField] private ToggleActiveIcons ToggleActiveIcons;
 
@@ -21,11 +21,10 @@ public class showHideHUD : MonoBehaviour
 
     public void Start()
     {
-       // ToggleActiveIcons = FindFirstObjectByType<ToggleActiveIcons>();
-        hudprimary.SetActive(false);
-        hudPrimaryNav.SetActive(false);
-        hudSecondaryNav.SetActive(false);
-        hudZones.SetActive(false);
+        // ToggleActiveIcons = FindFirstObjectByType<ToggleActiveIcons>();
+       
+        mainIconsLevel2.SetActive(false);
+        locationsLevel3.SetActive(false);
         Counter = 0;
         mousehover = false;
     }
@@ -38,12 +37,11 @@ public class showHideHUD : MonoBehaviour
     public void ResetHUDState()
     {
         //ToggleActiveIcons.DefaultIcon();
-        hudprimary.SetActive(false);
-        hudPrimaryNav.SetActive(false);
-        hudSecondaryNav.SetActive(false);
+        mainIconsLevel2.SetActive(false);
+        locationsLevel3.SetActive(false);
         turnHudOff.SetActive(false);
         turnHudOn.SetActive(true);
-        hudZones.SetActive(false);
+        
         showing = false;
     }
 
@@ -91,11 +89,11 @@ public class showHideHUD : MonoBehaviour
     {
         if (!showing)
         {
-            hudprimary.SetActive(true);
-            hudPrimaryNav.SetActive(true);
+            mainIconsLevel2.SetActive(true);
+            locationsLevel3.SetActive(false);
             turnHudOff.SetActive(true);
             turnHudOn.SetActive(false);
-            hudSecondaryNav.SetActive(false);
+           
             showing = true;
         }
         else if (showing)

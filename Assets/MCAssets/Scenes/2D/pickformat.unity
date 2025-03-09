@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -685,7 +686,7 @@ LightingSettings:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
-  serializedVersion: 8
+  serializedVersion: 9
   m_EnableBakedLightmaps: 1
   m_EnableRealtimeLightmaps: 1
   m_RealtimeEnvironmentLighting: 1
@@ -1252,7 +1253,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.009765625, y: -43.695984}
+  m_AnchoredPosition: {x: 0.009765625, y: -101}
   m_SizeDelta: {x: 0, y: 87.392}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1552999462
@@ -1570,7 +1571,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1764731968
 Transform:
   m_ObjectHideFlags: 0
@@ -1595,9 +1596,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1764731966}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 890f0d33860435a4d8a903868b76394c, type: 3}
+  m_Script: {fileID: 11500000, guid: 94ac770131be07044afb162d9e4571d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  switchVRon: 0
 --- !u!1 &1794481945
 GameObject:
   m_ObjectHideFlags: 0
@@ -1888,8 +1890,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c277a8b94df2e23498fb876c3883e42b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showText: {fileID: 1662153023}
-  hideScreen: {fileID: 0}
 --- !u!1 &2077668525
 GameObject:
   m_ObjectHideFlags: 0

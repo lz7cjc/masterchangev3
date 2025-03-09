@@ -4,8 +4,6 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using UnityEngine.UI;
 
-
-
 public class SetSkipVRSwitchScene : MonoBehaviour
 {
     private int SkipLearningScreenInt;
@@ -19,7 +17,6 @@ public class SetSkipVRSwitchScene : MonoBehaviour
         SkipSwitchScreenInt = PlayerPrefs.GetInt("SwitchtoVR");
         using2d = PlayerPrefs.GetInt("toggleToVR");
 
-
         if ((PlayerPrefs.HasKey("switchtovr")) || (using2d == 0))
         {
             if (PlayerPrefs.GetInt("SwitchtoVR") == 0)
@@ -30,16 +27,13 @@ public class SetSkipVRSwitchScene : MonoBehaviour
         }
         else
         {
-
             unityDontShowVRScreenDisplay.isOn = false;
         }
     }
 
     /// <summary>
-    /// This will skip the switchvr screen is checked the don't sow this screen again box
-    /// 
+    /// This will skip the switchvr screen if the "don't show this screen again" box is checked
     /// </summary>
-
     public void onChangeShowVRScreenDisplay(bool value)
     {
         Debug.Log("unityDontShowVRScreenDisplay " + unityDontShowVRScreenDisplay.isOn);
@@ -52,13 +46,13 @@ public class SetSkipVRSwitchScene : MonoBehaviour
         {
             PlayerPrefs.SetInt("SwitchtoVR", 1);
             Debug.Log("show the screen");
-
         }
 
         if (PlayerPrefs.HasKey("dbuserid"))
-        { 
-        updateuserdb = FindObjectOfType<updateuserdb>();
-        updateuserdb.callToUpdate();
+        {
+            // Use FindFirstObjectByType instead of the obsolete FindObjectOfType
+            updateuserdb = FindFirstObjectByType<updateuserdb>();
+            updateuserdb.callToUpdate();
         }
     }
 
@@ -67,19 +61,12 @@ public class SetSkipVRSwitchScene : MonoBehaviour
         SkipLearningScreenInt = PlayerPrefs.GetInt("trainingDone");
         Debug.Log("SkipLearningScreen " + SkipLearningScreenInt);
 
-       
-            SceneManager.LoadScene("everything");
-       
-
+        SceneManager.LoadScene("everything");
     }
 
     public void goDashboard()
     {
-      SceneManager.LoadScene("dashboard");
-
-
+        SceneManager.LoadScene("dashboard");
     }
-
 }
-    
 

@@ -45,7 +45,7 @@ public class closeAllHuds : MonoBehaviour
         {
             Debug.Log("Marker: Resetting HUD state for showHideHUDcat");
             hudCatController.ResetHUDState();
-            Debug.Log($"Marker: CloseTheHuds - turnon: {hudCatController.turnon}, zones active: {hudCatController.zones.activeSelf}, secondaryNavs active: {hudCatController.secondaryNavs.activeSelf}");
+          //  Debug.Log($"Marker: CloseTheHuds - turnon: {hudCatController.turnon}, zones active: {hudCatController.zones.activeSelf}, secondaryNavs active: {hudCatController.secondaryNavs.activeSelf}");
         }
     }
 }

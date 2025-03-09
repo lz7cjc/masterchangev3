@@ -11,7 +11,7 @@ public class pickVideoPlayer : MonoBehaviour
 
     public void unloadVideoFormat()
     {
-        VRorNot = PlayerPrefs.GetInt("toggletovr");
+        VRorNot = PlayerPrefs.GetInt("toggleToVR");
         scenename  = SceneManager.GetActiveScene();
         if ((scenename.name == "videoplayer") || (scenename.name == "videoplayer2d"))
         {
@@ -29,7 +29,7 @@ public class pickVideoPlayer : MonoBehaviour
 
     public void pickVideoFormat()
     {
-        VRorNot = PlayerPrefs.GetInt("toggletovr");
+        VRorNot = PlayerPrefs.GetInt("toggleToVR");
 
         if (VRorNot == 1)
             {

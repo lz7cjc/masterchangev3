@@ -13,7 +13,7 @@ public class switchformatreload : MonoBehaviour
 
     public void Start()
     {
-        if (PlayerPrefs.GetInt("toggletovr") == 1)
+        if (PlayerPrefs.GetInt("toggleToVR") == 1)
         {
             toggleActiveIconsVR.SetHeadsetIcon(true);
         }
@@ -50,11 +50,11 @@ public class switchformatreload : MonoBehaviour
                 }
 
                 // Toggle state
-                int currentState = PlayerPrefs.GetInt("toggletovr");
+                int currentState = PlayerPrefs.GetInt("toggleToVR");
                 int newState = (currentState == 1) ? 0 : 1;
                 Debug.Log($"Toggling VR state from {currentState} to {newState}");
 
-                PlayerPrefs.SetInt("toggletovr", newState);
+                PlayerPrefs.SetInt("toggleToVR", newState);
                 PlayerPrefs.Save();
 
                 // Switch VR state
@@ -65,7 +65,16 @@ public class switchformatreload : MonoBehaviour
 
                 if (togglingXR != null)
                 {
-                    togglingXR.SwitchingVR();
+                    if (newState == 1)
+                    {
+                        // Switch to VR mode
+                        togglingXR.StartCoroutine(togglingXR.StartXR());
+                    }
+                    else
+                    {
+                        // Switch to 360 mode
+                        togglingXR.StopXR();
+                    }
                 }
 
                 // Update icon based on new state

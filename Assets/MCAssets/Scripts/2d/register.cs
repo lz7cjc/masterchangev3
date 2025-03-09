@@ -2,19 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.IO;
 using System.Globalization;
 using UnityEngine.UI;
 using System;
 using UnityEngine.SceneManagement;
-
 
 public class register : MonoBehaviour
 {
     //remote
     string posturl = "https://masterchange.today/php_scripts/register2.php";
     //local
- //readonly string posturl = "http://localhost/php_scripts/register2.php";
+    //readonly string posturl = "http://localhost/php_scripts/register2.php";
 
     public InputField usernameField;
     public InputField passwordField;
@@ -23,7 +21,7 @@ public class register : MonoBehaviour
     public InputField lname;
     public InputField email;
     public Toggle receiveEmail;
-    //public Toggle TsandCs;
+
     public Button acceptSubmissionButton;
     public Text errorMessage;
     private int credsgiven;
@@ -41,7 +39,6 @@ public class register : MonoBehaviour
     private int age;
     private updateRiros updateRiros;
     public string Switchscene;
-    private bool isItNumber;
     private int prerirosEarnt;
     private int prerirosSpent;
     private int prerirosBalance;
@@ -60,17 +57,11 @@ public class register : MonoBehaviour
         prerirosBalance = PlayerPrefs.GetInt("rirosBalance");
         returnToScene = PlayerPrefs.GetString("returntoscene");
 
-        //usernameField.text = "ff88fgdafh";
-        //passwordField.text = "34534535dg";
-        //dob.text = "1934";
-        //email.text = "nik@beriro.co.uk";
-
         Debug.Log("iii behaviour and return to scene: " + behaviour + returnToScene);
 #if UNITY_ANDROID || UNITY_EDITOR
 
         earnRirosText.text = "Earn 10,000 Riros when you register";
         riroValue = 10000;
-
 
 #endif
 
@@ -91,7 +82,7 @@ public class register : MonoBehaviour
         }
 
         SwitchtoVR = PlayerPrefs.GetInt("SwitchtoVR");
-        if (SwitchtoVR !=1)
+        if (SwitchtoVR != 1)
         {
             SwitchtoVR = 0;
         }
@@ -101,36 +92,39 @@ public class register : MonoBehaviour
             SkipLearningScreenInt = 0;
         }
 
-        
         if (PlayerPrefs.HasKey("returnToScene"))
         {
-        returnToScene = PlayerPrefs.GetString("returntoscene");
-           
+            returnToScene = PlayerPrefs.GetString("returntoscene");
         }
-      
-        //usernameField.text = "masterchange";
-     
-        //passwordField.text = "password";
-        //dob.text = "2000";
-        //email.text = "ryr@";
 
         if (PlayerPrefs.HasKey("dbuserid"))
-
         {
-            SceneManager.LoadScene("earn riros");
+            SceneManager.LoadScene("dashboard");
         }
-        //Debug.Log("in start");
-   
     }
 
     public void CallRegisterCoroutine(string switchscne)
-    { 
-        globalvariables.Instance.nextScene = switchscne;
-        StartCoroutine(Register());
-        onChangeEmail();
-        Debug.Log("in CallRegisterCoroutine");
+    {
+        if (ValidateMandatoryFields())
+        {
+            globalvariables.Instance.nextScene = switchscne;
+            StartCoroutine(Register());
+            onChangeEmail();
+            Debug.Log("in CallRegisterCoroutine");
+        }
+        else
+        {
+            errorMessage.text = "Please fill in all mandatory fields.";
+        }
     }
 
+    private bool ValidateMandatoryFields()
+    {
+        return !string.IsNullOrEmpty(usernameField.text) &&
+               !string.IsNullOrEmpty(passwordField.text) &&
+               !string.IsNullOrEmpty(dob.text) &&
+               !string.IsNullOrEmpty(email.text);
+    }
 
     public void onChangeEmail()
     {
@@ -159,8 +153,6 @@ public class register : MonoBehaviour
 
         form.AddField("rirosEarnt", prerirosEarnt + riroValue);
         form.AddField("rirosSpent", prerirosSpent);
-        //form.AddField("rirosBalance", prerirosBalance);
-        //form.AddField("rirosBought", prerirosBalance);
 
         if (PlayerPrefs.HasKey("returnToScene"))
         {
@@ -171,7 +163,6 @@ public class register : MonoBehaviour
             form.AddField("returnscene", "0");
         }
 
-
         if (receiveEmail.isOn)
         {
             form.AddField("c_optin", "1");
@@ -181,19 +172,16 @@ public class register : MonoBehaviour
             form.AddField("c_optin", "0");
         }
 
-
-        UnityWebRequest www = UnityWebRequest.Post(posturl, form); // The file location for where my .php file is.
+        UnityWebRequest www = UnityWebRequest.Post(posturl, form);
         yield return www.SendWebRequest();
-        if (www.isNetworkError || www.isHttpError)
+        if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
         {
             Debug.Log("we got an error" + www.error);
             errorMessage.text = www.error;
-
         }
         else
         {
             string json = www.downloadHandler.text;
-            //json = json.Trim('[', ']');
 
             Debug.Log("what is downloaded" + www.downloadHandler.text);
             Debug.Log("json strnig" + json);
@@ -223,10 +211,7 @@ public class register : MonoBehaviour
             {
                 errorMessage.text = "Your account has been created but your R$ didn't update. This will be resolved the next time you earn, spend or buy riros";
             }
-
-
             else
-
             {
                 Debug.Log("json returned after data entry" + json);
                 UserData UserData = JsonUtility.FromJson<UserData>(json);
@@ -237,90 +222,61 @@ public class register : MonoBehaviour
                 string Username = UserData.Username;
                 Debug.Log("Username" + Username);
 
-                //  string Fname = loadUserData.Fname;
                 PlayerPrefs.SetInt("dbuserid", Convert.ToInt32(userid));
                 PlayerPrefs.SetString("username", Username);
-                // PlayerPrefs.SetString("fname", Fname);
-                //  updateRiros = FindObjectOfType<updateRiros>();
-                //  updateRiros.firstFunction();
 
-
-
-
-
-                /*   setRegRiros = FindObjectOfType<setRegRiros>();
-                   setRegRiros.toPayOut();
-               */  
                 Switchscene = globalvariables.Instance.nextScene;
                 if ((behaviour == "smoking") && (returnToScene == "hospital"))
-                    {
+                {
                     SceneManager.LoadScene("habitsdb");
-
-                    }
+                }
                 else
                 {
                     SceneManager.LoadScene(Switchscene);
                 }
-               
             }
         }
     }
-    
-
 
     public void Validation()
     {
         emailvalid = email.text.IndexOf('@');
-       
-      //Calculating Age
-        //get the age from year entered
-        //what is the date today
+
         DateTime now = DateTime.Today;
         Debug.Log("now" + now);
 
-        //get the year from today
-       thisyearS = (now.ToString("yyyy"));
+        thisyearS = (now.ToString("yyyy"));
         Debug.Log("thisyear" + thisyearS);
         thisyear = Convert.ToInt32(thisyearS);
         Debug.Log("integer Year" + thisyear);
 
-        //what year did they enter in the app
         myAge = dob.text;
         Debug.Log("dob myAge" + myAge);
 
-       Debug.Log("what is my age type" + myAge.GetType());
-         if (myAge !="")
-                {
-                 userYear = Convert.ToInt32(myAge);
-                }
-        // Debug.Log("dob converted" + userYear);
+        Debug.Log("what is my age type" + myAge.GetType());
+        if (myAge != "")
+        {
+            userYear = Convert.ToInt32(myAge);
+        }
 
-        //calculate their rough age
         age = thisyear - userYear;
         Debug.Log("their age in years" + age);
-         //acceptSubmissionButton.interactable = true;
+
         if ((usernameField.text.Length >= 6) && (passwordField.text.Length >= 8) && (age >= 18) && (emailvalid >= 1))
         {
             Debug.Log("should be usable");
             acceptSubmissionButton.interactable = true;
         }
-             else
+        else
         {
             Debug.Log("should not be usable");
             acceptSubmissionButton.interactable = false;
         }
     }
 
-
-
     private class UserData
     {
         public string UserID;
         public string Username;
-        //public string Fname;
-       // public int riros;
-
     }
-
-
 }

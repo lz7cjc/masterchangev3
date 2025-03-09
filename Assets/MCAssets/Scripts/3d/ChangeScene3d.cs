@@ -10,16 +10,17 @@ public class changeScene3d : MonoBehaviour
     public bool toForms;
     public float counter = 0;
     private string Switchscenename;
-    [SerializeField] private OptimizedToggleVR OptimizedToggleVR;
+    [SerializeField] private togglingXR togglingXR;
 
     private void Awake()
     {
-        if (OptimizedToggleVR == null)
+        // Ensure togglingXR is assigned
+        if (togglingXR == null)
         {
-          
-            if (OptimizedToggleVR == null)
+            togglingXR = FindFirstObjectByType<togglingXR>();
+            if (togglingXR == null)
             {
-                Debug.LogError("OptimizedToggleVR component not found!");
+                Debug.LogError("togglingXR component not found!");
             }
         }
     }
@@ -35,7 +36,10 @@ public class changeScene3d : MonoBehaviour
                 mousehover = false;
                 counter = 0;
 
-                OptimizedToggleVR.StopVR();
+                if (togglingXR != null)
+                {
+                    togglingXR.StopXR();
+                }
                 SceneManager.LoadScene(Switchscenename);
             }
         }

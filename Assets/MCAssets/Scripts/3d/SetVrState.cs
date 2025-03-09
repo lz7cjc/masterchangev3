@@ -12,7 +12,7 @@ public class SetVrState : MonoBehaviour
     private void Start()
     {
         hudController = FindFirstObjectByType<showHideHUD>();
-        int headsetOr2D = PlayerPrefs.GetInt("toggletovr");
+        int headsetOr2D = PlayerPrefs.GetInt("toggleToVR");
         UpdateVRSprites(headsetOr2D == 1);
     }
 
@@ -32,7 +32,7 @@ public class SetVrState : MonoBehaviour
 
     private void ActivateCamera()
     {
-        int headsetOr2D = PlayerPrefs.GetInt("toggletovr");
+        int headsetOr2D = PlayerPrefs.GetInt("toggleToVR");
 
         if (headsetOr2D == 1)
         {

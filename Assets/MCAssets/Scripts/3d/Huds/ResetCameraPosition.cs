@@ -1,0 +1,20 @@
+using TMPro.EditorUtilities;
+using Unity.Android.Gradle.Manifest;
+using UnityEngine;
+using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
+
+public class ResetCameraPosition : MonoBehaviour
+{
+  public Rigidbody player;  
+ 
+    public void MovePlayerToTarget(GameObject target)
+    {
+  
+
+        // Move player to the target position and reset transform
+        player.transform.position = target.transform.position;
+        player.transform.rotation = Quaternion.identity;
+
+
+    }
+}

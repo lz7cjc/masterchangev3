@@ -73,7 +73,7 @@ public class MoveCamera : MonoBehaviour
         toggleActiveIcons.SelectIcon();
         Counter = 0;
         player.useGravity = gravity;
-        closeAllHuds = FindFirstObjectByType<closeAllHuds>();
+     
         closeAllHuds.CloseTheHuds();
 
         player.transform.position = cameraTarget.transform.position;

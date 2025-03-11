@@ -162,9 +162,9 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\matchfav.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LoadingManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ThreeLevelHud.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\displayFormValues.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRirosDynamic.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ThreeLevelHud.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadStatus.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\setRegRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\fuckapple.cs" />

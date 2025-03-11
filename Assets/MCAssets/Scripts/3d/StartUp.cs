@@ -50,28 +50,38 @@ public class StartUp : MonoBehaviour
 
     public void ResetScene()
     {
-        Debug.Log($"ResetScene");
+        Debug.Log("Marker: ResetScene");
         InitializeScene();
         HandleZoneNavigation();
     }
 
     private void InitializeScene()
     {
-        Debug.Log($"InitializeScene");
+        Debug.Log("Marker: InitializeScene");
 
         togglingXR = FindFirstObjectByType<togglingXR>();
         togglingXR.SwitchingVR();
 
         currentZone = PlayerPrefs.GetString("lastknownzone", "Home_tgt");
-        Debug.Log($"lastknownzone -> currentZone: {currentZone}");
-        closeAllHuds.CloseTheHuds();
+        Debug.Log($"Marker: lastknownzone -> currentZone: {currentZone}");
+
+        if (closeAllHuds != null)
+        {
+            closeAllHuds.CloseTheHuds();
+        }
+        else
+        {
+            Debug.LogError("Marker: closeAllHuds is not assigned!");
+        }
 
         toggler = false;
     }
 
+
+
     private void HandleZoneNavigation()
     {
-        Debug.Log($"HandleZoneNavigation");
+        Debug.Log("Marker: HandleZoneNavigation");
 
         if (IsBCTZone(currentZone))
         {
@@ -85,7 +95,7 @@ public class StartUp : MonoBehaviour
 
     private bool IsBCTZone(string zone)
     {
-        Debug.Log($"IsBCTZone");
+        Debug.Log("Marker: IsBCTZone");
         return zone switch
         {
             "Smoking_tgt" or "Alcohol_tgt" or "MFN_tgt" => true,
@@ -95,7 +105,7 @@ public class StartUp : MonoBehaviour
 
     private void SetPlayerToTarget(GameObject target)
     {
-        Debug.Log($"SetPlayerToTarget");
+        Debug.Log("Marker: SetPlayerToTarget");
         if (target != null && player != null)
         {
             // Move the player to the target location and set it as a child of the target
@@ -109,14 +119,13 @@ public class StartUp : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"Missing reference - Target: {target}, Player: {player}");
+            Debug.LogError($"Marker: Missing reference - Target: {target}, Player: {player}");
         }
     }
 
     private void NavigateToBCTZone()
     {
-
-        Debug.Log($"Navigating to BCT zone: {currentZone}");
+        Debug.Log($"Marker: Navigating to BCT zone: {currentZone}");
 
         switch (currentZone)
         {
@@ -133,7 +142,7 @@ public class StartUp : MonoBehaviour
                 break;
 
             default:
-                Debug.LogError($"Unhandled BCT zone: {currentZone}");
+                Debug.LogError($"Marker: Unhandled BCT zone: {currentZone}");
                 NavigateToRegularZone();
                 break;
         }
@@ -141,8 +150,8 @@ public class StartUp : MonoBehaviour
 
     private void NavigateToRegularZone()
     {
-        Debug.Log($"NavigateToRegularZone");
-        Debug.Log($"Navigating to regular zone: {currentZone}");
+        Debug.Log("Marker: NavigateToRegularZone");
+        Debug.Log($"Marker: Navigating to regular zone: {currentZone}");
 
         switch (currentZone)
         {
@@ -162,7 +171,7 @@ public class StartUp : MonoBehaviour
 
     private void HandleAlcoholTreatment()
     {
-        Debug.Log($"HandleAlcoholTreatment");
+        Debug.Log("Marker: HandleAlcoholTreatment");
         SetPlayerToTarget(targetAlcohol);
         stage = PlayerPrefs.GetInt("stageAlcohol");
 
@@ -174,8 +183,8 @@ public class StartUp : MonoBehaviour
 
     private void HandleSmokingTreatment()
     {
-        Debug.Log($"HandleSmokingTreatment");
-        Debug.Log("Handling smoking treatment zone");
+        Debug.Log("Marker: HandleSmokingTreatment");
+        Debug.Log("Marker: Handling smoking treatment zone");
         SetPlayerToTarget(targetSmoking);
         stage = PlayerPrefs.GetInt("stageSmoking");
 

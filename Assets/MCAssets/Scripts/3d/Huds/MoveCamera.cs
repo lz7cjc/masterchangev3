@@ -73,11 +73,14 @@ public class MoveCamera : MonoBehaviour
         toggleActiveIcons.SelectIcon();
         Counter = 0;
         player.useGravity = gravity;
-     
+
         closeAllHuds.CloseTheHuds();
 
-        player.transform.position = cameraTarget.transform.position;
+        // Set the player as a child of the cameraTarget
         player.transform.SetParent(cameraTarget.transform);
+
+        // Reset the player's position to (0, 0, 0) relative to the cameraTarget
+        player.transform.localPosition = Vector3.zero;
 
         PlayerPrefs.SetString("lastknownzone", cameraTarget.name);
     }

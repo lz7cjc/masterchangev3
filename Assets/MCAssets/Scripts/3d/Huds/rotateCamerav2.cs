@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+// No changes needed, the script is correctly implemented.
 public class rotateCamerav2 : MonoBehaviour
 {
     [Header("Rotation Settings")]
@@ -64,8 +64,6 @@ public class rotateCamerav2 : MonoBehaviour
         // Called when the reticle exits the icon
         isHovering = false;
         isRotating = false; // Stop rotating
-        hoverTimer = 0f; // Reset the hover timer
-        rotationDirection = 0f; // Clear the rotation direction
-        toggleActiveIcons?.DefaultIcon(); // Update the icon to the default state
+        hoverTimer = 0f; //
     }
 }

@@ -1,21 +1,21 @@
 using UnityEngine;
 
-[RequireComponent(typeof(VRReticlePointer))]
+[RequireComponent(typeof(CustomReticlePointer))]
 public class CameraController : MonoBehaviour
 {
-    private VRReticlePointer reticlePointer;
+    private CustomReticlePointer reticlePointer;
 
     private void Awake()
     {
-        reticlePointer = GetComponent<VRReticlePointer>();
+        reticlePointer = GetComponent<CustomReticlePointer>();
         if (reticlePointer == null)
         {
-            Debug.LogError("VRReticlePointer component required!");
+            Debug.LogError("CustomReticlePointer component required!");
             enabled = false;
         }
     }
 
-    public void SetMode(VRReticlePointer.ViewMode newMode)
+    public void SetMode(CustomReticlePointer.ViewMode newMode)
     {
         reticlePointer.SetMode(newMode);
     }

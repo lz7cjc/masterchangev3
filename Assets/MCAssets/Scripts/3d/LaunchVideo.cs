@@ -34,10 +34,10 @@ public class LaunchVideo : MonoBehaviour
                 counter = 0;
                 PlayerPrefs.SetString("nextscene", "videoplayer");
               //  PlayerPrefs.SetString("returntoscene", returnToZone_tgt.name);
-                PlayerPrefs.SetInt("stagesmoking", stage);
+                PlayerPrefs.SetInt("stageSmoking", stage+1);
                 //PlayerPrefs.SetString("behaviour", behaviour);
 
-                PlayerPrefs.SetString("videourl", videoUrl);
+                PlayerPrefs.SetString("VideoUrl", videoUrl);
                 SceneManager.LoadScene("360VideoApp");
 
 
@@ -65,12 +65,12 @@ public class LaunchVideo : MonoBehaviour
     public void LaunchSmoking()
     {
         
-        PlayerPrefs.GetString("videourl");
+        PlayerPrefs.GetString("VideoUrl");
         SceneManager.LoadScene("360VideoApp");
     }
     public void LaunchAlcohol()
     {
-        PlayerPrefs.SetString("videourl", "alcoholwelcome");
+        PlayerPrefs.SetString("VideoUrl", "alcoholwelcome");
         SceneManager.LoadScene("360VideoApp");
     }
 

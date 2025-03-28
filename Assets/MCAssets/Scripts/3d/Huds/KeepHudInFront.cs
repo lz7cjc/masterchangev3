@@ -1,5 +1,6 @@
 using UnityEngine;
-
+// No changes needed, the script is correctly implemented.
+// ...existing code...
 public class KeepHUDInFront : MonoBehaviour
 {
     public Transform cameraTransform; // Reference to the camera

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using UnityEngine.SceneManagement;
 
 public class StartUp : MonoBehaviour
 {
@@ -22,8 +23,9 @@ public class StartUp : MonoBehaviour
     [SerializeField] private togglingXR togglingXR;
 
     [Header("Stage Management")]
-    [SerializeField] private int stage;
-    [SerializeField] private string currentZone;
+    private int stage;
+    private string currentZone;
+    private string lastKnownZone;
     [SerializeField] private bool toggler;
 
     [Header("Alcohol Treatment")]
@@ -34,11 +36,11 @@ public class StartUp : MonoBehaviour
 
     [Header("Smoking Treatment")]
     [SerializeField] private GameObject welcomeSmoking;
-    [SerializeField] private GameObject xrayResults;
-    [SerializeField] private GameObject stopGoCtscan;
+    [SerializeField] private GameObject InitialConsultation;
+    [SerializeField] private GameObject CTScanDelay;
     [SerializeField] private GameObject CTresults;
     [SerializeField] private GameObject smokingDone;
-    [SerializeField] private setCTdate setCTdate;
+    //   [SerializeField] private setCTdate setCTdate;
     [SerializeField] private int stopFilm;
     [SerializeField] private GameObject hud;
 
@@ -50,20 +52,25 @@ public class StartUp : MonoBehaviour
 
     public void ResetScene()
     {
-        Debug.Log("Marker: ResetScene");
+        Debug.Log("[StartUp] Marker: ResetScene");
+
+        // Retrieve values from PlayerPrefs
+        stage = PlayerPrefs.GetInt("stage", 0);
+        lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home_tgt");
+        currentZone = lastKnownZone; // Set currentZone to the value of lastKnownZone
+
+        Debug.Log($"[StartUp] Marker: PlayerPrefs - bct: {PlayerPrefs.GetString("bct")}, lastknownzone: {lastKnownZone}, stagesmoking: {PlayerPrefs.GetInt("stagesmoking")}");
+
         InitializeScene();
         HandleZoneNavigation();
     }
 
     private void InitializeScene()
     {
-        Debug.Log("Marker: InitializeScene");
+        Debug.Log("[StartUp] Marker: InitializeScene");
 
         togglingXR = FindFirstObjectByType<togglingXR>();
         togglingXR.SwitchingVR();
-
-        currentZone = PlayerPrefs.GetString("lastknownzone", "Home_tgt");
-        Debug.Log($"Marker: lastknownzone -> currentZone: {currentZone}");
 
         if (closeAllHuds != null)
         {
@@ -71,17 +78,18 @@ public class StartUp : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Marker: closeAllHuds is not assigned!");
+            Debug.LogError("[StartUp] Marker: closeAllHuds is not assigned!");
         }
 
         toggler = false;
+
+        // Move the player to the correct zone when the scene starts
+        MovePlayerToCurrentZone();
     }
-
-
 
     private void HandleZoneNavigation()
     {
-        Debug.Log("Marker: HandleZoneNavigation");
+        Debug.Log("[StartUp] Marker: HandleZoneNavigation");
 
         if (IsBCTZone(currentZone))
         {
@@ -95,7 +103,7 @@ public class StartUp : MonoBehaviour
 
     private bool IsBCTZone(string zone)
     {
-        Debug.Log("Marker: IsBCTZone");
+        Debug.Log("[StartUp] Marker: IsBCTZone");
         return zone switch
         {
             "Smoking_tgt" or "Alcohol_tgt" or "MFN_tgt" => true,
@@ -105,7 +113,7 @@ public class StartUp : MonoBehaviour
 
     private void SetPlayerToTarget(GameObject target)
     {
-        Debug.Log("Marker: SetPlayerToTarget");
+        Debug.Log("[StartUp] Marker: SetPlayerToTarget");
         if (target != null && player != null)
         {
             // Move the player to the target location and set it as a child of the target
@@ -119,13 +127,45 @@ public class StartUp : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"Marker: Missing reference - Target: {target}, Player: {player}");
+            Debug.LogError($"[StartUp] Marker: Missing reference - Target: {target}, Player: {player}");
+        }
+    }
+
+    private void MovePlayerToCurrentZone()
+    {
+        Debug.Log($"[StartUp] Marker: MovePlayerToCurrentZone -> currentZone: {currentZone}");
+
+        switch (currentZone)
+        {
+            case "Alcohol_tgt":
+                SetPlayerToTarget(targetAlcohol);
+                break;
+
+            case "Smoking_tgt":
+                SetPlayerToTarget(targetSmoking);
+                break;
+
+            case "MFN_tgt":
+                SetPlayerToTarget(targetMfn);
+                break;
+
+            case "Travel_tgt":
+                SetPlayerToTarget(targetTravel);
+                break;
+
+            case "Beaches_tgt":
+                SetPlayerToTarget(targetBeaches);
+                break;
+
+            default:
+                SetPlayerToTarget(targetHome);
+                break;
         }
     }
 
     private void NavigateToBCTZone()
     {
-        Debug.Log($"Marker: Navigating to BCT zone: {currentZone}");
+        Debug.Log($"[StartUp] Marker: Navigating to BCT zone: {currentZone}");
 
         switch (currentZone)
         {
@@ -142,7 +182,7 @@ public class StartUp : MonoBehaviour
                 break;
 
             default:
-                Debug.LogError($"Marker: Unhandled BCT zone: {currentZone}");
+                Debug.LogError($"[StartUp] Marker: Unhandled BCT zone: {currentZone}");
                 NavigateToRegularZone();
                 break;
         }
@@ -150,8 +190,8 @@ public class StartUp : MonoBehaviour
 
     private void NavigateToRegularZone()
     {
-        Debug.Log("Marker: NavigateToRegularZone");
-        Debug.Log($"Marker: Navigating to regular zone: {currentZone}");
+        Debug.Log("[StartUp] Marker: NavigateToRegularZone");
+        Debug.Log($"[StartUp] Marker: Navigating to regular zone: {currentZone}");
 
         switch (currentZone)
         {
@@ -171,7 +211,7 @@ public class StartUp : MonoBehaviour
 
     private void HandleAlcoholTreatment()
     {
-        Debug.Log("Marker: HandleAlcoholTreatment");
+        Debug.Log("[StartUp] Marker: HandleAlcoholTreatment");
         SetPlayerToTarget(targetAlcohol);
         stage = PlayerPrefs.GetInt("stageAlcohol");
 
@@ -183,38 +223,43 @@ public class StartUp : MonoBehaviour
 
     private void HandleSmokingTreatment()
     {
-        Debug.Log("Marker: HandleSmokingTreatment");
-        Debug.Log("Marker: Handling smoking treatment zone");
+        Debug.Log("[StartUp] Marker: HandleSmokingTreatment");
+        Debug.Log("[StartUp] Marker: Handling smoking treatment zone");
         SetPlayerToTarget(targetSmoking);
         stage = PlayerPrefs.GetInt("stageSmoking");
 
         // Reset all smoking treatment objects
         welcomeSmoking.SetActive(false);
-        xrayResults.SetActive(false);
-        stopGoCtscan.SetActive(false);
+        InitialConsultation.SetActive(false);
+        CTScanDelay.SetActive(false);
         CTresults.SetActive(false);
         smokingDone.SetActive(false);
 
         switch (stage)
         {
-            case 0:
-                welcomeSmoking.SetActive(true);
-                break;
             case 1:
-                xrayResults.SetActive(true);
+                PlayerPrefs.SetString("VideoUrl", "https://storage.googleapis.com/masterchange/behaviourchange/smoking/StacyXRayWelcome.mp4");
+                PlayerPrefs.SetInt("stageSmoking", 2);
+                PlayerPrefs.Save();
+                SceneManager.LoadScene("360VideoApp", LoadSceneMode.Single);
+                
                 break;
+
             case 2:
-                stopGoCtscan.SetActive(true);
-                setCTdate = FindFirstObjectByType<setCTdate>();
-                setCTdate.setReferenceDate();
+                InitialConsultation.SetActive(true);
+                //    setCTdate = FindFirstObjectByType<setCTdate>();
+                //CTScanDelay.setReferenceDate();
                 break;
             case 3:
                 PlayerPrefs.DeleteKey("CTstartpoint");
                 PlayerPrefs.DeleteKey("delaynotification");
-                CTresults.SetActive(true);
+                //    CTScanDelay.SetActive(true);
                 break;
             case 4:
-                smokingDone.SetActive(true);
+                CTresults.SetActive(true);
+                break;
+            case 5:
+                InitialConsultation.SetActive(true);
                 break;
         }
 

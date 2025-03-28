@@ -60,12 +60,12 @@ public class setCTdate : MonoBehaviour
 
         //did they get the good or bad video? If good then can ask to see bad
 
-        if (PlayerPrefs.GetString("videourl") == "https://youtu.be/1QSS32UG5p8")
+        if (PlayerPrefs.GetString("VideoUrl") == "https://youtu.be/1QSS32UG5p8")
         {
      //       // debug.log("PlayerPrefs.GetString(VideoUrl2) " + PlayerPrefs.GetString("videourl"));
 
             displayCountdown.text = "You must be very relieved. What a happy result. Feel free to explore MasterChange, there is plenty else to discover. If you want to see how it may have turned out, with a little less luck, choose to 'See a different path'";
-            PlayerPrefs.DeleteKey("videourl");
+            PlayerPrefs.DeleteKey("VideoUrl");
             NotifSend.SetActive(false);
             onWeGo.SetActive(true);
         }

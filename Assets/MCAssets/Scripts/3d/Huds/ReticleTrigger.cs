@@ -3,74 +3,24 @@ using UnityEngine;
 
 public class ReticleTrigger : MonoBehaviour
 {
-    [Header("Rotation Settings")]
-    [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private Vector3 rotationDirection = Vector3.up; // Set -Vector3.up for left, Vector3.up for right
-    [SerializeField] private float Delay = 2f; // Time before rotation starts
-
-    [Header("Interaction Settings")]
-    [SerializeField] private float maxInteractionDistance = 10f;
-    [SerializeField] private LayerMask interactableLayer;
-
-    //private bool isHovering = false;
-    private bool isRotating = false;
-    [SerializeField] private float Counter = 0;
-    [SerializeField] private Camera mainCamera;
-    private Coroutine rotationCoroutine;
-    private GameObject currentTarget;
+    public Camera mainCamera;
+    public float maxInteractionDistance = 10f;
+    public LayerMask interactableLayer;
+    public float rotationSpeed = 50f;
+    public float Delay = 3f;
     private bool mouseHover = false;
-    [SerializeField] private int delay = 3;
+    private bool isRotating = false;
+    private float Counter = 0f;
+    private GameObject currentTarget;
+    private Coroutine rotationCoroutine;
 
-    [SerializeField] private hudCountdown hudCountdown;
-
-    private void Start()
-    {
-        if (mainCamera != null)
-        {
-            Debug.Log("Start Camera found: " + mainCamera.name);
-        }
-        else
-        {
-            Debug.LogError(" Start Main Camera not assigned!");
-        }
-    }
-
-    void Update()
+    private void Update()
     {
         if (mouseHover)
         {
-            hudCountdown.SetCountdown(delay, Counter);
             Counter += Time.deltaTime;
-            Debug.Log("toCounter =" + Counter + "time.deltatime = " + Time.deltaTime);
-
-            //waiting
-            if (Counter < Delay)
-            {
-                Debug.Log("reticletrigger waiting");
-                Debug.Log("toCounter =" + Counter + "time.deltatime = " + Time.deltaTime);
-                if (mainCamera != null)
-                {
-                    Debug.Log("Updatewait Camera found: " + mainCamera.name);
-                }
-                else
-                {
-                    Debug.LogError("Updatewait Main Camera not assigned!");
-                }
-
-                CheckReticlePosition(); // Make sure the reticle stays locked on the object
-                if (hudCountdown == null)
-                {
-                    hudCountdown = FindFirstObjectByType<hudCountdown>();
-                }
-
-                if (hudCountdown != null)
-                {
-                    hudCountdown.SetCountdown(delay, Counter);
-                }
-            }
-
-            //triggering
-            else if (Counter >= Delay)
+            CheckReticlePosition();
+            if (Counter >= Delay)
             {
                 if (mainCamera != null)
                 {
@@ -80,8 +30,6 @@ public class ReticleTrigger : MonoBehaviour
                 {
                     Debug.LogError("Updatego  Main Camera not assigned!");
                 }
-                hudCountdown.resetCountdown();
-                Debug.Log("reticletrigger executing");
                 //put some code here once triggered the action 
                 if (isRotating)
                 {
@@ -143,7 +91,7 @@ public class ReticleTrigger : MonoBehaviour
         }
         if (mainCamera != null)
         {
-            mainCamera.transform.Rotate(rotationDirection * (rotationSpeed * Time.deltaTime));
+            mainCamera.transform.Rotate(Vector3.up * (rotationSpeed * Time.deltaTime));
         }
     }
 
@@ -155,7 +103,7 @@ public class ReticleTrigger : MonoBehaviour
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, maxInteractionDistance, interactableLayer))
         {
-            if (hit.collider.gameObject == currentTarget)
+            if (hit.collider.GetComponent<BoxCollider>() != null && hit.collider.gameObject == currentTarget)
             {
                 return; // The reticle is still on the correct object, do nothing
             }

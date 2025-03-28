@@ -53,34 +53,7 @@ public class ToggleShowHideVideo : MonoBehaviour
              //   Debug.Log("xxx setting counted");
                 mouseHover = false;
                 counter = 0;
-                PlayerPrefs.SetString("returntoscene", returntoscene);
-                PlayerPrefs.SetString("behaviour", behaviour);
-                PlayerPrefs.SetInt("stage", returnstage);
-                PlayerPrefs.SetString("nextscene", nextscene);
-              
-                if (riroAmount >= 50)
-                {
-                    PlayerPrefs.DeleteKey("stopFilm");
-                   Debug.Log("eeeee" + riroAmount);
-                    PlayerPrefs.SetString("VideoUrl", VideoUrlLink);
-                    SceneManager.LoadScene("360VideoApp");
-                    //         print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
-
-                    //      player.useGravity = false;
-                }
-
-                else
-                {
-               Debug.Log("111eeeee" + riroAmount);
-                    PlayerPrefs.SetInt("stopFilm", 0);
-                   
-                    riroStopGoV2.doNotPass(0);
-                    
-                //    player.MovePosition(cameraTarget.transform.position);
-                //    player.transform.SetParent(cameraTarget.transform);
-
-                }
-                
+                SetVideoUrl();
                 //showhide3d = FindObjectOfType<showhide3d>();
                 //showhide3d.ResetScene();
             }
@@ -110,7 +83,39 @@ public class ToggleShowHideVideo : MonoBehaviour
         mouseHover = false;
         counter = 0;
     }
-           
+
+    public void SetVideoUrl()
+    {
+        PlayerPrefs.SetString("returntoscene", returntoscene);
+        PlayerPrefs.SetString("behaviour", behaviour);
+        PlayerPrefs.SetInt("stage", returnstage);
+        PlayerPrefs.SetString("nextscene", nextscene);
+
+        if (riroAmount >= 50)
+        {
+            PlayerPrefs.DeleteKey("stopFilm");
+            Debug.Log("eeeee" + riroAmount);
+            PlayerPrefs.SetString("VideoUrl", VideoUrlLink);
+            SceneManager.LoadScene("360VideoApp");
+            //         print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
+
+            //      player.useGravity = false;
+        }
+
+        else
+        {
+            Debug.Log("111eeeee" + riroAmount);
+            PlayerPrefs.SetInt("stopFilm", 0);
+
+            riroStopGoV2.doNotPass(0);
+
+            //    player.MovePosition(cameraTarget.transform.position);
+            //    player.transform.SetParent(cameraTarget.transform);
+
+        }
+
+    }
+
 }
 
    

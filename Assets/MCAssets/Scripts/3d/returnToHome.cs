@@ -81,10 +81,10 @@ public class returnToHome : MonoBehaviour
                     switch (behaviour)
                     {
                         case "smoking":
-                            getStage = PlayerPrefs.GetInt("stagesmoking");
+                            getStage = PlayerPrefs.GetInt("stageSmoking");
                             putStage = getStage - 1;
                             PlayerPrefs.SetString("nextscene", "hospital");
-                            PlayerPrefs.SetInt("stagesmoking", putStage);
+                            PlayerPrefs.SetInt("stageSmoking", putStage);
 
 
                             if (putStage == 2)

@@ -78,11 +78,13 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\SetSkipVRSwitchScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Results.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ResetCameraPosition.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\TogglePlayPauseIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\syncfromdb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
@@ -123,7 +125,6 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstVisitRiros.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Stellar Sky\Demo\CameraController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
@@ -131,6 +132,7 @@
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ShowHide.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Habits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\TestToggle.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\FPSController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmoveold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />
@@ -165,6 +167,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ThreeLevelHud.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\displayFormValues.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRirosDynamic.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\CustomReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadStatus.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\setRegRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\fuckapple.cs" />
@@ -197,16 +200,19 @@
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\CameraRay.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\ChangeSceneHealthCheckv2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingHudManager.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoControllerV2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\togglingXR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsertsandpit.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\TestInterfaceButtons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\riroStopGo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\BuyInventoryItem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicLoadVideo1.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsHUD.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showWhichFormat.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\AnimPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\getfavourites.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ToggleActiveIconsVideo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
@@ -235,6 +241,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\ChangesceneInc.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showPassword.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\RiroStopGoV2.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\PickBCT.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\MenuManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\deleteUserId.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
@@ -259,6 +266,7 @@
     <None Include="Assets\3rdPartyAssets\Toby Fredson\Rocky Hills Environment - Light Pack\Legacy Project\Legacy Project_Read Me!.txt" />
     <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Fog.hlsl" />
     <None Include="Assets\MCAssets\InputManager\info.txt" />
+    <None Include="Assets\MCAssets\Images\2023UI\fonts\LICENSE.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\WaterCutoutMask.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />

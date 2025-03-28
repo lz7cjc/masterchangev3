@@ -56,19 +56,18 @@ public class DynamicLoadVideo1 : MonoBehaviour
             //floorceilingmove.stopTheCamera();
             counter += Time.deltaTime;
             if (counter >= 3)
-            {
-                mousehover = false;
+            {                mousehover = false;
                 counter = 0;
                 PlayerPrefs.SetString("nextscene", nextScene);
                 PlayerPrefs.SetString("returntoscene", returnScene);
-                PlayerPrefs.SetInt("stagesmoking", stage);
+                PlayerPrefs.SetInt("stageSmoking", stage);
                 PlayerPrefs.SetString("behaviour", behaviour);
 
                 if (JCMultiplier >= 4.5)
                 {
 
                     
-                    PlayerPrefs.SetString("videourl", VideoUrlLinkBad);
+                    PlayerPrefs.SetString("VideoUrl", VideoUrlLinkBad);
 
                    // // debug.log("Play bad video");
                 //    showhide3d = FindObjectOfType<showhide3d>();
@@ -78,7 +77,7 @@ public class DynamicLoadVideo1 : MonoBehaviour
                 else
                 {
                     
-                    PlayerPrefs.SetString("videourl", VideoUrlLinkGood);
+                    PlayerPrefs.SetString("VideoUrl", VideoUrlLinkGood);
                     
                     //// debug.log("Play good video");
 

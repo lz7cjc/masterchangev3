@@ -4,147 +4,134 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
-// using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters; // Commented out as it might be deprecated
-// using Unity.Android.Gradle.Manifest; // Commented out as it might not exist
 
-// called from smoking/alcohol HUD button to determine where to enter the userjourney
 public class BCTUserJourneyLaunch : MonoBehaviour
 {
     [SerializeField] private Rigidbody player;
-    //private int stage;
-
     [SerializeField] private GameObject returnToZone_tgt;
-    [SerializeField] private string lastknownzone;
     [SerializeField] private bool mousehover = false;
     [SerializeField] private float counter = 0;
-    // public string videoUrl;
-
-    [SerializeField] private int stageSmoking;
+    private int stageSmoking;
 
     //smoking stages
-    [SerializeField] private GameObject chooseXrayOutcome;
-    [SerializeField] private GameObject chooseNoCTScan;
-    [SerializeField] private GameObject chooseCTScan;
-    [SerializeField] private GameObject getCTScanResult;
-    [SerializeField] private GameObject finalWrapUp;
+    [SerializeField] private GameObject InitialConsultation;
+    [SerializeField] private GameObject CTScanDelay;
+    [SerializeField] private GameObject CTScan;
+    [SerializeField] private GameObject CTScanResult;
+    [SerializeField] private GameObject FinalConsultation;
 
     [SerializeField] private GameObject cameraTarget;
     [SerializeField] private string videoUrl = "https://storage.googleapis.com/masterchange/behaviourchange/smoking/StacyXRayWelcome.mp4";
     [SerializeField] private bool gravity = true;
-    [SerializeField] private GameObject stageTgt;
-    //////
+    [SerializeField]  public string stageTgt;
 
-    /// <summary>
-    /// This is to remind that this is the type of bct - lower case
-    /// </summary>
     [Tooltip("smoking, alcohol etc lower case")]
     [SerializeField] private string behaviourType;
-    [SerializeField] private float Counter = 0;
+   // [SerializeField] private float Counter = 0;
     [SerializeField] private int delay = 3;
     [SerializeField] private hudCountdown hudCountdown;
     [SerializeField] private LaunchVideo launchVideo;
     [SerializeField] private closeAllHuds closeAllHuds;
-    [SerializeField] private ToggleActiveIcons ToggleActiveIcons;
-    //[SerializeField] private closeAllHuds closeAllHuds;
-    // public MoveCamera moveCamera;
 
     void Start()
     {
-        ToggleActiveIcons.DefaultIcon();
+        //ToggleActiveIcons.DefaultIcon();
     }
 
-    // Update is called once per frame
+    //private void UpdateStageTgt()
+    //{
+    //    stageSmoking = PlayerPrefs.GetInt("stagesmoking");
+    //    if ((!PlayerPrefs.HasKey("stagesmoking")) || (stageSmoking == 1))
+    //    {
+    //        stageTgt = "CTScanDelay";
+    //    }
+
+    //    if (stageSmoking == 2)
+    //    {
+    //        stageTgt = "CTScanDelay";
+    //    }
+    //    else if (stageSmoking == 3)
+    //    {
+    //        stageTgt = "CTScan";
+    //    }
+    //    else if (stageSmoking == 4)
+    //    {
+    //        stageTgt = "CTScanResult";
+    //    }
+    //    else if (stageSmoking == 5)
+    //    {
+    //        stageTgt = "FinalConsultation";
+    //    }
+    //}
+
     void Update()
     {
         if (mousehover)
         {
-            ToggleActiveIcons.HoverIcon();
             hudCountdown.SetCountdown(delay, counter);
             counter += Time.deltaTime;
             if (counter >= delay)
             {
-                ToggleActiveIcons.SelectIcon();
                 mousehover = false;
                 counter = 0;
-                lastknownzone = returnToZone_tgt.name;
-                PlayerPrefs.SetString("lastknownzone", lastknownzone);
                 PlayerPrefs.SetString("bct", behaviourType);
                 hudCountdown.resetCountdown();
 
-                // which behaviour
                 if (behaviourType == "smoking")
                 {
-                    // convert last zone to string so can store in pp
-                    PlayerPrefs.SetString("lastknownzone", behaviourType);
-
-                    // starting smoking journey
-                    if ((stageSmoking == 0) || (!PlayerPrefs.HasKey("stagesmoking")))
+                    PlayerPrefs.SetString("lastknownzone", cameraTarget.name);
+                   // UpdateStageTgt();
+                    if (stageSmoking == 1)
                     {
-                        Debug.Log("stageSmoking pre: " + stageSmoking);
-                        stageSmoking = 1;
-                        PlayerPrefs.SetString("videourl", videoUrl);
-                        PlayerPrefs.SetInt("stagesmoking", stageSmoking);
-                        Debug.Log("stageSmoking post: " + stageSmoking);
-                        SceneManager.LoadScene("360VideoApp");
+                        PlayerPrefs.SetString("VideoUrl", videoUrl);
+                        PlayerPrefs.SetInt("stageSmoking", 2);
+                        PlayerPrefs.Save();
+                        SceneManager.LoadScene("360VideoApp", LoadSceneMode.Single); 
+                      ////  stageSmoking = 2;
+                      //  InitialConsultation.SetActive(true);
+                      //  CTScanDelay.SetActive(false);
+                      //  CTScan.SetActive(false);
+                      //  CTScanResult.SetActive(false);
+                      //  FinalConsultation.SetActive(false);
                     }
-                    else if ((PlayerPrefs.HasKey("stagesmoking")) && (stageSmoking != 0))
+                    else if (stageSmoking == 2)
                     {
-                        if (stageSmoking == 1)
-                        {
-                            stageSmoking = 2;
-                            chooseXrayOutcome.SetActive(true);
-                            chooseNoCTScan.SetActive(false);
-                            chooseCTScan.SetActive(false);
-                            getCTScanResult.SetActive(false);
-                            finalWrapUp.SetActive(false);
-                        }
-
-                        if (stageSmoking == 2)
-                        {
-                            stageTgt = chooseNoCTScan;
-                            stageSmoking = 3;
-                            chooseXrayOutcome.SetActive(false);
-                            chooseNoCTScan.SetActive(true);
-                            chooseCTScan.SetActive(false);
-                            getCTScanResult.SetActive(false);
-                            finalWrapUp.SetActive(false);
-                        }
-
-                        if (stageSmoking == 3)
-                        {
-                            stageTgt = chooseCTScan;
-                            stageSmoking = 4;
-                            chooseXrayOutcome.SetActive(false);
-                            chooseNoCTScan.SetActive(false);
-                            chooseCTScan.SetActive(true);
-                            getCTScanResult.SetActive(false);
-                            finalWrapUp.SetActive(false);
-                        }
-
-                        if (stageSmoking == 4)
-                        {
-                            stageTgt = getCTScanResult;
-                            stageSmoking = 5;
-                            chooseXrayOutcome.SetActive(false);
-                            chooseNoCTScan.SetActive(false);
-                            chooseCTScan.SetActive(false);
-                            getCTScanResult.SetActive(true);
-                            finalWrapUp.SetActive(false);
-                        }
-
-                        if (stageSmoking == 5)
-                        {
-                            stageSmoking = 0;
-                            stageTgt = finalWrapUp;
-                            chooseXrayOutcome.SetActive(false);
-                            chooseNoCTScan.SetActive(false);
-                            chooseCTScan.SetActive(false);
-                            getCTScanResult.SetActive(false);
-                            finalWrapUp.SetActive(true);
-                        }
+                    //    stageSmoking = 3;
+                        InitialConsultation.SetActive(false);
+                        CTScanDelay.SetActive(true);
+                        CTScan.SetActive(false);
+                        CTScanResult.SetActive(false);
+                        FinalConsultation.SetActive(false);
+                    }
+                    else if (stageSmoking == 3)
+                    {
+                      //  stageSmoking = 4;
+                        InitialConsultation.SetActive(false);
+                        CTScanDelay.SetActive(false);
+                        CTScan.SetActive(true);
+                        CTScanResult.SetActive(false);
+                        FinalConsultation.SetActive(false);
+                    }
+                    else if (stageSmoking == 4)
+                    {
+                      //  stageSmoking = 5;
+                        InitialConsultation.SetActive(false);
+                        CTScanDelay.SetActive(false);
+                        CTScan.SetActive(false);
+                        CTScanResult.SetActive(true);
+                        FinalConsultation.SetActive(false);
+                    }
+                    else if (stageSmoking == 5)
+                    {
+                       // stageSmoking = 0;
+                        InitialConsultation.SetActive(false);
+                        CTScanDelay.SetActive(false);
+                        CTScan.SetActive(false);
+                        CTScanResult.SetActive(false);
+                        FinalConsultation.SetActive(true);
                     }
                 }
-                PlayerPrefs.SetInt("stagesmoking", stageSmoking);
+                PlayerPrefs.SetInt("stageSmoking", stageSmoking);
                 MoveCamera();
             }
         }
@@ -152,18 +139,26 @@ public class BCTUserJourneyLaunch : MonoBehaviour
 
     private void MoveCamera()
     {
+        GameObject target = GameObject.Find(stageTgt);
+        if (target == null)
+        {
+            Debug.LogError("stageTgt is not assigned or not found!");
+            return;
+        }
+
         player.useGravity = gravity;
         closeAllHuds = FindFirstObjectByType<closeAllHuds>();
         closeAllHuds.CloseTheHuds();
-        player.transform.position = stageTgt.transform.position;
-        player.transform.SetParent(stageTgt.transform);
+        player.transform.position = target.transform.position;
+        player.transform.SetParent(target.transform);
     }
 
     // mouse Enter event
-    public void MouseHoverLaunchBCT(string _behaviourType)
+    public void MouseHoverLaunchBCT(int _stageSmoking)
     {
-        behaviourType = _behaviourType;
-        stageSmoking = PlayerPrefs.GetInt("stagesmoking");
+        stageSmoking = _stageSmoking;
+        Debug.Log("stageSmoking" + stageSmoking);
+        
         Debug.Log("bct value" + behaviourType);
         mousehover = true;
         counter = 0;
@@ -172,9 +167,9 @@ public class BCTUserJourneyLaunch : MonoBehaviour
     // mouse Exit Event
     public void MouseExit()
     {
-        ToggleActiveIcons.DefaultIcon();
         hudCountdown.resetCountdown();
         mousehover = false;
         counter = 0;
     }
 }
+

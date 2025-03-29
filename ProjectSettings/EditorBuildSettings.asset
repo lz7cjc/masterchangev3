@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/MCAssets/Scenes/2D/Bootstrap.unity
+    guid: c32db8a9f5f00804faf0d86562c3d659
+  - enabled: 1
     path: Assets/MCAssets/Scenes/2D/pickformat.unity
     guid: c897cdd7ceddafa4983bb32a04e3abde
   - enabled: 1
@@ -54,6 +57,6 @@ EditorBuildSettings:
     path: Assets/MCAssets/Scenes/3D/GyroTestScene.unity
     guid: 748bbbd6bd2edfa47b9aff673b8a9e09
   m_configObjects:
-    com.unity.addressableassets: {fileID: 11400000, guid: 0782194debc9a544dbf0ad424e6f0944, type: 2}
+    com.unity.addressableassets: {fileID: 11400000, guid: 941b4851e53fb5f499f0c0d8b138edc0, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e4d40cac255e863438fc3792a2d2880b, type: 2}
   m_UseUCBPForAssetBundles: 0

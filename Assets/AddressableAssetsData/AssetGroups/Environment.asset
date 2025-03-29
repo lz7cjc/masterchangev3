@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Environment
+  m_EditorClassIdentifier: 
+  m_GroupName: Environment
+  m_GUID: 713688cb580ff2845bc37f477154d799
+  m_SerializeEntries:
+  - m_GUID: 59eefb51e7854254090570764b08070b
+    m_Address: Assets/MCAssets/Prefabs/Addressables/MCCottagePrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Cottage
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9c883675bfe7e5e489c37745dfd7afde
+    m_Address: Assets/MCAssets/Prefabs/Addressables/Terrain.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Terrain
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 493df16292238f44daa051e4c0a85597, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 20d26745dce4adf4e84022609b9d6b4f, type: 2}
+    - {fileID: 11400000, guid: 1ea67fd5bf906004a938679eb68d2643, type: 2}

@@ -65,6 +65,13 @@ public class ReticleTrigger : MonoBehaviour
             StopCoroutine(rotationCoroutine);
             rotationCoroutine = null;
         }
+
+        // Call MouseExit on VideoControllerV2 if it exists
+        VideoControllerV2 videoController = GetComponent<VideoControllerV2>();
+        if (videoController != null)
+        {
+            videoController.MouseExit();
+        }
     }
 
     private IEnumerator StartRotationAfterDelay()

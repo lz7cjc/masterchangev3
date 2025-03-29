@@ -69,6 +69,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\checkregistered.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\passwordreset.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
@@ -84,7 +85,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
@@ -103,6 +103,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\favourites.cs" />
@@ -212,7 +213,6 @@
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\AnimPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\getfavourites.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ToggleActiveIconsVideo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
@@ -238,6 +238,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\hasRegistered2d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Health.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Food.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ChangesceneInc.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showPassword.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\RiroStopGoV2.cs" />

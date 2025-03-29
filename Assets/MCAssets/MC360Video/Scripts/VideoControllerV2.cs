@@ -14,7 +14,7 @@ public class VideoControllerV2 : MonoBehaviour
     public float counter = 0;
     private string videoAction;
     public float delay = 3.0f; // Delay in seconds
-   
+
     private int totalfilmlength;
     private showfilm showfilm;
 
@@ -45,6 +45,9 @@ public class VideoControllerV2 : MonoBehaviour
     public Sprite spriteHoverRewind;
     public Sprite spriteSelectedRewind;
 
+    public GameObject playGameObject;
+    public GameObject pauseGameObject;
+
     public GameObject[] objectsToShowOnStop;
     public GameObject[] objectsToHideOnStop;
 
@@ -52,12 +55,16 @@ public class VideoControllerV2 : MonoBehaviour
     [SerializeField] private TMP_Text elapsedTimeText;
     [SerializeField] private TMP_Text filmLengthText;
 
+    private Coroutine continuousActionCoroutine;
+    private bool actionTriggered = false;
+
     void Start()
     {
         if (videoPlayer == null)
             videoPlayer = GetComponent<VideoPlayer>();
 
         videoPlayer.prepareCompleted += OnVideoPrepared;
+        videoPlayer.loopPointReached += OnVideoFinished;
         videoPlayer.Prepare();
 
         Debug.Log("VideoController Start: VideoPlayer prepared");
@@ -65,6 +72,7 @@ public class VideoControllerV2 : MonoBehaviour
 
     void Update()
     {
+        // Update the elapsed time text
         if (videoPlayer.isPlaying)
         {
             TimeSpan elapsedTime = TimeSpan.FromSeconds(videoPlayer.time);
@@ -74,44 +82,64 @@ public class VideoControllerV2 : MonoBehaviour
         if (mousehover)
         {
             counter += Time.deltaTime;
-            if (counter >= delay)
+            Debug.Log("controls: Counter value is " + counter);
+            if (counter >= delay && !actionTriggered)
             {
-                mousehover = false;
-                counter = 0;
+                Debug.Log("controls: Counter exceeded delay");
+                actionTriggered = true;
 
                 if (videoPlayer.canSetPlaybackSpeed)
                 {
                     switch (videoAction)
                     {
                         case "FastForward":
-                            Debug.Log("Vid: FastForward");
+                            Debug.Log("controls: FastForward action triggered");
                             spriterendererFF.sprite = spriteSelectedFF;
-                            StartCoroutine(ContinuousAction(() =>
+                            continuousActionCoroutine = StartCoroutine(ContinuousAction(() =>
                             {
                                 videoPlayer.playbackSpeed = 2f;
                                 audioPlayer.playbackSpeed = 2f;
-                                Debug.Log("vid: Playback speed set to 2x" + videoPlayer.playbackSpeed);
+                                Debug.Log("controls: Playback speed set to 2x" + videoPlayer.playbackSpeed);
                             }));
                             break;
                         case "FastFastForward":
-                            Debug.Log("Vid: FastFastForward");
+                            Debug.Log("controls: FastFastForward action triggered");
                             spriterendererFFFF.sprite = spriteSelectedFFFF;
-                            StartCoroutine(ContinuousAction(() =>
+                            continuousActionCoroutine = StartCoroutine(ContinuousAction(() =>
                             {
                                 videoPlayer.playbackSpeed = 3f;
                                 audioPlayer.playbackSpeed = 3f;
-                                Debug.Log("vid: Playback speed set to 3x" + videoPlayer.playbackSpeed);
+                                Debug.Log("controls: Playback speed set to 3x" + videoPlayer.playbackSpeed);
                             }));
                             break;
                         case "Rewind":
-                            Debug.Log("Vid: Rewind");
+                            Debug.Log("controls: Rewind action triggered");
                             spriterendererFF.sprite = spriteSelectedRewind;
-                            StartCoroutine(ContinuousAction(() =>
+                            continuousActionCoroutine = StartCoroutine(ContinuousAction(() =>
                             {
-                                videoPlayer.time = Math.Max(0, videoPlayer.time - 1);
-                                audioPlayer.time = Math.Max(0, audioPlayer.time - 1);
-                                Debug.Log("vid: Rewinding by 1 second");
+                                videoPlayer.playbackSpeed = -2f;
+                                audioPlayer.playbackSpeed = -2f;
+                                Debug.Log("controls: Playback speed set to -2x" + videoPlayer.playbackSpeed);
                             }));
+                            break;
+                        case "Pause":
+                            Debug.Log("controls: Pause action triggered");
+                            videoPlayer.Pause();
+                            playGameObject.SetActive(true);
+                            pauseGameObject.SetActive(false);
+                            break;
+                        case "Play":
+                            Debug.Log("controls: Play action triggered");
+                            videoPlayer.Play();
+                            playGameObject.SetActive(false);
+                            pauseGameObject.SetActive(true);
+                            break;
+                        case "Stop":
+                            Debug.Log("controls: Stop action triggered");
+                            StopAndReset();
+                            break;
+                        default:
+                            Debug.Log("controls: No valid action specified");
                             break;
                     }
                 }
@@ -122,13 +150,33 @@ public class VideoControllerV2 : MonoBehaviour
     private void OnVideoPrepared(VideoPlayer vp)
     {
         videoPlayer.Play();
-        spriterendererPlay.gameObject.SetActive(false);
-        spriterendererPause.gameObject.SetActive(true);
+        playGameObject.SetActive(false);
+        pauseGameObject.SetActive(true);
 
         TimeSpan filmLength = TimeSpan.FromSeconds(videoPlayer.length);
         filmLengthText.text = string.Format("{0:D2}:{1:D2}:{2:D2}", filmLength.Hours, filmLength.Minutes, filmLength.Seconds);
 
-        Debug.Log("OnVideoPrepared: Video length set and playback started");
+        Debug.Log("controls: OnVideoPrepared: Video length set and playback started");
+    }
+
+    private void OnVideoFinished(VideoPlayer vp)
+    {
+        Debug.Log("controls: Video finished playing");
+        StopAndReset();
+    }
+
+    private void StopAndReset()
+    {
+        videoPlayer.Stop();
+        ResetIcons();
+        foreach (GameObject obj in objectsToHideOnStop)
+        {
+            obj.SetActive(false);
+        }
+        foreach (GameObject obj in objectsToShowOnStop)
+        {
+            obj.SetActive(true);
+        }
     }
 
     public void MouseHover(string action)
@@ -136,8 +184,10 @@ public class VideoControllerV2 : MonoBehaviour
         videoAction = action;
         mousehover = true;
         counter = 0;
-        Debug.Log("Vid: videoAction is " + videoAction);
+        actionTriggered = false;
+        Debug.Log("controls: MouseHover called with action " + videoAction);
 
+        // Change the icon to hover state immediately
         switch (action)
         {
             case "FastForward":
@@ -146,12 +196,27 @@ public class VideoControllerV2 : MonoBehaviour
             case "FastFastForward":
                 spriterendererFFFF.sprite = spriteHoverFFFF;
                 break;
+            case "Rewind":
+                spriterendererFF.sprite = spriteHoverRewind;
+                break;
+            case "Pause":
+                spriterendererPause.sprite = spriteHoverPause;
+                break;
+            case "Play":
+                spriterendererPlay.sprite = spriteHoverPlay;
+                break;
+            case "Stop":
+                spriterendererStop.sprite = spriteHoverStop;
+                break;
+            default:
+                Debug.Log("controls: No valid hover action specified");
+                break;
         }
     }
 
     private IEnumerator ContinuousAction(Action action)
     {
-        Debug.Log("vid: in ienumerator" + action);
+        Debug.Log("controls: ContinuousAction coroutine started");
         while (mousehover)
         {
             action();
@@ -159,15 +224,33 @@ public class VideoControllerV2 : MonoBehaviour
         }
         videoPlayer.playbackSpeed = 1.0f;
         audioPlayer.playbackSpeed = 1.0f;
-        Debug.Log("vid: Playback speed reset to 1x");
+        Debug.Log("controls: Playback speed reset to 1x");
         ResetIcons();
+        Debug.Log("controls: ContinuousAction coroutine ended");
+        continuousActionCoroutine = null;
     }
 
     public void MouseExit()
     {
         mousehover = false;
         counter = 0;
+        actionTriggered = false;
+        Debug.Log("controls: MouseExit called, counter reset");
+        if (continuousActionCoroutine != null)
+        {
+            StopCoroutine(continuousActionCoroutine);
+            continuousActionCoroutine = null;
+        }
         ResetIcons();
+        videoPlayer.playbackSpeed = 1.0f; // Ensure playback speed is reset
+        audioPlayer.playbackSpeed = 1.0f; // Ensure playback speed is reset
+
+        // Additional logic to handle fast fast forward cancellation
+        if (videoAction == "FastFastForward")
+        {
+            spriterendererFFFF.sprite = spriteDefaultFFFF;
+            Debug.Log("controls: FastFastForward action cancelled");
+        }
     }
 
     private void ResetIcons()
@@ -175,8 +258,12 @@ public class VideoControllerV2 : MonoBehaviour
         spriterendererPlay.sprite = spriteDefaultPlay;
         spriterendererPause.sprite = spriteDefaultPause;
         spriterendererStop.sprite = spriteDefaultStop;
-        spriterendererFF.sprite = spriteDefaultFF;
+        spriterendererFF.sprite = spriteDefaultFF; // Ensure this line sets the correct default FF sprite
         spriterendererFFFF.sprite = spriteDefaultFFFF;
-        spriterendererFF.sprite = spriteDefaultRewind;
+        Debug.Log("controls: Icons reset to default state");
     }
 }
+
+
+
+

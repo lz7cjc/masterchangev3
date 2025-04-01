@@ -1,4 +1,8 @@
 %YAML 1.1
+%YAML 1.1
+// Ensure that the prefab has materials assigned to its renderers
+// Open the prefab in the Unity Editor and check the materials in the Inspector
+// Assign appropriate materials if they are missing
 // Ensure that the prefab has materials assigned to its renderers
 // Open the prefab in the Unity Editor and check the materials in the Inspector
 // Assign appropriate materials if they are missing

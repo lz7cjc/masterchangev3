@@ -57,6 +57,6 @@ EditorBuildSettings:
     path: Assets/MCAssets/Scenes/3D/GyroTestScene.unity
     guid: 748bbbd6bd2edfa47b9aff673b8a9e09
   m_configObjects:
-    com.unity.addressableassets: {fileID: 11400000, guid: 941b4851e53fb5f499f0c0d8b138edc0, type: 2}
+    com.unity.addressableassets: {fileID: 11400000, guid: dc71dac186f3fba41ad1c02d949fdf64, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e4d40cac255e863438fc3792a2d2880b, type: 2}
   m_UseUCBPForAssetBundles: 0

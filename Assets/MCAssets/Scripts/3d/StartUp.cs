@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class StartUp : MonoBehaviour
 {
@@ -40,12 +41,37 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject CTScanDelay;
     [SerializeField] private GameObject CTresults;
     [SerializeField] private GameObject smokingDone;
-    //   [SerializeField] private setCTdate setCTdate;
     [SerializeField] private int stopFilm;
     [SerializeField] private GameObject hud;
 
     private void Start()
     {
+        StartCoroutine(WaitForAddressablesAndSetupScene());
+    }
+
+    private IEnumerator WaitForAddressablesAndSetupScene()
+    {
+        // Check if the BackgroundPreloader exists and wait for it to complete
+        BackgroundPreloader preloader = BackgroundPreloader.Instance;
+
+        if (preloader != null && !preloader.PreloadingComplete)
+        {
+            Debug.Log("[StartUp] Waiting for addressables to finish loading...");
+
+            // Wait until preloading is complete or a timeout occurs
+            float timeoutSeconds = 10f;
+            float elapsedTime = 0f;
+
+            while (!preloader.PreloadingComplete && elapsedTime < timeoutSeconds)
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            Debug.Log("[StartUp] Addressables finished loading");
+        }
+
+        // Now proceed with scene setup
         player = GameObject.Find("Player").GetComponent<Rigidbody>();
         ResetScene();
     }
@@ -242,7 +268,7 @@ public class StartUp : MonoBehaviour
                 PlayerPrefs.SetInt("stageSmoking", 2);
                 PlayerPrefs.Save();
                 SceneManager.LoadScene("360VideoApp", LoadSceneMode.Single);
-                
+
                 break;
 
             case 2:

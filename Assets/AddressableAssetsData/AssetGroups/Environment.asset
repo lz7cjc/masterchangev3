@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Environment
   m_EditorClassIdentifier: 
   m_GroupName: Environment
-  m_GUID: 713688cb580ff2845bc37f477154d799
+  m_GUID: 39f29a3a5cca743469f1cc1dc40670de
   m_SerializeEntries:
   - m_GUID: 59eefb51e7854254090570764b08070b
     m_Address: Assets/MCAssets/Prefabs/Addressables/MCCottagePrefab.prefab
@@ -28,8 +28,8 @@ MonoBehaviour:
     - Terrain
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
-  m_Settings: {fileID: 11400000, guid: 493df16292238f44daa051e4c0a85597, type: 2}
+  m_Settings: {fileID: 11400000, guid: a4be1be2add51c74d9196be2a6128299, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 20d26745dce4adf4e84022609b9d6b4f, type: 2}
-    - {fileID: 11400000, guid: 1ea67fd5bf906004a938679eb68d2643, type: 2}
+    - {fileID: 11400000, guid: f46b57bee5945c34c9af7471423e3e15, type: 2}
+    - {fileID: 11400000, guid: 7922c813f5b17af4dae9ce7a79f2f650, type: 2}

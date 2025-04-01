@@ -3,6 +3,7 @@
     "com.google.xr.cardboard": "file:C:/Users/nick/Downloads/cardboard-xr-plugin-master/cardboard-xr-plugin-master",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.addressables": "2.2.2",
+    "com.unity.addressables.android": "1.0.6",
     "com.unity.ide.visualstudio": "2.0.22",
     "com.unity.inputsystem": "1.13.0",
     "com.unity.multiplayer.center": "1.0.0",

@@ -1,23 +1,13 @@
-using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-/// <summary>
-/// Preloads addressable assets in the background as soon as the app starts.
-/// Place this on a GameObject in your initial scene.
-/// </summary>
 public class BackgroundPreloader : MonoBehaviour
 {
-    [Tooltip("Assets to preload by address")]
     [SerializeField] private string[] assetsToPreload;
-
-    [Tooltip("Assets to preload by label")]
     [SerializeField] private string[] labelsToPreload;
-
-    [Tooltip("Whether to show debug logs")]
     [SerializeField] private bool showDebugLogs = true;
 
     // Singleton instance
@@ -34,8 +24,8 @@ public class BackgroundPreloader : MonoBehaviour
     public float PreloadProgress => _preloadProgress;
     public bool PreloadingComplete { get; private set; } = false;
 
-    public event Action<float> OnProgressChanged;
-    public event Action OnPreloadComplete;
+    public event System.Action<float> OnProgressChanged;
+    public event System.Action OnPreloadComplete;
 
     private void Awake()
     {
@@ -43,9 +33,11 @@ public class BackgroundPreloader : MonoBehaviour
         {
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            LogMessage("Instance initialized and set to DontDestroyOnLoad");
         }
         else
         {
+            LogMessage("Duplicate instance found, destroying");
             Destroy(gameObject);
             return;
         }
@@ -59,7 +51,8 @@ public class BackgroundPreloader : MonoBehaviour
 
     private IEnumerator PreloadAssets()
     {
-        if (assetsToPreload.Length == 0 && labelsToPreload.Length == 0)
+        if ((assetsToPreload == null || assetsToPreload.Length == 0) &&
+            (labelsToPreload == null || labelsToPreload.Length == 0))
         {
             LogMessage("No assets configured for preloading.");
             PreloadingComplete = true;
@@ -68,60 +61,108 @@ public class BackgroundPreloader : MonoBehaviour
         }
 
         _isPreloading = true;
-        int totalOperations = assetsToPreload.Length + labelsToPreload.Length;
+        int totalOperations = 0;
+
+        if (assetsToPreload != null) totalOperations += assetsToPreload.Length;
+        if (labelsToPreload != null) totalOperations += labelsToPreload.Length;
+
         int completedOperations = 0;
 
         LogMessage("Starting background preloading of addressable assets...");
 
         // Load assets by address
-        foreach (string address in assetsToPreload)
+        if (assetsToPreload != null)
         {
-            LogMessage($"Preloading asset: {address}");
-            AsyncOperationHandle handle = Addressables.LoadAssetAsync<UnityEngine.Object>(address);
-            _loadedAssets[address] = handle;
-
-            // Wait for completion (non-blocking)
-            yield return handle;
-
-            if (handle.Status == AsyncOperationStatus.Failed)
+            foreach (string address in assetsToPreload)
             {
-                LogError($"Failed to load asset: {address} - {handle.OperationException}");
-            }
-            else
-            {
-                LogMessage($"Successfully loaded asset: {address}");
-            }
+                if (string.IsNullOrEmpty(address))
+                {
+                    LogMessage("Skipping empty address");
+                    completedOperations++;
+                    continue;
+                }
 
-            completedOperations++;
-            UpdateProgress((float)completedOperations / totalOperations);
+                LogMessage($"Preloading asset: {address}");
+                AsyncOperationHandle handle = default;
+
+                try
+                {
+                    handle = Addressables.LoadAssetAsync<UnityEngine.Object>(address);
+                    _loadedAssets[address] = handle;
+                }
+                catch (System.Exception e)
+                {
+                    LogError($"Exception starting load of {address}: {e.Message}");
+                    completedOperations++;
+                    UpdateProgress((float)completedOperations / totalOperations);
+                    continue;
+                }
+
+                // Wait for completion (non-blocking)
+                yield return handle;
+
+                if (handle.Status == AsyncOperationStatus.Failed)
+                {
+                    LogError($"Failed to load asset: {address} - {handle.OperationException}");
+                }
+                else
+                {
+                    LogMessage($"Successfully loaded asset: {address}");
+                }
+
+                completedOperations++;
+                UpdateProgress((float)completedOperations / totalOperations);
+            }
         }
 
         // Load assets by label
-        foreach (string label in labelsToPreload)
+        if (labelsToPreload != null)
         {
-            LogMessage($"Preloading assets with label: {label}");
-            AsyncOperationHandle<IList<UnityEngine.Object>> handle = Addressables.LoadAssetsAsync<UnityEngine.Object>(
-                label,
-                obj => { /* Optional callback for each loaded object */ }
-            );
-
-            // Store the handle with the label as key
-            _loadedAssets[label] = handle;
-
-            // Wait for completion (non-blocking)
-            yield return handle;
-
-            if (handle.Status == AsyncOperationStatus.Failed)
+            foreach (string label in labelsToPreload)
             {
-                LogError($"Failed to load assets with label: {label} - {handle.OperationException}");
-            }
-            else
-            {
-                LogMessage($"Successfully loaded {handle.Result.Count} assets with label: {label}");
-            }
+                if (string.IsNullOrEmpty(label))
+                {
+                    LogMessage("Skipping empty label");
+                    completedOperations++;
+                    continue;
+                }
 
-            completedOperations++;
-            UpdateProgress((float)completedOperations / totalOperations);
+                LogMessage($"Preloading assets with label: {label}");
+                AsyncOperationHandle<IList<UnityEngine.Object>> handle = default;
+
+                try
+                {
+                    handle = Addressables.LoadAssetsAsync<UnityEngine.Object>(
+                        label,
+                        obj => { /* Optional callback for each loaded object */ }
+                    );
+
+                    // Store the handle with the label as key
+                    _loadedAssets[label] = handle;
+                }
+                catch (System.Exception e)
+                {
+                    LogError($"Exception starting load of label {label}: {e.Message}");
+                    completedOperations++;
+                    UpdateProgress((float)completedOperations / totalOperations);
+                    continue;
+                }
+
+                // Wait for completion (non-blocking)
+                yield return handle;
+
+                if (handle.Status == AsyncOperationStatus.Failed)
+                {
+                    LogError($"Failed to load assets with label: {label} - {handle.OperationException}");
+                }
+                else
+                {
+                    LogMessage($"Successfully loaded {handle.Result.Count} assets with label: {label}");
+                }
+
+                completedOperations++;
+                UpdateProgress((float)completedOperations / totalOperations);
+            }
         }
 
         _isPreloading = false;
@@ -132,49 +173,15 @@ public class BackgroundPreloader : MonoBehaviour
         OnPreloadComplete?.Invoke();
     }
 
-    /// <summary>
-    /// Gets an already loaded asset if it exists.
-    /// </summary>
-    /// <typeparam name="T">Type of asset to get</typeparam>
-    /// <param name="key">Asset address or label</param>
-    /// <returns>The loaded asset, or null if not found or wrong type</returns>
-    public T GetLoadedAsset<T>(string key) where T : UnityEngine.Object
-    {
-        if (_loadedAssets.TryGetValue(key, out AsyncOperationHandle handle))
-        {
-            if (handle.IsValid() && handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                if (handle.Result is T result)
-                {
-                    return result;
-                }
-
-                if (handle.Result is IList<UnityEngine.Object> objects)
-                {
-                    // This was a label load with multiple objects, find first matching type
-                    foreach (var obj in objects)
-                    {
-                        if (obj is T matchingObj)
-                        {
-                            return matchingObj;
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Gets all loaded assets of a specific type from a label.
-    /// </summary>
-    /// <typeparam name="T">Type of assets to get</typeparam>
-    /// <param name="label">Label used to load the assets</param>
-    /// <returns>List of loaded assets of the specified type, or empty list if none found</returns>
     public List<T> GetLoadedAssetsByLabel<T>(string label) where T : UnityEngine.Object
     {
         List<T> result = new List<T>();
+
+        if (string.IsNullOrEmpty(label))
+        {
+            LogError("Cannot get assets with empty label");
+            return result;
+        }
 
         if (_loadedAssets.TryGetValue(label, out AsyncOperationHandle handle))
         {
@@ -182,6 +189,7 @@ public class BackgroundPreloader : MonoBehaviour
             {
                 if (handle.Result is IList<UnityEngine.Object> objects)
                 {
+                    LogMessage($"Found {objects.Count} objects with label {label}");
                     foreach (var obj in objects)
                     {
                         if (obj is T matchingObj)
@@ -189,27 +197,58 @@ public class BackgroundPreloader : MonoBehaviour
                             result.Add(matchingObj);
                         }
                     }
+                    LogMessage($"Returning {result.Count} objects of type {typeof(T).Name}");
+                }
+                else
+                {
+                    LogError($"Result for label {label} is not a list");
                 }
             }
+            else
+            {
+                LogError($"Handle for label {label} is invalid or operation failed");
+            }
+        }
+        else
+        {
+            LogError($"No assets loaded with label: {label}");
         }
 
         return result;
     }
 
-    /// <summary>
-    /// Manually preloads an additional asset if needed.
-    /// </summary>
-    public void PreloadAdditionalAsset(string address)
+    public T GetLoadedAsset<T>(string address) where T : UnityEngine.Object
     {
-        if (_loadedAssets.ContainsKey(address))
+        if (string.IsNullOrEmpty(address))
         {
-            LogMessage($"Asset {address} already preloaded.");
-            return;
+            LogError("Cannot get asset with empty address");
+            return null;
         }
 
-        LogMessage($"Preloading additional asset: {address}");
-        AsyncOperationHandle handle = Addressables.LoadAssetAsync<UnityEngine.Object>(address);
-        _loadedAssets[address] = handle;
+        if (_loadedAssets.TryGetValue(address, out AsyncOperationHandle handle))
+        {
+            if (handle.IsValid() && handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                if (handle.Result is T result)
+                {
+                    return result;
+                }
+                else
+                {
+                    LogError($"Asset at {address} is not of type {typeof(T).Name}");
+                }
+            }
+            else
+            {
+                LogError($"Handle for address {address} is invalid or operation failed");
+            }
+        }
+        else
+        {
+            LogError($"No asset loaded with address: {address}");
+        }
+
+        return null;
     }
 
     private void UpdateProgress(float progress)
@@ -234,7 +273,16 @@ public class BackgroundPreloader : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Release all loaded assets when the preloader is destroyed
+        // Clear instance reference if we're the current instance
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    // This method should be called when the application is shutting down
+    public void ReleaseAllAssets()
+    {
         foreach (var handle in _loadedAssets.Values)
         {
             if (handle.IsValid())
@@ -244,5 +292,11 @@ public class BackgroundPreloader : MonoBehaviour
         }
 
         _loadedAssets.Clear();
+        LogMessage("Released all loaded assets");
+    }
+
+    private void OnApplicationQuit()
+    {
+        ReleaseAllAssets();
     }
 }

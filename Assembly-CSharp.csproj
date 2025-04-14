@@ -70,6 +70,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\passwordreset.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
@@ -127,8 +128,10 @@
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\FlyCameraControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\loading.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\PolygonZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstVisitRiros.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoSystemDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
@@ -145,7 +148,9 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\PrefabManager.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry.cs" />
@@ -165,6 +170,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\userBehaviours.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoDatabaseManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\matchfav.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />
@@ -179,6 +185,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHudsold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LaunchVideo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\setCTdate.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoPlacementController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITipsManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Selectionmanager_s.cs" />
@@ -195,6 +202,7 @@
     <Compile Include="Assets\MCAssets\Scripts\addressables\DebugAddressableLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\EnhancedVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\registerbtnoptions.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
@@ -202,9 +210,9 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\ToggleShowVote.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\pickVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Scenecontroller.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DetectPlayingAudio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showhideformat.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\CameraRay.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DetectPlayingAudio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\ChangeSceneHealthCheckv2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingHudManager.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoControllerV2.cs" />
@@ -241,6 +249,7 @@
     <Compile Include="Assets\PlayerPrefsEditor\SimpleEncryption.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\PlayerPrefsUtility.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIcons.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\StandalonePrefabManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\hasRegistered2d.cs" />
@@ -253,6 +262,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\PickBCT.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\MenuManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\deleteUserId.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmJsonImporter.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHuds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits.cs" />
@@ -291,7 +301,6 @@
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
-    <None Include="Assets\AddressableAssetsData\link.xml" />
     <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Vertex.hlsl" />
     <None Include="Assets\MCAssets\Materials\SpriteFadeOut.shader" />
     <None Include="Assets\PlayerPrefsEditor\README.txt" />

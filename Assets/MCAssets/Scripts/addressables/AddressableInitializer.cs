@@ -31,6 +31,17 @@ public class AddressableInitializer : MonoBehaviour
         }
     }
 
+    public void Start()
+    {
+        Debug.Log("[AddressableInitializer] Start method called.");
+        var startTime = Time.realtimeSinceStartup;
+
+        // Existing initialization logic
+        // ...
+
+        Debug.Log($"[AddressableInitializer] Initialization completed in {Time.realtimeSinceStartup - startTime} seconds.");
+    }
+
     private void InitializeBackgroundPreloader()
     {
         // Check if preloader already exists

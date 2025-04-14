@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Film List</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .btn { padding: 6px 12px; margin-right: 6px; cursor: pointer; }
+        .edit-form { background-color: #f9f9f9; padding: 15px; border: 1px solid #ddd; }
+        .edit-form-row { display: none; }
+        .edit-form-row td { padding: 0; }
+        .zone-checkboxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .status-message { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        #debugOutput { 
+            margin-top: 20px; 
+            padding: 10px; 
+            background-color: #f8f9fa; 
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 200px;
+            overflow: auto;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Films</h1>
+    <button id="generateJsonBtn" class="btn">Generate JSON File</button>
+    <div id="jsonStatus"></div>
+    <div id="statusMessage"></div>
+    <button id="toggleDebugBtn" class="btn">Show Debug Info</button>
+    <div id="debugOutput"></div>
+    <table id="filmTable">
+        <thead>
+            <tr>
+                <th>Film Name</th>
+                <th>Path</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Country</th>
+                <th>Locale</th>
+                <th>Prefab</th>
+                <th>Zones</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+    let debugInfo = {};
+    let availablePrefabs = ["Default"]; // Default prefabs list, will be populated dynamically
+    
+    // Load available prefabs when the page loads
+    window.addEventListener('DOMContentLoaded', function() {
+        loadPrefabs();
+        fetchFilms();
+    });
+    
+    // Toggle debug info visibility
+    document.getElementById('toggleDebugBtn').addEventListener('click', () => {
+        const debugOutput = document.getElementById('debugOutput');
+        if (debugOutput.style.display === 'block') {
+            debugOutput.style.display = 'none';
+            document.getElementById('toggleDebugBtn').textContent = 'Show Debug Info';
+        } else {
+            debugOutput.style.display = 'block';
+            document.getElementById('toggleDebugBtn').textContent = 'Hide Debug Info';
+        }
+    });
+    
+    function updateDebugInfo(info) {
+        debugInfo = {...debugInfo, ...info};
+        document.getElementById('debugOutput').textContent = JSON.stringify(debugInfo, null, 2);
+    }
+    
+    // Load prefabs from the server
+    function loadPrefabs() {
+        updateDebugInfo({action: 'loadPrefabs', timestamp: new Date().toISOString()});
+        
+        fetch('get_prefabs.php')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.prefabs && Array.isArray(data.prefabs)) {
+                    availablePrefabs = data.prefabs;
+                    updateDebugInfo({prefabsLoaded: availablePrefabs});
+                    console.log('Loaded prefabs:', availablePrefabs);
+                } else {
+                    console.error('Invalid prefabs data format', data);
+                    updateDebugInfo({prefabsError: 'Invalid data format', prefabsData: data});
+                }
+            })
+            .catch(error => {
+                console.error('Error loading prefabs:', error);
+                updateDebugInfo({prefabsError: error.toString()});
+            });
+    }
+    
+    // Generate prefab dropdown HTML
+    function generatePrefabDropdown(selectedPrefab) {
+        let html = '<select name="Prefab" style="width: 90%;">';
+        html += '<option value="">Default</option>';
+        
+        // Add all available prefabs from the loaded list
+        for (let i = 0; i < availablePrefabs.length; i++) {
+            // Skip "Default" as we already added it
+            if (availablePrefabs[i] !== "Default") {
+                let prefab = availablePrefabs[i];
+                let selected = (prefab === selectedPrefab) ? 'selected' : '';
+                html += `<option value="${prefab}" ${selected}>${prefab}</option>`;
+            }
+        }
+        
+        html += '</select>';
+        return html;
+    }
+    
+    function fetchFilms() {
+        updateDebugInfo({action: 'fetchFilms', timestamp: new Date().toISOString()});
+        
+        fetch('get_all_films.php')
+            .then(res => {
+                updateDebugInfo({
+                    fetchResponse: {
+                        status: res.status,
+                        statusText: res.statusText,
+                        headers: Object.fromEntries([...res.headers])
+                    }
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                updateDebugInfo({filmsCount: data.length});
+                
+                const tbody = document.querySelector('#filmTable tbody');
+                tbody.innerHTML = '';
+                data.forEach(film => {
+                    // Create regular row
+                    const row = document.createElement('tr');
+                    row.id = `film-row-${film.filmid}`;
+                    row.innerHTML = `
+                        <td>${film.filename}</td>
+                        <td>${film.public_url}</td>
+                        <td>${film.Label || ''}</td>
+                        <td>${film.Description || ''}</td>
+                        <td>${film.Country || ''}</td>
+                        <td>${film.Locale || ''}</td>
+                        <td>${film.Prefab || ''}</td>
+                        <td>${film.Zones || ''}</td>
+                        <td><button onclick="toggleEditForm(${film.filmid})">Edit</button></td>
+                    `;
+                    tbody.appendChild(row);
+                    
+                    // Create edit form row right after
+                    const editRow = document.createElement('tr');
+                    editRow.id = `edit-row-${film.filmid}`;
+                    editRow.className = 'edit-form-row';
+                    editRow.innerHTML = `
+                        <td colspan="9">
+                            <div class="edit-form">
+                                <form id="filmEditForm-${film.filmid}" onsubmit="saveFilm(event, ${film.filmid})">
+                                    <input type="hidden" name="filmid" value="${film.filmid}">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                        <div>
+                                            <label>Title:<br><input type="text" name="Label" value="${film.Label || ''}" style="width: 90%;"></label>
+                                        </div>
+                                        <div>
+                                            <label>Description:<br><input type="text" name="Description" value="${film.Description || ''}" style="width: 90%;"></label>
+                                        </div>
+                                        <div>
+                                            <label>Country:<br><input type="text" name="Country" value="${film.Country || ''}" style="width: 90%;"></label>
+                                        </div>
+                                        <div>
+                                            <label>Locale:<br><input type="text" name="Locale" value="${film.Locale || ''}" style="width: 90%;"></label>
+                                        </div>
+                                        <div>
+                                            <label>Prefab:<br>
+                                                ${generatePrefabDropdown(film.Prefab)}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <strong>Assign Zones:</strong><br>
+                                        <div class="zone-checkboxes">
+                                            <label><input type="checkbox" name="zones[]" value="1" ${film.Zones && film.Zones.includes('Sports') ? 'checked' : ''}> Sports</label>
+                                            <label><input type="checkbox" name="zones[]" value="2" ${film.Zones && film.Zones.includes('Travel') ? 'checked' : ''}> Travel</label>
+                                            <label><input type="checkbox" name="zones[]" value="3" ${film.Zones && film.Zones.includes('Beach') ? 'checked' : ''}> Beach</label>
+                                            <label><input type="checkbox" name="zones[]" value="4" ${film.Zones && film.Zones.includes('Heights') ? 'checked' : ''}> Heights</label>
+                                            <label><input type="checkbox" name="zones[]" value="5" ${film.Zones && film.Zones.includes('Smoking') ? 'checked' : ''}> Smoking</label>
+                                            <label><input type="checkbox" name="zones[]" value="6" ${film.Zones && film.Zones.includes('Alcohol') ? 'checked' : ''}> Alcohol</label>
+                                            <label><input type="checkbox" name="zones[]" value="7" ${film.Zones && film.Zones.includes('Mindfulness') ? 'checked' : ''}> Mindfulness</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-top: 15px;">
+                                        <button type="submit" class="btn">Save</button>
+                                        <button type="button" class="btn" onclick="toggleEditForm(${film.filmid})">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(editRow);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching films:', error);
+                updateDebugInfo({fetchError: error.toString()});
+                showStatus('Error loading films: ' + error.message, false);
+            });
+    }
+
+    function toggleEditForm(filmId) {
+        const editRow = document.getElementById(`edit-row-${filmId}`);
+        
+        // Check if it's currently visible
+        if (editRow.style.display === 'table-row') {
+            // Hide it
+            editRow.style.display = 'none';
+        } else {
+            // Hide any other open edit forms first
+            document.querySelectorAll('.edit-form-row').forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            // Show this edit form
+            editRow.style.display = 'table-row';
+            
+            // Log for debugging
+            console.log(`Showing edit form for film ID: ${filmId}`);
+            updateDebugInfo({editFormOpened: filmId});
+        }
+    }
+
+    function showStatus(message, isSuccess) {
+        const statusEl = document.getElementById('statusMessage');
+        statusEl.textContent = message;
+        statusEl.className = isSuccess ? 'status-message success' : 'status-message error';
+        
+        updateDebugInfo({
+            statusMessage: {
+                text: message,
+                type: isSuccess ? 'success' : 'error',
+                time: new Date().toISOString()
+            }
+        });
+        
+        // Don't auto-clear error messages
+        if (isSuccess) {
+            // Clear success message after 5 seconds
+            setTimeout(() => {
+                statusEl.textContent = '';
+                statusEl.className = '';
+            }, 5000);
+        }
+    }
+
+    function saveFilm(event, filmId) {
+        event.preventDefault();
+        
+        // Show saving message
+        showStatus('Saving changes...', true);
+        updateDebugInfo({savingFilm: filmId, timestamp: new Date().toISOString()});
+        
+        const form = document.getElementById(`filmEditForm-${filmId}`);
+        const formData = new FormData(form);
+        
+        // Log form data for debugging
+        const formDataObj = {};
+        for (let [key, value] of formData.entries()) {
+            if (formDataObj[key]) {
+                if (!Array.isArray(formDataObj[key])) {
+                    formDataObj[key] = [formDataObj[key]];
+                }
+                formDataObj[key].push(value);
+            } else {
+                formDataObj[key] = value;
+            }
+        }
+        
+        updateDebugInfo({formData: formDataObj});
+        
+        fetch('update_film.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            updateDebugInfo({
+                saveResponse: {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries([...response.headers])
+                }
+            });
+            
+            return response.text();  // Get the raw text first for debugging
+        })
+        .then(text => {
+            updateDebugInfo({responseText: text});
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+                updateDebugInfo({parsedResponse: data});
+            } catch (e) {
+                updateDebugInfo({jsonParseError: e.toString()});
+                throw new Error('Invalid JSON response: ' + text);
+            }
+            
+            if (data.success) {
+                showStatus('Film updated successfully!', true);
+                fetchFilms();
+                document.getElementById(`edit-row-${filmId}`).style.display = 'none';
+            } else {
+                showStatus(`Error: ${data.error || 'Unknown error'}`, false);
+                if (data.debug) {
+                    updateDebugInfo({serverDebug: data.debug});
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error saving film:', error);
+            updateDebugInfo({savingError: error.toString()});
+            showStatus('Error saving film: ' + error.message, false);
+        });
+    }
+
+    document.getElementById('generateJsonBtn').addEventListener('click', () => {
+        updateDebugInfo({action: 'generateJson', timestamp: new Date().toISOString()});
+        
+        fetch('generate_json.php')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                updateDebugInfo({generateJsonResponse: data});
+                
+                if (data.success) {
+                    document.getElementById('jsonStatus').innerText = '✅ JSON created: ' + data.path;
+                } else {
+                    document.getElementById('jsonStatus').innerText = '❌ Error: ' + data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error generating JSON:', error);
+                updateDebugInfo({generateJsonError: error.toString()});
+                document.getElementById('jsonStatus').innerText = '❌ Error generating JSON file: ' + error.message;
+            });
+    });
+    </script>
+</body>
+</html>

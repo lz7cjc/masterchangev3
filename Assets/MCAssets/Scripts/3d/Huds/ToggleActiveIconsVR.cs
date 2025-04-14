@@ -35,4 +35,11 @@ public class ToggleActiveIconsVR : MonoBehaviour
         useHeadsetSprites = isHeadset;
         spriteRenderer.sprite = useHeadsetSprites ? headsetDefaultSprite : noHeadsetDefaultSprite;
     }
+
+    // Add debug logs to track VR icon toggling
+    public void ToggleIcons(bool isVRMode)
+    {
+        Debug.Log($"Toggling icons for VR mode: {isVRMode}");
+        // Existing logic for toggling icons
+    }
 }

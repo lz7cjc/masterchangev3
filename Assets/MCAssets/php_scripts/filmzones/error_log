@@ -1,0 +1,70 @@
+[12-Apr-2025 10:08:11 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:08:11 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:08:11 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:08:11 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:18:18 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:18:18 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:18:18 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:18:18 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:19:26 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:19:26 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:19:26 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:19:26 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:19:38 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:19:38 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:19:38 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:19:38 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:20:26 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:20:26 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:20:26 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:20:26 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:06 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:06 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:06 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:06 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:07 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:07 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:07 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:07 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:48 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:48 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 2
+[12-Apr-2025 10:22:48 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:22:48 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/get_films.php on line 5
+[12-Apr-2025 10:34:34 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/update_film.php on line 2
+[12-Apr-2025 10:34:34 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/update_film.php on line 2
+[12-Apr-2025 10:34:34 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/update_film.php on line 12
+[12-Apr-2025 10:34:34 UTC] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/update_film.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/update_film.php on line 12
+[12-Apr-2025 10:42:45 UTC] PHP Warning:  include(db.php): failed to open stream: No such file or directory in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/generate_json.php on line 2
+[12-Apr-2025 10:42:45 UTC] PHP Warning:  include(): Failed opening 'db.php' for inclusion (include_path='.:/opt/alt/php72/usr/share/pear') in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/generate_json.php on line 2
+[12-Apr-2025 10:42:45 UTC] PHP Notice:  Undefined variable: conn in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/generate_json.php on line 9
+[12-Apr-2025 10:42:45 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/generate_json.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/vdl54bmtrmu6/public_html/php_scripts/filmzones/generate_json.php on line 9

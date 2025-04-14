@@ -10,10 +10,9 @@ public class ToggleShowHideVideo : MonoBehaviour
 {
     public bool mouseHover = false;
     public float counter = 0;
-   // public string Switchscenename;
     public string VideoUrlLink;
     private int riroAmount;
-    
+
     public string returntoscene;
     public string nextscene;
     public int returnstage;
@@ -24,48 +23,48 @@ public class ToggleShowHideVideo : MonoBehaviour
     [SerializeField] private StartUp StartUp;
     [SerializeField] private RiroStopGoV2 riroStopGoV2;
     private Rigidbody player;
-   // private floorceilingmove floorceilingmove;
+
+    // New property to store the category (for zone placement)
+    [HideInInspector]
+    public string category;
+
+    // New property to support zone-based placement
+    [HideInInspector]
+    public string zoneName;
+
     public void Start()
     {
-
         riroAmount = PlayerPrefs.GetInt("rirosBalance");
-     //   Debug.Log("riro balance" + riroAmount);
+        // Initialize hasText based on whether TMP_title is assigned
+        hasText = (TMP_title != null);
+
+        // Try to extract category from URL if not already set
+        if (string.IsNullOrEmpty(category) && !string.IsNullOrEmpty(VideoUrlLink))
+        {
+            ExtractCategoryFromUrl();
+        }
     }
-            
 
     // Update is called once per frame
     void Update()
     {
         if (mouseHover)
         {
-            //Debug.Log("xxx setting mousehover");
-            counter += Time.deltaTime;  
-           
-                //floorceilingmove.stopTheCamera();
+            counter += Time.deltaTime;
 
             if (counter >= 3)
             {
-               // Debug.Log("ppp togglescript what is behaviour " + behaviour);
-              //  Debug.Log("ppp togglescript what is nextscene " + nextscene);
-              //  Debug.Log("ppp togglescript what is returntoscene " + returntoscene);
-
-
-             //   Debug.Log("xxx setting counted");
                 mouseHover = false;
                 counter = 0;
                 SetVideoUrl();
-                //showhide3d = FindObjectOfType<showhide3d>();
-                //showhide3d.ResetScene();
             }
-
         }
-        
     }
 
     // mouse Enter event
     public void MouseHoverChangeScene()
     {
-        if (hasText)
+        if (hasText && TMP_title != null)
         {
             TMP_title.color = Color.green;
         }
@@ -75,13 +74,24 @@ public class ToggleShowHideVideo : MonoBehaviour
     // mouse Exit Event
     public void MouseExit()
     {
-        if (hasText)
+        if (hasText && TMP_title != null)
         {
             TMP_title.color = Color.white;
         }
-      //  Debug.Log("cancelling scene change");
         mouseHover = false;
         counter = 0;
+    }
+
+    // Try to extract category from the URL
+    private void ExtractCategoryFromUrl()
+    {
+        if (string.IsNullOrEmpty(VideoUrlLink)) return;
+
+        string[] parts = VideoUrlLink.Split('/');
+        if (parts.Length >= 3)
+        {
+            category = parts[parts.Length - 3] + "/" + parts[parts.Length - 2];
+        }
     }
 
     public void SetVideoUrl()
@@ -97,27 +107,12 @@ public class ToggleShowHideVideo : MonoBehaviour
             Debug.Log("eeeee" + riroAmount);
             PlayerPrefs.SetString("VideoUrl", VideoUrlLink);
             SceneManager.LoadScene("360VideoApp");
-            //         print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
-
-            //      player.useGravity = false;
         }
-
         else
         {
             Debug.Log("111eeeee" + riroAmount);
             PlayerPrefs.SetInt("stopFilm", 0);
-
             riroStopGoV2.doNotPass(0);
-
-            //    player.MovePosition(cameraTarget.transform.position);
-            //    player.transform.SetParent(cameraTarget.transform);
-
         }
-
     }
-
 }
-
-   
-
-

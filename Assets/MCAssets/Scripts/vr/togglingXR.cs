@@ -9,6 +9,14 @@ public class togglingXR : MonoBehaviour
 
     public void Start()
     {
+        Debug.Log($"Start method called. switchVRon: {switchVRon}");
+
+        // Add debug log to check XRGeneralSettings.Instance at the start
+        if (XRGeneralSettings.Instance == null)
+        {
+            Debug.LogWarning("XRGeneralSettings.Instance is null at Start. Ensure XR Plugin Management is configured.");
+        }
+
         if (switchVRon)
         {
             StartCoroutine(StartXR());
@@ -22,64 +30,68 @@ public class togglingXR : MonoBehaviour
     public void SwitchingVR()
     {
         vrSetOn = PlayerPrefs.GetInt("toggleToVR");
+        Debug.Log($"[togglingXR] SwitchingVR called. toggleToVR: {vrSetOn}");
+
         if (vrSetOn == 1)
         {
+            Debug.Log("[togglingXR] Starting XR mode.");
             StartCoroutine(StartXR());
         }
         else
         {
+            Debug.Log("[togglingXR] Stopping XR mode. Enforcing 2D mode.");
             StopXR();
         }
-
     }
-
 
     public IEnumerator StartXR()
     {
-        Debug.Log("Attempting to start XR...");
+        Debug.Log("[togglingXR] Attempting to start XR...");
+        var startTime = Time.realtimeSinceStartup;
 
-        // Wait for XR system to be ready
+        ShowLoadingScreen();
+
         yield return new WaitForSeconds(0.5f);
 
         if (XRGeneralSettings.Instance == null)
         {
-            Debug.LogWarning("XRGeneralSettings.Instance is null! Make sure XR Plugin Management is properly set up in Project Settings.");
-            switchVRon = false;
+            Debug.LogWarning("[togglingXR] XRGeneralSettings.Instance is null!");
+            HideLoadingScreen();
             yield break;
         }
 
         if (XRGeneralSettings.Instance.Manager == null)
         {
-            Debug.LogWarning("XRGeneralSettings.Instance.Manager is null! Make sure you have at least one XR Plugin installed and enabled.");
-            switchVRon = false;
+            Debug.LogWarning("[togglingXR] XRGeneralSettings.Instance.Manager is null!");
+            HideLoadingScreen();
             yield break;
         }
 
-        // Initialize the XR loader
         yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
 
         if (XRGeneralSettings.Instance.Manager.activeLoader == null)
         {
-            // Initialization failed
-            Debug.LogError("Initializing XR Failed. Check Editor or Player log for details.");
-            switchVRon = false;
+            Debug.LogError("[togglingXR] Initializing XR Failed.");
         }
         else
         {
-            // Start XR subsystems
             XRGeneralSettings.Instance.Manager.StartSubsystems();
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
-            Debug.Log("XR started successfully!");
+            Debug.Log("[togglingXR] XR started successfully!");
         }
+
+        HideLoadingScreen();
+        Debug.Log($"[togglingXR] StartXR completed in {Time.realtimeSinceStartup - startTime} seconds.");
     }
 
     public void StopXR()
     {
         Debug.Log("Attempting to stop XR...");
 
+        // Add debug log to check XRGeneralSettings.Instance before stopping XR
         if (XRGeneralSettings.Instance == null)
         {
-            Debug.LogWarning("Cannot stop XR - XRGeneralSettings.Instance is null");
+            Debug.LogWarning("Cannot stop XR - XRGeneralSettings.Instance is null. Ensure XR Plugin Management is configured.");
             return;
         }
 
@@ -91,6 +103,7 @@ public class togglingXR : MonoBehaviour
 
         if (XRGeneralSettings.Instance.Manager.activeLoader != null)
         {
+            Debug.Log("Stopping XR subsystems...");
             // Stop XR subsystems and deinitialize the loader
             XRGeneralSettings.Instance.Manager.StopSubsystems();
             XRGeneralSettings.Instance.Manager.DeinitializeLoader();
@@ -100,5 +113,24 @@ public class togglingXR : MonoBehaviour
         {
             Debug.Log("No active XR loader to stop");
         }
+    }
+
+    // Add methods to handle loading screen visibility
+    private void ShowLoadingScreen()
+    {
+        Debug.Log("Showing loading screen...");
+        // Implement logic to display a loading screen or fallback UI
+    }
+
+    private void HideLoadingScreen()
+    {
+        Debug.Log("Hiding loading screen...");
+        // Implement logic to hide the loading screen or fallback UI
+    }
+
+    private void Initialize2DScreen()
+    {
+        Debug.Log("Initializing 2D screen...");
+        // Implement logic to ensure the 2D screen is properly displayed
     }
 }

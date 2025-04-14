@@ -65,6 +65,7 @@ public class switchformatreload : MonoBehaviour
 
                 if (togglingXR != null)
                 {
+                    Debug.Log($"Switching VR state. New state: {newState}");
                     if (newState == 1)
                     {
                         // Switch to VR mode
@@ -75,6 +76,10 @@ public class switchformatreload : MonoBehaviour
                         // Switch to 360 mode
                         togglingXR.StopXR();
                     }
+                }
+                else
+                {
+                    Debug.LogWarning("togglingXR instance not found!");
                 }
 
                 // Update icon based on new state
@@ -106,5 +111,12 @@ public class switchformatreload : MonoBehaviour
         }
         isHovering = false;
         Counter = 0;
+    }
+
+    // Add debug logs to track format switching
+    public void ReloadFormat(bool isVRMode)
+    {
+        Debug.Log($"Reloading format for VR mode: {isVRMode}");
+        // Existing logic for reloading format
     }
 }

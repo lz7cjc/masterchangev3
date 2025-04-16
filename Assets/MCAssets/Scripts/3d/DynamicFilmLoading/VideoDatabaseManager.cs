@@ -19,7 +19,7 @@ public class VideoEntry
     public string Title;              // Display title
     public string Description;        // Description text
     public string Prefab;             // Which prefab to use for displaying
-    public string zones;              // Direct zone assignment (string format)
+    public string Zone;              // Direct zone assignment (string format)
     public List<string> Zones = new List<string>();  // Parsed zones list for easier access
 
     [NonSerialized]
@@ -139,11 +139,11 @@ public class VideoDatabase
 
         foreach (var entry in Entries)
         {
-            // If we have a zones string but the Zones list is empty, parse it
-            if (!string.IsNullOrEmpty(entry.zones) && entry.Zones.Count == 0)
+            // If we have a Zone string but the Zones list is empty, parse it
+            if (!string.IsNullOrEmpty(entry.Zone) && entry.Zones.Count == 0)
             {
                 // Parse comma-separated zones and add to the list
-                string[] zoneArray = entry.zones.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] zoneArray = entry.Zone.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string zone in zoneArray)
                 {
                     string trimmedZone = zone.Trim();
@@ -371,7 +371,7 @@ public class VideoDatabaseManager : MonoBehaviour
         // Parse zones if available
         if (columns.Length > 6 && !string.IsNullOrEmpty(columns[6]))
         {
-            entry.zones = columns[6];
+            entry.Zone = columns[6];
 
             // Parse comma-separated zones
             string[] zoneArray = columns[6].Split(',');
@@ -514,11 +514,11 @@ public class VideoDatabaseManager : MonoBehaviour
         {
             entry.Zones.Add(zone);
 
-            // Update zones string to match
-            if (string.IsNullOrEmpty(entry.zones))
-                entry.zones = zone;
+            // Update Zone string to match
+            if (string.IsNullOrEmpty(entry.Zone))
+                entry.Zone = zone;
             else
-                entry.zones += "," + zone;
+                entry.Zone += "," + zone;
 
             // Update the lookup dictionary
             if (!database.ZoneToVideos.ContainsKey(zone))
@@ -543,8 +543,8 @@ public class VideoDatabaseManager : MonoBehaviour
         {
             entry.Zones.Remove(zone);
 
-            // Update zones string to match
-            entry.zones = string.Join(",", entry.Zones);
+            // Update Zone string to match
+            entry.Zone = string.Join(",", entry.Zones);
 
             // Update the lookup dictionary
             if (database.ZoneToVideos.ContainsKey(zone))

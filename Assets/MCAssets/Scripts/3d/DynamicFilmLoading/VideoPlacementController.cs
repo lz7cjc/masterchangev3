@@ -31,6 +31,16 @@ public class VideoPlacementController : MonoBehaviour
 
     [SerializeField] private List<PrefabMapping> prefabMappings = new List<PrefabMapping>();
 
+    [System.Serializable]
+    public class ZonePrefabMapping
+    {
+        public string ZoneName;
+        public GameObject DefaultPrefab;
+    }
+
+    [Header("Zone Default Prefabs")]
+    [SerializeField] private List<ZonePrefabMapping> zonePrefabMappings = new List<ZonePrefabMapping>();
+
     [Header("Debug Options")]
     [SerializeField] private bool verboseLogging = true;
 
@@ -40,6 +50,7 @@ public class VideoPlacementController : MonoBehaviour
     private TerrainCollider terrainCollider;
 
     private Dictionary<string, GameObject> prefabMap = new Dictionary<string, GameObject>();
+    private Dictionary<string, GameObject> zonePrefabMap = new Dictionary<string, GameObject>();
 
     private void Awake()
     {
@@ -82,6 +93,7 @@ public class VideoPlacementController : MonoBehaviour
             if (verboseLogging) Debug.Log("Added Default prefab to mapping");
         }
 
+        // Initialize type-based prefab mappings
         foreach (PrefabMapping mapping in prefabMappings)
         {
             if (!string.IsNullOrEmpty(mapping.PrefabType) && mapping.Prefab != null)
@@ -92,6 +104,20 @@ public class VideoPlacementController : MonoBehaviour
             else
             {
                 Debug.LogWarning($"Invalid prefab mapping: {(mapping.PrefabType ?? "null")} -> {(mapping.Prefab ? mapping.Prefab.name : "null")}");
+            }
+        }
+
+        // Initialize zone-based prefab mappings
+        foreach (ZonePrefabMapping mapping in zonePrefabMappings)
+        {
+            if (!string.IsNullOrEmpty(mapping.ZoneName) && mapping.DefaultPrefab != null)
+            {
+                zonePrefabMap[mapping.ZoneName] = mapping.DefaultPrefab;
+                if (verboseLogging) Debug.Log($"Added zone prefab mapping: {mapping.ZoneName} -> {mapping.DefaultPrefab.name}");
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid zone prefab mapping: {(mapping.ZoneName ?? "null")} -> {(mapping.DefaultPrefab ? mapping.DefaultPrefab.name : "null")}");
             }
         }
     }
@@ -285,19 +311,31 @@ public class VideoPlacementController : MonoBehaviour
         Debug.Log($"Successfully placed {placedCount} out of {zoneVideos.Count} videos in zone '{zone.Name}'");
     }
 
-    // ==================== REPLACE THIS METHOD WITH THE NEW VERSION BELOW ====================
     // Place a single video link
     private void PlaceVideoLink(VideoEntry video, Vector3 position, string zoneName, Transform parent)
     {
-        if (verboseLogging) Debug.Log($"Placing video: {video.Title}, URL: {video.PublicUrl}");
+        if (verboseLogging)
+        {
+            Debug.Log($"===== PLACING VIDEO =====");
+            Debug.Log($"Video Title: {video.Title}");
+            Debug.Log($"Video URL: {video.PublicUrl}");
+            Debug.Log($"Video Prefab Type: '{video.Prefab}'");
+            Debug.Log($"In Zone: '{zoneName}'");
+        }
 
         // Get prefab for this video - prioritize the video's prefab setting
-        GameObject prefab = GetPrefabForVideo(video);
+        GameObject prefab = GetPrefabForVideo(video, zoneName);
 
         if (prefab == null)
         {
-            Debug.LogError($"No prefab available for video {video.Title}. Prefab type: {video.Prefab}");
+            Debug.LogError($"No prefab available for video {video.Title}. Prefab type: {video.Prefab}, Zone: {zoneName}");
             return;
+        }
+
+        if (verboseLogging)
+        {
+            Debug.Log($"Selected prefab: {prefab.name}");
+            Debug.Log($"Prefab active state: {prefab.activeSelf}");
         }
 
         // Apply terrain height adjustment
@@ -317,6 +355,14 @@ public class VideoPlacementController : MonoBehaviour
 
         // Create a temporary instance to measure the prefab's dimensions
         GameObject tempInstance = Instantiate(prefab, new Vector3(0, -1000, 0), Quaternion.identity);
+        // Force the temp instance to be active
+        tempInstance.SetActive(true);
+
+        // Activate all child objects to ensure accurate bounds calculation
+        foreach (Transform child in tempInstance.transform)
+        {
+            child.gameObject.SetActive(true);
+        }
 
         // Get the prefab's bounds to determine its height offset
         Bounds prefabBounds = CalculatePrefabBounds(tempInstance);
@@ -340,6 +386,14 @@ public class VideoPlacementController : MonoBehaviour
         // Create the actual game object
         GameObject videoLink = Instantiate(prefab, finalPosition, Quaternion.identity, parent);
         videoLink.name = $"VideoLink_{video.Title}";
+
+        // IMPORTANT: Make sure the object is active
+        videoLink.SetActive(true);
+
+        // Ensure all child objects are active
+        ActivateAllChildren(videoLink.transform);
+
+        if (verboseLogging) Debug.Log($"Created video link GameObject: {videoLink.name}, Active: {videoLink.activeSelf}");
 
         // Add the EnhancedVideoPlayer component
         EnhancedVideoPlayer linkComponent = videoLink.GetComponent<EnhancedVideoPlayer>();
@@ -388,6 +442,7 @@ public class VideoPlacementController : MonoBehaviour
                 GameObject textObj = new GameObject("Title");
                 textObj.transform.SetParent(videoLink.transform);
                 textObj.transform.localPosition = new Vector3(0, 1.2f, 0);
+                textObj.SetActive(true); // Ensure text object is active
 
                 // Create canvas if needed
                 Canvas canvas = videoLink.GetComponentInChildren<Canvas>();
@@ -395,6 +450,8 @@ public class VideoPlacementController : MonoBehaviour
                 {
                     GameObject canvasObj = new GameObject("Canvas");
                     canvasObj.transform.SetParent(videoLink.transform);
+                    canvasObj.SetActive(true); // Ensure canvas is active
+
                     canvas = canvasObj.AddComponent<Canvas>();
                     canvas.renderMode = RenderMode.WorldSpace;
 
@@ -429,6 +486,8 @@ public class VideoPlacementController : MonoBehaviour
                 GameObject background = new GameObject("Background");
                 background.transform.SetParent(textObj.transform);
                 background.transform.SetAsFirstSibling(); // Put background behind text
+                background.SetActive(true); // Ensure background is active
+
                 RectTransform bgRect = background.AddComponent<RectTransform>();
                 bgRect.sizeDelta = new Vector2(180, 40);
                 bgRect.anchoredPosition = Vector2.zero;
@@ -458,17 +517,49 @@ public class VideoPlacementController : MonoBehaviour
             }
         }
 
-        if (verboseLogging) Debug.Log($"Successfully placed {video.Title} at {finalPosition}");
-    }
-    // ==================== END OF METHOD TO REPLACE ====================
+        // Final check to ensure everything is active
+        if (!videoLink.activeSelf)
+        {
+            Debug.LogWarning($"Video link {videoLink.name} is still inactive after placement! Forcing activation.");
+            videoLink.SetActive(true);
+            ActivateAllChildren(videoLink.transform);
+        }
 
-    // ==================== ADD THIS NEW METHOD ====================
+        if (verboseLogging)
+        {
+            Debug.Log($"Successfully placed {video.Title} at {finalPosition}");
+            Debug.Log($"Final active state: {videoLink.activeSelf}");
+            Debug.Log($"===== PLACEMENT COMPLETE =====");
+        }
+    }
+
+    // Recursively activate all children
+    private void ActivateAllChildren(Transform parent)
+    {
+        foreach (Transform child in parent)
+        {
+            child.gameObject.SetActive(true);
+
+            // Recursively activate children of this child
+            if (child.childCount > 0)
+            {
+                ActivateAllChildren(child);
+            }
+        }
+    }
+
     // Calculate the bounds of a prefab including all child renderers and colliders
     private Bounds CalculatePrefabBounds(GameObject prefab)
     {
-        // Get all renderers and colliders in the prefab
-        Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>();
-        Collider[] colliders = prefab.GetComponentsInChildren<Collider>();
+        // Get all renderers and colliders in the prefab, including inactive ones
+        Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+        Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
+
+        if (verboseLogging)
+        {
+            Debug.Log($"Calculating bounds for prefab: {prefab.name}");
+            Debug.Log($"Found {renderers.Length} renderers and {colliders.Length} colliders");
+        }
 
         // Initialize bounds
         Bounds bounds = new Bounds();
@@ -477,28 +568,64 @@ public class VideoPlacementController : MonoBehaviour
         // Include renderer bounds
         foreach (Renderer renderer in renderers)
         {
+            // Temporarily activate the renderer's GameObject if it's inactive
+            bool wasActive = renderer.gameObject.activeSelf;
+            if (!wasActive)
+            {
+                renderer.gameObject.SetActive(true);
+            }
+
             if (!boundsInitialized)
             {
                 bounds = renderer.bounds;
                 boundsInitialized = true;
+
+                if (verboseLogging)
+                {
+                    Debug.Log($"Initial bounds from renderer {renderer.name}: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
+                }
             }
             else
             {
                 bounds.Encapsulate(renderer.bounds);
+            }
+
+            // Restore original state if we changed it
+            if (!wasActive)
+            {
+                renderer.gameObject.SetActive(wasActive);
             }
         }
 
         // Include collider bounds
         foreach (Collider collider in colliders)
         {
+            // Temporarily activate the collider's GameObject if it's inactive
+            bool wasActive = collider.gameObject.activeSelf;
+            if (!wasActive)
+            {
+                collider.gameObject.SetActive(true);
+            }
+
             if (!boundsInitialized)
             {
                 bounds = collider.bounds;
                 boundsInitialized = true;
+
+                if (verboseLogging)
+                {
+                    Debug.Log($"Initial bounds from collider {collider.name}: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
+                }
             }
             else
             {
                 bounds.Encapsulate(collider.bounds);
+            }
+
+            // Restore original state if we changed it
+            if (!wasActive)
+            {
+                collider.gameObject.SetActive(wasActive);
             }
         }
 
@@ -510,9 +637,13 @@ public class VideoPlacementController : MonoBehaviour
             if (verboseLogging) Debug.LogWarning($"No renderers or colliders found on prefab. Using default bounds.");
         }
 
+        if (verboseLogging)
+        {
+            Debug.Log($"Final calculated bounds: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
+        }
+
         return bounds;
     }
-    // ==================== END OF NEW METHOD ====================
 
     // Calculate center of a zone by name
     private Vector3 CalculateZoneCenter(string zoneName)
@@ -537,8 +668,11 @@ public class VideoPlacementController : MonoBehaviour
         return center;
     }
 
-    // Get the appropriate prefab for a video - prioritize video's specific prefab setting
-    private GameObject GetPrefabForVideo(VideoEntry video)
+    // Get the appropriate prefab for a video with the following priority:
+    // 1. Video-specific prefab from the database
+    // 2. Zone-specific default prefab
+    // 3. Global default prefab
+    private GameObject GetPrefabForVideo(VideoEntry video, string zoneName)
     {
         // First check if the video specifies a prefab type in its data
         if (!string.IsNullOrEmpty(video.Prefab) && prefabMap.ContainsKey(video.Prefab))
@@ -547,14 +681,22 @@ public class VideoPlacementController : MonoBehaviour
             return prefabMap[video.Prefab];
         }
 
-        // Fallback to default prefab
+        // Next check if the zone has a default prefab assigned
+        if (!string.IsNullOrEmpty(zoneName) && zonePrefabMap.ContainsKey(zoneName))
+        {
+            if (verboseLogging) Debug.Log($"Using zone-specific default prefab for zone: {zoneName}");
+            return zonePrefabMap[zoneName];
+        }
+
+        // Fallback to default prefab mapping
         if (prefabMap.ContainsKey("Default"))
         {
-            if (verboseLogging) Debug.Log($"Using default prefab for {video.Title}");
+            if (verboseLogging) Debug.Log($"Using global default prefab for {video.Title}");
             return prefabMap["Default"];
         }
 
         // Last resort - use the default prefab from inspector
+        if (verboseLogging) Debug.Log($"Using default prefab from inspector for {video.Title}");
         return defaultPrefab;
     }
 }

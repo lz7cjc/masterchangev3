@@ -191,7 +191,7 @@ GameObject:
   - component: {fileID: 6779024809642987816}
   - component: {fileID: 195598798427592274}
   m_Layer: 5
-  m_Name: Football-brazil
+  m_Name: Football
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

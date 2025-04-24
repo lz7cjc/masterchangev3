@@ -11,13 +11,21 @@ public class VideoPlacementController : MonoBehaviour
 {
     [Header("Placement Settings")]
     [SerializeField] private float placementHeight = 0.1f; // Height above terrain
-    // Note: We're no longer using a fixed offset, but instead calculating it per prefab
-    // [SerializeField] private float yOffsetAdjustment = -4.07f; // Removed fixed Y offset
     [SerializeField] private float avoidObstacleRadius = 1.0f;
     [SerializeField] private int maxPlacementAttempts = 50;
     [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private bool placeOnStart = true;
     [SerializeField] private float startDelay = 1.0f;
+
+    [Header("Reticle Settings")]
+    [SerializeField] private float reticleRange = 15.0f; // Range of the reticle pointer
+    [SerializeField] private bool showReticleGizmo = true;
+    [SerializeField] private Color reticleColor = new Color(1f, 0f, 0f, 0.3f);
+
+    [Header("Orientation Settings")]
+    [SerializeField] private bool faceCamera = true; // Make prefabs face camera
+    [SerializeField] private bool dynamicFacing = true; // Make prefabs constantly face camera as it moves
+    [SerializeField] private float updateInterval = 0.2f; // How often to update orientation (seconds)
 
     [Header("Video Prefabs")]
     [SerializeField] private GameObject defaultPrefab;
@@ -48,17 +56,31 @@ public class VideoPlacementController : MonoBehaviour
     private PolygonZoneManager zoneManager;
     private Terrain terrain;
     private TerrainCollider terrainCollider;
+    private Camera mainCamera;
+    private List<GameObject> activePrefabs = new List<GameObject>();
+    private float lastOrientationUpdateTime;
 
     private Dictionary<string, GameObject> prefabMap = new Dictionary<string, GameObject>();
     private Dictionary<string, GameObject> zonePrefabMap = new Dictionary<string, GameObject>();
 
     private void Awake()
     {
+        // Find the main camera
+        mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            Debug.LogWarning("Main camera not found. Camera-facing orientation will not work.");
+        }
+
         // Find the database manager
         databaseManager = FindObjectOfType<VideoDatabaseManager>();
         if (databaseManager == null)
         {
             Debug.LogError("No VideoDatabaseManager found in the scene!");
+            // Create one to avoid null reference exceptions
+            GameObject dbManagerObj = new GameObject("VideoDatabaseManager");
+            databaseManager = dbManagerObj.AddComponent<VideoDatabaseManager>();
+            Debug.LogWarning("Created a VideoDatabaseManager, but it needs configuration");
         }
 
         // Find the zone manager
@@ -66,6 +88,12 @@ public class VideoPlacementController : MonoBehaviour
         if (zoneManager == null)
         {
             Debug.LogWarning("No PolygonZoneManager found in the scene. Some features may not work correctly.");
+        }
+        else
+        {
+            // Set the reticle range in the zone manager
+            zoneManager.reticleRange = reticleRange;
+            if (verboseLogging) Debug.Log($"Set reticle range in PolygonZoneManager to {reticleRange}");
         }
 
         // Find terrain components
@@ -131,620 +159,381 @@ public class VideoPlacementController : MonoBehaviour
         }
     }
 
-    // Place video links in all configured zones
-    public void PlaceAllVideoLinks()
+    private void Update()
     {
-        if (verboseLogging) Debug.Log("Starting video link placement...");
-
-        if (databaseManager == null)
+        // Update prefab orientation to face camera if enabled
+        if (dynamicFacing && mainCamera != null && activePrefabs.Count > 0)
         {
-            Debug.LogError("Cannot place video links: No database manager available");
-            return;
-        }
-
-        if (!databaseManager.IsInitialized)
-        {
-            Debug.LogError("Database manager is not initialized. Make sure database is loaded before placing videos.");
-
-            // Try to load the database
-            databaseManager.LoadDatabaseFromJson();
-
-            if (!databaseManager.IsInitialized)
+            // Only update at the specified interval to avoid performance issues
+            if (Time.time - lastOrientationUpdateTime >= updateInterval)
             {
-                Debug.LogError("Failed to initialize database. Check if your database file exists.");
-                return;
-            }
-        }
-
-        int entryCount = databaseManager.EntryCount;
-        if (entryCount == 0)
-        {
-            Debug.LogError("No video entries in database. Check your database file.");
-            return;
-        }
-        else
-        {
-            if (verboseLogging) Debug.Log($"Found {entryCount} videos in database");
-        }
-
-        // Clear existing video links
-        ClearExistingVideoLinks();
-
-        // Check if we have a polygon zone manager
-        if (zoneManager != null && zoneManager.zones.Count > 0)
-        {
-            if (verboseLogging) Debug.Log($"Found {zoneManager.zones.Count} zones for placement");
-
-            // Process each zone from the polygon zone manager
-            foreach (PolygonZone zone in zoneManager.zones)
-            {
-                if (zone.Points.Count < 3)
-                {
-                    Debug.LogWarning($"Zone '{zone.Name}' has fewer than 3 points. Skipping this zone.");
-                    continue;
-                }
-
-                PlaceVideosInPolygonZone(zone);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("No PolygonZoneManager or no zones defined. No videos will be placed.");
-        }
-    }
-
-    // Clear all existing video links
-    private void ClearExistingVideoLinks()
-    {
-        // Clear both old and new video link types
-        EnhancedVideoPlayer[] enhancedLinks = FindObjectsOfType<EnhancedVideoPlayer>();
-        int enhancedCount = enhancedLinks.Length;
-
-        foreach (EnhancedVideoPlayer link in enhancedLinks)
-        {
-            Destroy(link.gameObject);
-        }
-
-        // Also clear legacy links if they exist
-        var legacyLinks = FindObjectsOfType<MonoBehaviour>().Where(mb => mb.GetType().Name == "ToggleShowHideVideo");
-        int legacyCount = legacyLinks.Count();
-
-        foreach (MonoBehaviour link in legacyLinks)
-        {
-            Destroy(link.gameObject);
-        }
-
-        if (verboseLogging) Debug.Log($"Cleared {enhancedCount} enhanced video links and {legacyCount} legacy links");
-    }
-
-    // Place videos within a polygon zone
-    private void PlaceVideosInPolygonZone(PolygonZone zone)
-    {
-        if (verboseLogging) Debug.Log($"Processing zone: {zone.Name}");
-
-        // Get videos assigned to this zone
-        List<VideoEntry> zoneVideos = databaseManager.GetEntriesForZone(zone.Name);
-
-        if (verboseLogging) Debug.Log($"Found {zoneVideos.Count} videos directly assigned to zone '{zone.Name}'");
-
-        // If no direct zone assignments, fallback to category-based filtering
-        if (zoneVideos.Count == 0 && zone.Categories != null && zone.Categories.Count > 0)
-        {
-            if (verboseLogging) Debug.Log($"No direct zone assignments, falling back to category filtering");
-
-            foreach (string category in zone.Categories)
-            {
-                if (string.IsNullOrEmpty(category)) continue;
-
-                string[] parts = category.Split('/');
-                List<VideoEntry> categoryVideos;
-
-                if (parts.Length == 1)
-                {
-                    // Main category only
-                    categoryVideos = databaseManager.GetEntriesForCategory(parts[0]);
-                    if (verboseLogging) Debug.Log($"Category '{parts[0]}' has {categoryVideos.Count} videos");
-                }
-                else if (parts.Length == 2)
-                {
-                    // Main category and subcategory
-                    categoryVideos = databaseManager.GetEntriesForCategory(parts[0], parts[1]);
-                    if (verboseLogging) Debug.Log($"Category '{parts[0]}/{parts[1]}' has {categoryVideos.Count} videos");
-                }
-                else
-                {
-                    if (verboseLogging) Debug.Log($"Invalid category format: {category}");
-                    continue;
-                }
-
-                zoneVideos.AddRange(categoryVideos);
-            }
-
-            // Remove duplicates from category filtering
-            int beforeCount = zoneVideos.Count;
-            zoneVideos = zoneVideos.Distinct().ToList();
-            if (verboseLogging && beforeCount != zoneVideos.Count)
-                Debug.Log($"Removed {beforeCount - zoneVideos.Count} duplicate videos from category filtering");
-        }
-
-        if (zoneVideos.Count == 0)
-        {
-            Debug.LogWarning($"No videos found for zone '{zone.Name}'. Check zone assignments in your database.");
-            return;
-        }
-
-        // Apply max videos limit
-        if (zoneVideos.Count > zone.MaxVideos)
-        {
-            if (verboseLogging) Debug.Log($"Limiting videos in zone {zone.Name} to {zone.MaxVideos} (from {zoneVideos.Count})");
-            zoneVideos = zoneVideos.Take(zone.MaxVideos).ToList();
-        }
-
-        Debug.Log($"Placing {zoneVideos.Count} videos in zone {zone.Name}");
-
-        // Create a parent object for this zone
-        GameObject zoneParent = new GameObject($"Zone_{zone.Name}");
-        zoneParent.transform.parent = transform;
-
-        // Keep track of placed positions
-        List<Vector3> placedPositions = new List<Vector3>();
-
-        // Place each video
-        int placedCount = 0;
-        foreach (VideoEntry video in zoneVideos)
-        {
-            // Use placement manager to find a valid position
-            Vector3 position = zoneManager.FindValidPositionInZone(zone, placedPositions);
-
-            if (position != Vector3.zero)
-            {
-                PlaceVideoLink(video, position, zone.Name, zoneParent.transform);
-                placedPositions.Add(position);
-                placedCount++;
-            }
-            else
-            {
-                Debug.LogWarning($"Could not find valid position for video '{video.Title}' in zone '{zone.Name}'");
-            }
-        }
-
-        Debug.Log($"Successfully placed {placedCount} out of {zoneVideos.Count} videos in zone '{zone.Name}'");
-    }
-
-    // Place a single video link
-    private void PlaceVideoLink(VideoEntry video, Vector3 position, string zoneName, Transform parent)
-    {
-        if (verboseLogging)
-        {
-            Debug.Log($"===== PLACING VIDEO =====");
-            Debug.Log($"Video Title: {video.Title}");
-            Debug.Log($"Video URL: {video.PublicUrl}");
-            Debug.Log($"Video Prefab Type: '{video.Prefab}'");
-            Debug.Log($"In Zone: '{zoneName}'");
-        }
-
-        // Get prefab for this video - prioritize the video's prefab setting
-        GameObject prefab = GetPrefabForVideo(video, zoneName);
-
-        if (prefab == null)
-        {
-            Debug.LogError($"No prefab available for video {video.Title}. Prefab type: {video.Prefab}, Zone: {zoneName}");
-            return;
-        }
-
-        if (verboseLogging)
-        {
-            Debug.Log($"Selected prefab: {prefab.name}");
-            Debug.Log($"Prefab active state: {prefab.activeSelf}");
-        }
-
-        // Apply terrain height adjustment
-        float terrainHeight = position.y; // Use the height already determined by PolygonZoneManager
-        if (verboseLogging) Debug.Log($"Initial terrain height at position: {terrainHeight}");
-
-        // Double-check terrain height using raycast for more accuracy
-        if (terrainCollider != null)
-        {
-            RaycastHit hit;
-            if (Physics.Raycast(new Vector3(position.x, 1000f, position.z), Vector3.down, out hit, 2000f, LayerMask.GetMask("Default", "Terrain")))
-            {
-                terrainHeight = hit.point.y;
-                if (verboseLogging) Debug.Log($"Refined terrain height via raycast: {terrainHeight}");
-            }
-        }
-
-        // Create a temporary instance to measure the prefab's dimensions
-        GameObject tempInstance = Instantiate(prefab, new Vector3(0, -1000, 0), Quaternion.identity);
-        // Force the temp instance to be active
-        tempInstance.SetActive(true);
-
-        // Activate all child objects to ensure accurate bounds calculation
-        foreach (Transform child in tempInstance.transform)
-        {
-            child.gameObject.SetActive(true);
-        }
-
-        // Get the prefab's bounds to determine its height offset
-        Bounds prefabBounds = CalculatePrefabBounds(tempInstance);
-        float prefabHeight = prefabBounds.size.y;
-        float prefabBottomOffset = prefabBounds.min.y - tempInstance.transform.position.y;
-
-        // We won't need this temporary instance anymore
-        Destroy(tempInstance);
-
-        if (verboseLogging) Debug.Log($"Prefab height: {prefabHeight}, Bottom offset: {prefabBottomOffset}");
-
-        // Calculate the position so the bottom of the prefab rests on the terrain
-        Vector3 finalPosition = new Vector3(
-            position.x,
-            terrainHeight - prefabBottomOffset, // Position so bottom of prefab is at terrain height
-            position.z
-        );
-
-        if (verboseLogging) Debug.Log($"Original position: {position}, Final adjusted position: {finalPosition}");
-
-        // Create the actual game object
-        GameObject videoLink = Instantiate(prefab, finalPosition, Quaternion.identity, parent);
-        videoLink.name = $"VideoLink_{video.Title}";
-
-        // IMPORTANT: Make sure the object is active
-        videoLink.SetActive(true);
-
-        // Ensure all child objects are active
-        ActivateAllChildren(videoLink.transform);
-
-        if (verboseLogging) Debug.Log($"Created video link GameObject: {videoLink.name}, Active: {videoLink.activeSelf}");
-
-        // Add the EnhancedVideoPlayer component
-        EnhancedVideoPlayer linkComponent = videoLink.GetComponent<EnhancedVideoPlayer>();
-        if (linkComponent == null)
-        {
-            linkComponent = videoLink.AddComponent<EnhancedVideoPlayer>();
-            if (verboseLogging) Debug.Log($"Added EnhancedVideoPlayer component to {videoLink.name}");
-        }
-
-        // Configure the component
-        linkComponent.VideoUrlLink = video.PublicUrl;
-        linkComponent.returntoscene = SceneHelper.GetActiveSceneName(); // Default to current scene
-        linkComponent.behaviour = zoneName;
-        linkComponent.title = video.Title;
-        linkComponent.description = video.Description;
-        linkComponent.prefabType = video.Prefab;
-        linkComponent.zoneName = zoneName;
-        linkComponent.debugMode = verboseLogging;
-
-        // Add collider if missing
-        Collider existingCollider = videoLink.GetComponent<Collider>();
-        if (existingCollider == null)
-        {
-            BoxCollider collider = videoLink.AddComponent<BoxCollider>();
-            collider.center = Vector3.up * 0.5f;
-            collider.size = new Vector3(1f, 1f, 1f);
-            if (verboseLogging) Debug.Log($"Added collider to {videoLink.name}");
-        }
-
-        // Add interaction component if missing
-        if (videoLink.GetComponent<VideoLinkInteraction>() == null)
-        {
-            videoLink.AddComponent<VideoLinkInteraction>();
-            if (verboseLogging) Debug.Log($"Added VideoLinkInteraction to {videoLink.name}");
-        }
-
-        // Add or update text component
-        if (!string.IsNullOrEmpty(video.Title))
-        {
-            // Find existing TextMeshPro component
-            TMP_Text textComponent = videoLink.GetComponentInChildren<TMP_Text>();
-
-            if (textComponent == null)
-            {
-                // Create a new text object
-                GameObject textObj = new GameObject("Title");
-                textObj.transform.SetParent(videoLink.transform);
-                textObj.transform.localPosition = new Vector3(0, 1.2f, 0);
-                textObj.SetActive(true); // Ensure text object is active
-
-                // Create canvas if needed
-                Canvas canvas = videoLink.GetComponentInChildren<Canvas>();
-                if (canvas == null)
-                {
-                    GameObject canvasObj = new GameObject("Canvas");
-                    canvasObj.transform.SetParent(videoLink.transform);
-                    canvasObj.SetActive(true); // Ensure canvas is active
-
-                    canvas = canvasObj.AddComponent<Canvas>();
-                    canvas.renderMode = RenderMode.WorldSpace;
-
-                    // Set canvas size
-                    RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
-                    canvasRect.sizeDelta = new Vector2(200, 100);
-                    canvasRect.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-
-                    // Add canvas scaler
-                    CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-                    scaler.dynamicPixelsPerUnit = 10;
-
-                    // Add raycaster
-                    canvasObj.AddComponent<GraphicRaycaster>();
-
-                    // Move text under canvas
-                    textObj.transform.SetParent(canvasObj.transform);
-                }
-
-                // Add TextMeshProUGUI component
-                textComponent = textObj.AddComponent<TextMeshProUGUI>();
-                textComponent.fontSize = 12;
-                textComponent.alignment = TextAlignmentOptions.Center;
-                textComponent.color = Color.white;
-
-                // Set rect transform
-                RectTransform textRect = textComponent.GetComponent<RectTransform>();
-                textRect.sizeDelta = new Vector2(150, 30);
-                textRect.anchoredPosition = new Vector2(0, 0);
-
-                // Add background
-                GameObject background = new GameObject("Background");
-                background.transform.SetParent(textObj.transform);
-                background.transform.SetAsFirstSibling(); // Put background behind text
-                background.SetActive(true); // Ensure background is active
-
-                RectTransform bgRect = background.AddComponent<RectTransform>();
-                bgRect.sizeDelta = new Vector2(180, 40);
-                bgRect.anchoredPosition = Vector2.zero;
-                Image bgImage = background.AddComponent<Image>();
-                bgImage.color = new Color(0, 0, 0, 0.5f);
-
-                if (verboseLogging) Debug.Log($"Created text component for {videoLink.name}");
-            }
-
-            // Set text
-            textComponent.text = video.Title;
-
-            // Link the text component to the video component
-            linkComponent.TMP_title = textComponent;
-            linkComponent.hasText = true;
-        }
-
-        // Find center of the zone for orientation
-        Vector3 zoneCenter = CalculateZoneCenter(zoneName);
-        if (zoneCenter != Vector3.zero)
-        {
-            // Make the object face toward the center of the zone
-            Vector3 lookDirection = new Vector3(zoneCenter.x, position.y, zoneCenter.z) - position;
-            if (lookDirection != Vector3.zero)
-            {
-                videoLink.transform.rotation = Quaternion.LookRotation(-lookDirection); // Look away from center
-            }
-        }
-
-        // Final check to ensure everything is active
-        if (!videoLink.activeSelf)
-        {
-            Debug.LogWarning($"Video link {videoLink.name} is still inactive after placement! Forcing activation.");
-            videoLink.SetActive(true);
-            ActivateAllChildren(videoLink.transform);
-        }
-
-        if (verboseLogging)
-        {
-            Debug.Log($"Successfully placed {video.Title} at {finalPosition}");
-            Debug.Log($"Final active state: {videoLink.activeSelf}");
-            Debug.Log($"===== PLACEMENT COMPLETE =====");
-        }
-    }
-
-    // Recursively activate all children
-    private void ActivateAllChildren(Transform parent)
-    {
-        foreach (Transform child in parent)
-        {
-            child.gameObject.SetActive(true);
-
-            // Recursively activate children of this child
-            if (child.childCount > 0)
-            {
-                ActivateAllChildren(child);
+                UpdatePrefabOrientation();
+                lastOrientationUpdateTime = Time.time;
             }
         }
     }
 
-    // Calculate the bounds of a prefab including all child renderers and colliders
-    private Bounds CalculatePrefabBounds(GameObject prefab)
+    // Update orientation of all prefabs to face the camera
+    private void UpdatePrefabOrientation()
     {
-        // Get all renderers and colliders in the prefab, including inactive ones
-        Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-        Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
+        Vector3 cameraPosition = mainCamera.transform.position;
 
-        if (verboseLogging)
+        foreach (GameObject prefab in activePrefabs)
         {
-            Debug.Log($"Calculating bounds for prefab: {prefab.name}");
-            Debug.Log($"Found {renderers.Length} renderers and {colliders.Length} colliders");
-        }
-
-        // Initialize bounds
-        Bounds bounds = new Bounds();
-        bool boundsInitialized = false;
-
-        // Include renderer bounds
-        foreach (Renderer renderer in renderers)
-        {
-            // Temporarily activate the renderer's GameObject if it's inactive
-            bool wasActive = renderer.gameObject.activeSelf;
-            if (!wasActive)
+            if (prefab != null)
             {
-                renderer.gameObject.SetActive(true);
-            }
+                // Calculate direction from prefab to camera (ignoring Y axis for a cleaner rotation)
+                Vector3 lookDirection = new Vector3(
+                    cameraPosition.x - prefab.transform.position.x,
+                    0, // Keep y axis constant
+                    cameraPosition.z - prefab.transform.position.z
+                );
 
-            if (!boundsInitialized)
-            {
-                bounds = renderer.bounds;
-                boundsInitialized = true;
-
-                if (verboseLogging)
+                if (lookDirection != Vector3.zero)
                 {
-                    Debug.Log($"Initial bounds from renderer {renderer.name}: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
+                    // Make the prefab face the camera
+                    prefab.transform.rotation = Quaternion.LookRotation(lookDirection);
                 }
             }
-            else
-            {
-                bounds.Encapsulate(renderer.bounds);
-            }
-
-            // Restore original state if we changed it
-            if (!wasActive)
-            {
-                renderer.gameObject.SetActive(wasActive);
-            }
         }
-
-        // Include collider bounds
-        foreach (Collider collider in colliders)
-        {
-            // Temporarily activate the collider's GameObject if it's inactive
-            bool wasActive = collider.gameObject.activeSelf;
-            if (!wasActive)
-            {
-                collider.gameObject.SetActive(true);
-            }
-
-            if (!boundsInitialized)
-            {
-                bounds = collider.bounds;
-                boundsInitialized = true;
-
-                if (verboseLogging)
-                {
-                    Debug.Log($"Initial bounds from collider {collider.name}: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
-                }
-            }
-            else
-            {
-                bounds.Encapsulate(collider.bounds);
-            }
-
-            // Restore original state if we changed it
-            if (!wasActive)
-            {
-                collider.gameObject.SetActive(wasActive);
-            }
-        }
-
-        // If no renderers or colliders found, use a default size
-        if (!boundsInitialized)
-        {
-            bounds.center = prefab.transform.position;
-            bounds.size = Vector3.one;
-            if (verboseLogging) Debug.LogWarning($"No renderers or colliders found on prefab. Using default bounds.");
-        }
-
-        if (verboseLogging)
-        {
-            Debug.Log($"Final calculated bounds: Center={bounds.center}, Size={bounds.size}, Min={bounds.min}, Max={bounds.max}");
-        }
-
-        return bounds;
     }
 
-    // Calculate center of a zone by name
-    private Vector3 CalculateZoneCenter(string zoneName)
+    private void OnDrawGizmosSelected()
     {
-        if (zoneManager == null)
-            return Vector3.zero;
-
-        // Find the zone with the matching name
-        PolygonZone zone = zoneManager.zones.FirstOrDefault(z => z.Name == zoneName);
-
-        if (zone == null || zone.Points.Count == 0)
-            return Vector3.zero;
-
-        // Calculate the center of all points
-        Vector3 center = Vector3.zero;
-        foreach (Vector3 point in zone.Points)
+        if (showReticleGizmo)
         {
-            center += point;
-        }
-        center /= zone.Points.Count;
+            // For simplicity, just show the reticle range at the camera position in editor
+            Vector3 center = Camera.main != null ? Camera.main.transform.position : transform.position;
 
-        return center;
+            // Draw circle at ground level
+            DrawCircleGizmo(center, reticleRange, reticleColor);
+        }
+    }
+
+    // Helper method to draw circle gizmos
+    private void DrawCircleGizmo(Vector3 center, float radius, Color color)
+    {
+        Gizmos.color = color;
+
+        const int segments = 32;
+        float angleStep = 360f / segments;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float angle1 = i * angleStep * Mathf.Deg2Rad;
+            float angle2 = (i + 1) * angleStep * Mathf.Deg2Rad;
+
+            Vector3 point1 = new Vector3(
+                center.x + Mathf.Cos(angle1) * radius,
+                center.y, // Keep at same height
+                center.z + Mathf.Sin(angle1) * radius
+            );
+
+            Vector3 point2 = new Vector3(
+                center.x + Mathf.Cos(angle2) * radius,
+                center.y, // Keep at same height
+                center.z + Mathf.Sin(angle2) * radius
+            );
+
+            Gizmos.DrawLine(point1, point2);
+        }
     }
 
     // Get the appropriate prefab for a video with the following priority:
     // 1. Video-specific prefab from the database
     // 2. Zone-specific default prefab
     // 3. Global default prefab
-    private GameObject GetPrefabForVideo(VideoEntry video, string zoneName)
+    public GameObject GetPrefabForVideo(VideoEntry video)
     {
-        // First check if the video specifies a prefab type in its data
+        if (video == null)
+        {
+            Debug.LogWarning("Null video passed to GetPrefabForVideo");
+            return defaultPrefab;
+        }
+
+        // First check if the video specifies a prefab type and we have that mapping
         if (!string.IsNullOrEmpty(video.Prefab) && prefabMap.ContainsKey(video.Prefab))
         {
-            if (verboseLogging) Debug.Log($"Using video-specific prefab type: {video.Prefab}");
+            if (verboseLogging) Debug.Log($"Using video-specific prefab type: {video.Prefab} for {video.Title}");
             return prefabMap[video.Prefab];
         }
 
-        // Next check if the zone has a default prefab assigned
-        if (!string.IsNullOrEmpty(zoneName) && zonePrefabMap.ContainsKey(zoneName))
+        // Check if the video is in a specific zone and we have a prefab for that zone
+        if (zoneManager != null && video.Zones.Count > 0)
         {
-            if (verboseLogging) Debug.Log($"Using zone-specific default prefab for zone: {zoneName}");
-            return zonePrefabMap[zoneName];
+            foreach (string zoneName in video.Zones)
+            {
+                if (zonePrefabMap.ContainsKey(zoneName))
+                {
+                    if (verboseLogging) Debug.Log($"Using zone-specific prefab for zone: {zoneName}, video: {video.Title}");
+                    return zonePrefabMap[zoneName];
+                }
+            }
         }
 
-        // Fallback to default prefab mapping
-        if (prefabMap.ContainsKey("Default"))
-        {
-            if (verboseLogging) Debug.Log($"Using global default prefab for {video.Title}");
-            return prefabMap["Default"];
-        }
-
-        // Last resort - use the default prefab from inspector
-        if (verboseLogging) Debug.Log($"Using default prefab from inspector for {video.Title}");
+        // Fall back to the global default prefab
+        if (verboseLogging) Debug.Log($"Using default prefab for video: {video.Title}");
         return defaultPrefab;
     }
-}
 
-// Helper class for scene management
-public static class SceneHelper
-{
-    public static string GetActiveSceneName()
+    // Main method to place all video links in the scene - make it public to be accessible via Invoke
+    public void PlaceAllVideoLinks()
     {
-        return UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-    }
-}
-
-// Editor extension for the VideoPlacementController
-#if UNITY_EDITOR
-[CustomEditor(typeof(VideoPlacementController))]
-public class VideoPlacementControllerEditor : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-
-        VideoPlacementController controller = (VideoPlacementController)target;
-
-        EditorGUILayout.Space();
-
-        if (GUILayout.Button("Place All Video Links"))
+        // Ensure we have a database manager
+        if (databaseManager == null)
         {
-            if (Application.isPlaying)
+            databaseManager = FindObjectOfType<VideoDatabaseManager>();
+            if (databaseManager == null)
             {
-                controller.PlaceAllVideoLinks();
+                Debug.LogError("Cannot place video links: database manager is null");
+                return;
+            }
+        }
+
+        if (verboseLogging) Debug.Log("Starting placement of all video links...");
+
+        // Clear any existing prefabs
+        ClearAllActivePrefabs();
+
+        // Ensure zone manager is available
+        if (zoneManager == null)
+        {
+            zoneManager = FindObjectOfType<PolygonZoneManager>();
+            if (zoneManager == null)
+            {
+                Debug.LogWarning("Zone manager not found. Some placement features may not work correctly.");
+            }
+        }
+
+        // Process each zone if zone manager exists
+        if (zoneManager != null && zoneManager.zones != null)
+        {
+            foreach (PolygonZone zone in zoneManager.zones)
+            {
+                if (zone != null && zone.Points.Count >= 3)
+                {
+                    PlaceVideosInZone(zone);
+                }
+            }
+        }
+        else
+        {
+            // Fallback to using the database directly
+            List<VideoEntry> allVideos = databaseManager.GetAllEntries();
+
+            if (allVideos != null && allVideos.Count > 0)
+            {
+                if (verboseLogging) Debug.Log($"Found {allVideos.Count} videos to place");
+
+                foreach (VideoEntry video in allVideos)
+                {
+                    PlaceVideoByDefault(video);
+                }
             }
             else
             {
-                EditorUtility.DisplayDialog("Runtime Only",
-                    "This operation can only be performed in Play mode.", "OK");
+                Debug.LogWarning("No videos found in database to place");
             }
         }
 
-        // Display help box with troubleshooting info
-        EditorGUILayout.Space();
-        EditorGUILayout.HelpBox(
-            "Troubleshooting:\n" +
-            "1. Make sure VideoDatabaseManager has loaded films\n" +
-            "2. Check that PolygonZoneManager has zones with valid points\n" +
-            "3. Verify prefab mappings match your database entries\n" +
-            "4. Enable verbose logging for detailed placement information",
-            MessageType.Info);
+        // Update orientation initially if not using dynamic updates
+        if (faceCamera && !dynamicFacing)
+        {
+            UpdatePrefabOrientation();
+        }
+
+        if (verboseLogging) Debug.Log($"Finished placing {activePrefabs.Count} video links");
+    }
+
+    // Helper method to place videos in a zone
+    private void PlaceVideosInZone(PolygonZone zone)
+    {
+        if (databaseManager == null || zone == null) return;
+
+        // Get videos for this zone
+        List<VideoEntry> zoneVideos = databaseManager.GetEntriesForZone(zone.Name);
+
+        if (zoneVideos == null || zoneVideos.Count == 0)
+        {
+            if (verboseLogging) Debug.Log($"No videos found for zone: {zone.Name}");
+            return;
+        }
+
+        int videoCount = Mathf.Min(zoneVideos.Count, zone.MaxVideos);
+        if (verboseLogging) Debug.Log($"Placing {videoCount} videos in zone: {zone.Name}");
+
+        // Track positions for spacing
+        List<Vector3> placedPositions = new List<Vector3>();
+
+        // Place each video
+        for (int i = 0; i < videoCount; i++)
+        {
+            VideoEntry video = zoneVideos[i];
+            Vector3 position = zoneManager.FindValidPositionInZone(zone, placedPositions, video);
+
+            if (position == Vector3.zero)
+            {
+                Debug.LogWarning($"Could not find valid position for video in zone: {zone.Name}");
+                continue;
+            }
+
+            PlaceVideoAtPosition(video, position);
+            placedPositions.Add(position);
+        }
+    }
+
+    // Place a video using default logic (when zone placement isn't available)
+    private void PlaceVideoByDefault(VideoEntry video)
+    {
+        if (video == null) return;
+
+        Vector3 position;
+
+        // Try to place at a random position
+        if (TryRandomPlacement(out position))
+        {
+            PlaceVideoAtPosition(video, position);
+        }
+        else
+        {
+            Debug.LogWarning($"Could not find valid position for video: {video.Title}");
+        }
+    }
+
+    // Helper method to place a video at a specific position
+    private void PlaceVideoAtPosition(VideoEntry video, Vector3 position)
+    {
+        GameObject prefab = GetPrefabForVideo(video);
+        if (prefab == null)
+        {
+            prefab = defaultPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError("No default prefab available for video placement");
+                return;
+            }
+        }
+
+        // Create the instance
+        GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+
+        // Find or add a video link component
+        VideoLinkComponent linkComponent = instance.GetComponent<VideoLinkComponent>();
+        if (linkComponent == null)
+        {
+            linkComponent = instance.AddComponent<VideoLinkComponent>();
+        }
+
+        // Set up the component with video data
+        if (linkComponent != null)
+        {
+            linkComponent.Initialize(video);
+        }
+
+        activePrefabs.Add(instance);
+    }
+
+    // Helper method to clear all active prefabs
+    private void ClearAllActivePrefabs()
+    {
+        foreach (GameObject prefab in activePrefabs)
+        {
+            if (prefab != null)
+            {
+                Destroy(prefab);
+            }
+        }
+
+        activePrefabs.Clear();
+        if (verboseLogging) Debug.Log("Cleared all active prefabs");
+    }
+
+    // Try to place a video at a random position within range
+    private bool TryRandomPlacement(out Vector3 position)
+    {
+        position = Vector3.zero;
+        Vector3 center = mainCamera != null ? mainCamera.transform.position : transform.position;
+
+        for (int i = 0; i < maxPlacementAttempts; i++)
+        {
+            // Get random position within reticle range
+            float angle = Random.Range(0f, 2f * Mathf.PI);
+            float distance = Random.Range(0f, reticleRange);
+
+            position = new Vector3(
+                center.x + Mathf.Cos(angle) * distance,
+                0,
+                center.z + Mathf.Sin(angle) * distance
+            );
+
+            if (IsPositionClear(position))
+            {
+                // Adjust height based on terrain
+                position.y = GetHeightAtPosition(position) + placementHeight;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Check if a position is clear of obstacles
+    private bool IsPositionClear(Vector3 position)
+    {
+        Collider[] colliders = Physics.OverlapSphere(position, avoidObstacleRadius, obstacleLayer);
+        return colliders.Length == 0;
+    }
+
+    // Get the terrain height at a specific position
+    private float GetHeightAtPosition(Vector3 position)
+    {
+        // If we have a terrain, use its height
+        if (terrain != null)
+        {
+            return terrain.SampleHeight(position);
+        }
+        // If we have a terrain collider, use raycast to find height
+        else if (terrainCollider != null)
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(position + Vector3.up * 100f, Vector3.down, out hit, 200f))
+            {
+                return hit.point.y;
+            }
+        }
+
+        // Default to zero if no terrain information available
+        return 0f;
     }
 }
-#endif
+
+// Simple video link component to avoid missing component errors
+public class VideoLinkComponent : MonoBehaviour
+{
+    public string VideoUrl { get; private set; }
+    public string Title { get; private set; }
+    public string Description { get; private set; }
+
+    public void Initialize(VideoEntry video)
+    {
+        if (video != null)
+        {
+            VideoUrl = video.PublicUrl;
+            Title = video.Title;
+            Description = video.Description;
+
+            // Set up any UI elements with the video data
+            SetupUI();
+        }
+    }
+
+    private void SetupUI()
+    {
+        // Find title text component if it exists
+        TextMeshProUGUI titleText = GetComponentInChildren<TextMeshProUGUI>();
+        if (titleText != null)
+        {
+            titleText.text = Title;
+        }
+    }
+}

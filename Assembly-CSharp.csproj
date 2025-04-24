@@ -149,6 +149,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\PrefabManager.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />

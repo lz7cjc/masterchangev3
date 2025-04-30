@@ -1,15 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using UnityEngine;
-using UnityEngine.Networking;
 using System.Collections;
-using TMPro;
+using System.Collections.Generic;
+using UnityEngine;
+using System.IO;
 using UnityEditor;
+using System;
+using System.Linq;
+using UnityEngine.Networking;
 
-// Data model for a video entry
+// Improved data model for a video entry - matches JSON structure
 [System.Serializable]
 public class VideoEntry
 {
@@ -19,8 +17,8 @@ public class VideoEntry
     public string Title;              // Display title
     public string Description;        // Description text
     public string Prefab;             // Which prefab to use for displaying
-    public string Zone;              // Direct zone assignment (string format)
-    public List<string> Zones = new List<string>();  // Parsed zones list for easier access
+    public string Zone;               // Legacy single zone field
+    public List<string> Zones = new List<string>();  // List of zones this video belongs to
 
     [NonSerialized]
     private string _category;
@@ -93,7 +91,7 @@ public class VideoEntry
     }
 }
 
-// Complete database collection
+// Complete database collection - modified to match JSON structure
 [System.Serializable]
 public class VideoDatabase
 {
@@ -132,29 +130,37 @@ public class VideoDatabase
         }
     }
 
-    // Helper method to build the zone lookup and parse zone strings
+    // Helper method to build the zone lookup and ensure Zones list is populated
     public void BuildZoneLookup()
     {
         ZoneToVideos.Clear();
 
         foreach (var entry in Entries)
         {
-            // If we have a Zone string but the Zones list is empty, parse it
-            if (!string.IsNullOrEmpty(entry.Zone) && entry.Zones.Count == 0)
+            // If Zones list is empty but Zone string is set, move data from Zone to Zones
+            if (entry.Zones.Count == 0 && !string.IsNullOrEmpty(entry.Zone))
             {
-                // Parse comma-separated zones and add to the list
+                // Parse comma-separated zones if present
                 string[] zoneArray = entry.Zone.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string zone in zoneArray)
+                if (zoneArray.Length > 0)
                 {
-                    string trimmedZone = zone.Trim();
-                    if (!string.IsNullOrEmpty(trimmedZone) && !entry.Zones.Contains(trimmedZone))
+                    foreach (string zone in zoneArray)
                     {
-                        entry.Zones.Add(trimmedZone);
+                        string trimmedZone = zone.Trim();
+                        if (!string.IsNullOrEmpty(trimmedZone) && !entry.Zones.Contains(trimmedZone))
+                        {
+                            entry.Zones.Add(trimmedZone);
+                        }
                     }
+                }
+                else
+                {
+                    // Just add the single zone
+                    entry.Zones.Add(entry.Zone.Trim());
                 }
             }
 
-            // Build the lookup dictionary
+            // Now build the lookup dictionary
             foreach (string zoneName in entry.Zones)
             {
                 if (!ZoneToVideos.ContainsKey(zoneName))
@@ -198,7 +204,7 @@ public class VideoDatabaseManager : MonoBehaviour
 {
     [Header("Configuration")]
     [SerializeField] private string databaseFilePath = "Assets/Resources/film_data.json";
-    [SerializeField] public TextAsset cloudDatabaseFile; // Changed to public
+    [SerializeField] public TextAsset cloudDatabaseFile;
     [SerializeField] private bool parseOnAwake = true;
 
     [Header("Database Options")]
@@ -293,57 +299,107 @@ public class VideoDatabaseManager : MonoBehaviour
             return;
         }
 
-        database.Entries.Clear();
+        try
+        {
+            // Try parsing as raw JSON first - our preferred format with full structure
+            database = JsonUtility.FromJson<VideoDatabase>(content);
 
+            // If we get a valid database but no entries, try a different approach
+            if (database == null || database.Entries == null || database.Entries.Count == 0)
+            {
+                // Check if it's the raw format where Entries is the root
+                if (content.Contains("\"Entries\":"))
+                {
+                    // Add wrapper to make it a valid VideoDatabase object
+                    content = "{ \"Entries\": " + content.Substring(content.IndexOf("[")) + " }";
+                    database = JsonUtility.FromJson<VideoDatabase>(content);
+                }
+            }
+
+            // If still empty, try parsing legacy format
+            if (database == null || database.Entries == null || database.Entries.Count == 0)
+            {
+                ParseLegacyFormat(content);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error parsing database JSON: {ex.Message}");
+
+            // Fallback to legacy parsing as last resort
+            ParseLegacyFormat(content);
+        }
+
+        // Build lookups
+        if (database != null && database.Entries != null && database.Entries.Count > 0)
+        {
+            database.BuildCategoryLookup();
+            database.BuildZoneLookup();
+
+            if (logDatabaseInfo)
+            {
+                Debug.Log($"Parsed {database.Entries.Count} video entries");
+                Debug.Log($"Found {database.CategoryToSubCategories.Count} categories");
+                Debug.Log($"Found {database.ZoneToVideos.Count} zones");
+            }
+
+            databaseInitialized = true;
+
+            // Auto save if enabled
+            if (autoSaveJson)
+            {
+                SaveDatabaseToJson();
+            }
+        }
+        else
+        {
+            Debug.LogError("Failed to parse database entries");
+        }
+    }
+
+    // Parse legacy tab-delimited or line-by-line formats
+    private void ParseLegacyFormat(string content)
+    {
+        Debug.Log("Attempting to parse legacy format...");
+
+        database = new VideoDatabase();
+        database.Entries = new List<VideoEntry>();
+
+        // Try parsing as tab-delimited or line-by-line
         string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-        // Skip the header line
-        for (int i = 1; i < lines.Length; i++)
+        // Skip the header line if it exists
+        int startLine = (lines.Length > 0 && lines[0].Contains("FileName") || lines[0].Contains("filmname")) ? 1 : 0;
+
+        for (int i = startLine; i < lines.Length; i++)
         {
-            ProcessDatabaseLine(lines[i]);
-        }
+            string line = lines[i].Trim();
+            if (string.IsNullOrEmpty(line)) continue;
 
-        // Build category and zone lookups
-        database.BuildCategoryLookup();
-        database.BuildZoneLookup();
-
-        if (logDatabaseInfo)
-        {
-            Debug.Log($"Parsed {database.Entries.Count} video entries from text content");
-            Debug.Log($"Found {database.CategoryToSubCategories.Count} categories");
-            Debug.Log($"Found {database.ZoneToVideos.Count} zones");
-        }
-
-        databaseInitialized = true;
-
-        // Auto save if enabled
-        if (autoSaveJson)
-        {
-            SaveDatabaseToJson();
+            try
+            {
+                // Check if it's tab-delimited
+                string[] columns = line.Split('\t');
+                if (columns.Length >= 3)
+                {
+                    ProcessTabDelimitedLine(columns);
+                }
+                else
+                {
+                    // Last resort: try to parse as a simplified format with specific markers
+                    TryParseSimplifiedLine(line);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error parsing line {i}: {ex.Message}");
+            }
         }
     }
 
-    // Parse the tab-delimited cloud storage database
-    public void ParseCloudDatabase()
+    // Process a tab-delimited line
+    private void ProcessTabDelimitedLine(string[] columns)
     {
-        if (cloudDatabaseFile == null)
-        {
-            Debug.LogError("No cloud database file assigned!");
-            return;
-        }
-
-        ParseDatabaseText(cloudDatabaseFile.text);
-    }
-
-    // Process a single line from the database
-    private void ProcessDatabaseLine(string line)
-    {
-        line = line.Trim();
-        if (string.IsNullOrEmpty(line)) return;
-
-        string[] columns = line.Split('\t');
-        if (columns.Length < 3) return;
-
         // Skip directory entries or empty URLs
         if (string.IsNullOrEmpty(columns[1]) || columns[1].EndsWith("/") || columns[1].EndsWith(":"))
             return;
@@ -388,6 +444,63 @@ public class VideoDatabaseManager : MonoBehaviour
         database.Entries.Add(entry);
     }
 
+    // Last resort parser for simplified formats
+    private void TryParseSimplifiedLine(string line)
+    {
+        // Try to extract URL, it's the most important part
+        int urlStart = line.IndexOf("http");
+        if (urlStart < 0) return;
+
+        int urlEnd = line.IndexOf("\"", urlStart);
+        if (urlEnd < 0) urlEnd = line.IndexOf(" ", urlStart);
+        if (urlEnd < 0) urlEnd = line.Length;
+
+        string url = line.Substring(urlStart, urlEnd - urlStart);
+
+        // Create a basic entry
+        VideoEntry entry = new VideoEntry
+        {
+            FileName = Path.GetFileName(url),
+            PublicUrl = url,
+            Title = Path.GetFileNameWithoutExtension(url),
+            Prefab = "Default"
+        };
+
+        // Try to extract zones if present
+        int zonesStart = line.IndexOf("zone");
+        if (zonesStart >= 0)
+        {
+            int valStart = line.IndexOf(":", zonesStart) + 1;
+            int valEnd = line.IndexOf(",", valStart);
+            if (valEnd < 0) valEnd = line.IndexOf("}", valStart);
+            if (valEnd < 0) valEnd = line.Length;
+
+            if (valStart > 0 && valStart < line.Length)
+            {
+                string zoneVal = line.Substring(valStart, valEnd - valStart).Trim().Trim('"', '\'', ' ');
+                if (!string.IsNullOrEmpty(zoneVal))
+                {
+                    entry.Zone = zoneVal;
+                    entry.Zones.Add(zoneVal);
+                }
+            }
+        }
+
+        database.Entries.Add(entry);
+    }
+
+    // Parse the cloud database file
+    public void ParseCloudDatabase()
+    {
+        if (cloudDatabaseFile == null)
+        {
+            Debug.LogError("No cloud database file assigned!");
+            return;
+        }
+
+        ParseDatabaseText(cloudDatabaseFile.text);
+    }
+
     // Save the database to JSON
     public void SaveDatabaseToJson()
     {
@@ -419,33 +532,16 @@ public class VideoDatabaseManager : MonoBehaviour
             }
 
             string json = File.ReadAllText(databaseFilePath);
+            ParseDatabaseText(json);
 
-            try
+            if (logDatabaseInfo && databaseInitialized)
             {
-                database = JsonUtility.FromJson<VideoDatabase>(json);
-
-                // Rebuild dictionaries (since they're not serialized)
-                database.BuildCategoryLookup();
-                database.BuildZoneLookup();
-
-                databaseInitialized = true;
-
-                if (logDatabaseInfo)
+                Debug.Log($"Loaded database with {database.Entries.Count} entries from {databaseFilePath}");
+                // Log zones info
+                foreach (var zonePair in database.ZoneToVideos)
                 {
-                    Debug.Log($"Loaded database with {database.Entries.Count} entries from {databaseFilePath}");
-                    Debug.Log($"Found {database.CategoryToSubCategories.Count} categories");
-                    Debug.Log($"Found {database.ZoneToVideos.Count} zones");
-
-                    // Log zones info
-                    foreach (var zonePair in database.ZoneToVideos)
-                    {
-                        Debug.Log($"Zone '{zonePair.Key}' has {zonePair.Value.Count} videos");
-                    }
+                    Debug.Log($"Zone '{zonePair.Key}' has {zonePair.Value.Count} videos");
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error loading database: JSON must represent an object type. {ex.Message}");
             }
         }
         catch (System.Exception ex)
@@ -638,7 +734,6 @@ public class VideoDatabaseManager : MonoBehaviour
     }
 }
 
-// Editor utility for the database manager
 #if UNITY_EDITOR
 [CustomEditor(typeof(VideoDatabaseManager))]
 public class VideoDatabaseManagerEditor : Editor

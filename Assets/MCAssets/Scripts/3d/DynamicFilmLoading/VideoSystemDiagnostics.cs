@@ -25,7 +25,7 @@ public class VideoSystemDiagnostics : MonoBehaviour
     [Header("Manager References")]
     [SerializeField] private VideoDatabaseManager databaseManager;
     [SerializeField] private PolygonZoneManager zoneManager;
-    [SerializeField] private VideoPlacementController placementController;
+    [SerializeField] private AdvancedVideoPlacementManager placementManager;
 
     [Header("Manual Test")]
     [SerializeField] private string testZoneName = "Travel";
@@ -88,7 +88,7 @@ public class VideoSystemDiagnostics : MonoBehaviour
         }
 
         // Try to force placement if auto-fix is enabled
-        if (attemptAutoFix && placementController != null)
+        if (attemptAutoFix && placementManager != null)
         {
             Log("Attempting to fix issues and place videos...");
 
@@ -128,10 +128,10 @@ public class VideoSystemDiagnostics : MonoBehaviour
             }
         }
 
-        if (placementController == null)
+        if (placementManager == null)
         {
-            placementController = FindObjectOfType<VideoPlacementController>();
-            if (placementController == null)
+            placementManager = FindObjectOfType<AdvancedVideoPlacementManager>();
+            if (placementManager == null)
             {
                 AddIssue("VideoPlacementController not found in scene");
             }
@@ -297,21 +297,21 @@ public class VideoSystemDiagnostics : MonoBehaviour
     /// </summary>
     private void CheckPrefabs()
     {
-        if (placementController == null) return;
+        if (placementManager == null) return;
 
         Log("Checking prefabs...");
 
         // Find prefab fields through reflection
-        var defaultPrefabField = placementController.GetType().GetField("defaultPrefab",
+        var defaultPrefabField = placementManager.GetType().GetField("defaultPrefab",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
-        var prefabMappingsField = placementController.GetType().GetField("prefabMappings",
+        var prefabMappingsField = placementManager.GetType().GetField("prefabMappings",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
         if (defaultPrefabField != null && prefabMappingsField != null)
         {
-            GameObject defaultPrefab = defaultPrefabField.GetValue(placementController) as GameObject;
-            var prefabMappings = prefabMappingsField.GetValue(placementController) as IList;
+            GameObject defaultPrefab = defaultPrefabField.GetValue(placementManager) as GameObject;
+            var prefabMappings = prefabMappingsField.GetValue(placementManager) as IList;
 
             // Check default prefab
             if (defaultPrefab == null)
@@ -434,14 +434,18 @@ public class VideoSystemDiagnostics : MonoBehaviour
     /// <summary>
     /// Force placement of videos
     /// </summary>
+    /// <summary>
+    /// Force placement of videos
+    /// </summary>
     private void ForcePlacement()
     {
-        if (placementController != null)
+        if (placementManager != null)
         {
             Log("Forcing video placement...");
-            placementController.PlaceAllVideoLinks();
+            placementManager.PlaceAllVideos(); // Corrected method name
         }
     }
+
 
     /// <summary>
     /// Place a test video prefab in the scene

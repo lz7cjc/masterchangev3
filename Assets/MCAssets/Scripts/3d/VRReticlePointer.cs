@@ -46,6 +46,13 @@ public class VRReticlePointer : MonoBehaviour
         mainCamera = GetComponentInChildren<Camera>();
         focusIndicator = GetComponent<WorldSpaceFocusIndicator>();
 
+        if (focusIndicator == null)
+        {
+            // Try adding the component if it doesn't exist
+            focusIndicator = gameObject.AddComponent<WorldSpaceFocusIndicator>();
+            Debug.Log("Added WorldSpaceFocusIndicator component");
+        }
+
         if (playerInput == null)
         {
             Debug.LogError("PlayerInput component not found!");
@@ -176,8 +183,19 @@ public class VRReticlePointer : MonoBehaviour
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
         RaycastHit hitInfo;
 
+        // Draw debug ray
+        if (showDebugRay)
+        {
+            Debug.DrawRay(ray.origin, ray.direction * maxInteractionDistance, Color.yellow);
+        }
+
         if (Physics.Raycast(ray, out hitInfo, maxInteractionDistance, interactableLayers))
         {
+            if (showDebugRay)
+            {
+                // Draw a hit point marker
+                Debug.DrawLine(ray.origin, hitInfo.point, Color.green);
+            }
             HandleTargetInteraction(hitInfo.collider.gameObject);
         }
         else
@@ -188,7 +206,25 @@ public class VRReticlePointer : MonoBehaviour
 
     private void HandleTargetInteraction(GameObject hitObject)
     {
-        if (hitObject.GetComponent<BoxCollider>() != null && ((1 << hitObject.layer) & interactableLayers) != 0)
+        // Check if this is an interactable object
+        bool isInteractable = false;
+
+        // Consider object interactable if it has a BoxCollider on the correct layer
+        BoxCollider boxCollider = hitObject.GetComponent<BoxCollider>();
+        if (boxCollider != null && ((1 << hitObject.layer) & interactableLayers) != 0)
+        {
+            isInteractable = true;
+        }
+
+        // Also consider objects with EventTrigger components as interactable
+        EventTrigger eventTrigger = hitObject.GetComponent<EventTrigger>();
+        if (eventTrigger != null)
+        {
+            isInteractable = true;
+        }
+
+        // Handle the target interaction based on interactability
+        if (isInteractable)
         {
             if (currentTarget != hitObject)
             {
@@ -197,7 +233,10 @@ public class VRReticlePointer : MonoBehaviour
                 TriggerPointerEnter(hitObject);
 
                 // Update focus indicator state
-                focusIndicator?.SetInteractiveState(true);
+                if (focusIndicator != null)
+                {
+                    focusIndicator.SetInteractiveState(true);
+                }
             }
         }
         else if (currentTarget != null)
@@ -232,7 +271,10 @@ public class VRReticlePointer : MonoBehaviour
             currentTarget = null;
 
             // Reset focus indicator state
-            focusIndicator?.SetInteractiveState(false);
+            if (focusIndicator != null)
+            {
+                focusIndicator.SetInteractiveState(false);
+            }
         }
     }
 

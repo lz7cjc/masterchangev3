@@ -150,7 +150,7 @@ public class PolygonZoneManager : MonoBehaviour
     private float minObstacleSpacing = 1.5f;
 
     private VideoDatabaseManager databaseManager;
-    private VideoPlacementController placementController;
+    private AdvancedVideoPlacementManager placementManager;
     private Terrain terrain;
     private TerrainCollider terrainCollider;
 
@@ -196,9 +196,9 @@ public class PolygonZoneManager : MonoBehaviour
         }
 
         // Find the placement controller
-        if (placementController == null)
+        if (placementManager == null)
         {
-            placementController = FindObjectOfType<VideoPlacementController>();
+            placementManager = FindObjectOfType<AdvancedVideoPlacementManager>();
         }
     }
 
@@ -218,14 +218,14 @@ public class PolygonZoneManager : MonoBehaviour
             return;
         }
 
-        if (placementController == null)
+        if (placementManager == null)
         {
             Debug.LogError("Cannot generate video links: No placement controller available");
             return;
         }
 
         // Let the placement controller handle the actual placement
-        placementController.PlaceAllVideoLinks();
+        placementManager.PlaceAllVideos();
     }
 
     // Helper method for VideoPlacementController to get zone name by ID

@@ -76,6 +76,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
     <Compile Include="Assets\MCAssets\InputManager\InteractiveObject.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
+    <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\justGetRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\SetSkipVRSwitchScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Results.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TogglePlayPauseIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInstantiator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\syncfromdb.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\ZoneAssignmentEditor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
@@ -95,6 +97,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCameraNoToggleIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\tutorialPages.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideLocations.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\ReticlePointerSynchronizer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsert.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
@@ -107,6 +110,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoAdjustmentHandler.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\AddressablePositioner.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
@@ -130,6 +134,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\PolygonZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstVisitRiros.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\PolygonZone.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoSystemDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
@@ -148,6 +153,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoPlacementCache.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
@@ -162,6 +168,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\smokinghabitsdone.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\KeepHudInFront.cs" />
+    <Compile Include="Assets\Island\Scripts\MouseLook.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\rotateCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\switchformatreload.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toMasterChange.cs" />
@@ -184,13 +191,14 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\setRegRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\fuckapple.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHudsold4huds.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\AdvancedVideoPlacementManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LaunchVideo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\setCTdate.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoPlacementController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITipsManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Selectionmanager_s.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
+    <Compile Include="Assets\Island\Scripts\FixedTiling.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\getfav.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GazeMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
@@ -231,6 +239,7 @@
     <Compile Include="Assets\MCAssets\Scripts\addressables\BackgroundPreloader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
+    <Compile Include="Assets\Default Example URP Assets\Scripts\SimpleCameraController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\feedback.cs" />
@@ -264,9 +273,12 @@
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\MenuManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\deleteUserId.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmJsonImporter.cs" />
+    <Compile Include="Assets\Default Example URP Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHuds.cs" />
+    <Compile Include="Assets\Island\Scripts\CharacterMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoPlacementWorkflow.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\3rdPartyAssets\TerrainSampleAssets\ThirdPartyNotices.txt" />

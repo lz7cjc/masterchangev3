@@ -167,8 +167,8 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\BCTUserJourneyLaunch.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\smokinghabitsdone.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\KeepHudInFront.cs" />
     <Compile Include="Assets\Island\Scripts\MouseLook.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\KeepHudInFront.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\rotateCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\switchformatreload.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toMasterChange.cs" />
@@ -178,6 +178,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\userBehaviours.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\SpriteBasedFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoDatabaseManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\matchfav.cs" />
@@ -275,8 +276,8 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmJsonImporter.cs" />
     <Compile Include="Assets\Default Example URP Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHuds.cs" />
     <Compile Include="Assets\Island\Scripts\CharacterMovement.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHuds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoPlacementWorkflow.cs" />
   </ItemGroup>

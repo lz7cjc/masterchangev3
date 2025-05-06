@@ -4,14 +4,23 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
 {
     public enum FocusIndicatorShape { Square, Circle }
 
+    // Scale factor to convert from user-friendly units to world units
+    // 100 means 1 user unit = 0.01 world units
+    [Header("Scale Settings")]
+    [SerializeField] private float scaleFactor = 100f;
+
     [Header("Focus Indicator Settings")]
-    [SerializeField] private float indicatorDistance = 0.4f;
+    [SerializeField] private float indicatorDistance = 40f; // Was 0.4
     [SerializeField] private FocusIndicatorShape defaultShape = FocusIndicatorShape.Square;
-    [SerializeField] private float dotSize = 0.04f;
-    [SerializeField] private float circleSize = 0.04f;
-    [SerializeField] private float circleThickness = 0.01f;
+    [SerializeField] private float dotSize = 4f;           // Was 0.04
+    [SerializeField] private float circleSize = 4f;        // Was 0.04
+    [SerializeField] private float circleThickness = 1f;   // Was 0.01
     [SerializeField] private Color defaultColor = Color.yellow;
     [SerializeField] private Color interactiveColor = Color.green;
+
+    // Added settings for enhanced rendering
+    [SerializeField] private float minVisibleCircleSize = 0.5f;  // Was 0.005
+    [SerializeField] private float thicknessScaleFactor = 0.25f;   // Controls how thickness scales with size
 
     [Header("Debug Options")]
     [SerializeField] private bool debugMode = false;
@@ -21,6 +30,7 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
     private GameObject ringIndicator;
     private Camera mainCamera;
     private bool isOverInteractive = false;
+    private LineRenderer lineRenderer;  // Keep reference to update thickness
 
     void Start()
     {
@@ -54,7 +64,10 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         squareIndicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
         squareIndicator.name = "SquareIndicator";
         squareIndicator.transform.parent = transform;
-        squareIndicator.transform.localScale = new Vector3(dotSize, dotSize, dotSize);
+
+        // Convert from user-friendly units to world units
+        float worldDotSize = dotSize / scaleFactor;
+        squareIndicator.transform.localScale = new Vector3(worldDotSize, worldDotSize, worldDotSize);
 
         // Configure renderer
         Renderer renderer = squareIndicator.GetComponent<Renderer>();
@@ -84,8 +97,11 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         disc.name = "SolidCircle";
         disc.transform.parent = circleIndicator.transform;
 
+        // Convert from user-friendly units to world units
+        float worldCircleSize = circleSize / scaleFactor;
+
         // Scale to make it a flat disc and the right size
-        disc.transform.localScale = new Vector3(circleSize, 0.001f, circleSize);
+        disc.transform.localScale = new Vector3(worldCircleSize, 0.001f, worldCircleSize);
 
         // Rotate to face forward (cylinder's circular face is up/down by default)
         disc.transform.localRotation = Quaternion.Euler(90, 0, 0);
@@ -114,12 +130,16 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         ringIndicator.transform.parent = transform;
 
         // We'll create a ring using a LineRenderer
-        LineRenderer lineRenderer = ringIndicator.AddComponent<LineRenderer>();
+        lineRenderer = ringIndicator.AddComponent<LineRenderer>();
 
         // Set up the line renderer for a ring
         lineRenderer.useWorldSpace = false;
         lineRenderer.loop = true;
-        lineRenderer.widthMultiplier = circleThickness;
+
+        // Calculate proper thickness for current size
+        float calculatedThickness = GetScaledThickness(circleSize);
+        lineRenderer.widthMultiplier = calculatedThickness;
+
         lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         lineRenderer.receiveShadows = false;
 
@@ -133,15 +153,30 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         mat.color = interactiveColor;
         lineRenderer.material = mat;
 
-        // Create the circular points for the ring
-        int segments = 32;
+        // Create the points for the ring
+        // Convert user units to world units
+        float worldCircleSize = circleSize / scaleFactor;
+        UpdateRingGeometry(worldCircleSize);
+    }
+
+    // New method to update ring geometry based on size
+    private void UpdateRingGeometry(float worldSize)
+    {
+        if (lineRenderer == null) return;
+
+        float worldMinSize = minVisibleCircleSize / scaleFactor;
+
+        // For smaller circles, use more segments to maintain smoothness
+        int segments = worldSize < worldMinSize * 3 ? 64 :
+                      worldSize < worldMinSize * 5 ? 48 : 32;
+
         Vector3[] positions = new Vector3[segments];
 
         for (int i = 0; i < segments; i++)
         {
             float angle = i * (360f / segments) * Mathf.Deg2Rad;
-            float x = Mathf.Sin(angle) * circleSize;
-            float y = Mathf.Cos(angle) * circleSize;
+            float x = Mathf.Sin(angle) * worldSize;
+            float y = Mathf.Cos(angle) * worldSize;
             positions[i] = new Vector3(x, y, 0);
         }
 
@@ -149,13 +184,44 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         lineRenderer.SetPositions(positions);
     }
 
+    // Helper method to calculate proper thickness for a given size
+    private float GetScaledThickness(float size)
+    {
+        // Convert from user units to world units
+        float worldSize = size / scaleFactor;
+        float worldThickness = circleThickness / scaleFactor;
+        float worldMinVisibleSize = minVisibleCircleSize / scaleFactor;
+
+        // Improved thickness scaling for better visibility at small sizes
+        // Base thickness is proportional to circle size with a minimum threshold
+        float baseThicknessRatio = 0.1f; // 10% of circle size as base ratio
+        float minThicknessRatio = 0.15f; // Minimum thickness as percentage of circle size
+
+        // For very small circles, increase the proportion to maintain visibility
+        if (size < 2.0f)
+        {
+            // Gradually increase thickness ratio for smaller circles
+            float ratio = Mathf.Lerp(0.25f, minThicknessRatio, size / 2.0f);
+            baseThicknessRatio = Mathf.Max(baseThicknessRatio, ratio);
+        }
+
+        // Calculate final thickness in world units
+        float scaledThickness = worldSize * baseThicknessRatio;
+
+        // Ensure minimum absolute thickness to prevent disappearing lines
+        float minAbsoluteThickness = 0.2f / scaleFactor;
+        return Mathf.Max(scaledThickness, minAbsoluteThickness);
+    }
+
     void Update()
     {
         if (mainCamera == null || squareIndicator == null || circleIndicator == null || ringIndicator == null) return;
 
         // Calculate position in front of camera
+        // Convert user-friendly distance to world units
+        float worldDistance = indicatorDistance / scaleFactor;
         Vector3 position = mainCamera.transform.position +
-                          mainCamera.transform.forward * indicatorDistance;
+                          mainCamera.transform.forward * worldDistance;
 
         // Only update the indicators, not the parent transform
         squareIndicator.transform.position = position;
@@ -243,6 +309,30 @@ public class WorldSpaceFocusIndicator : MonoBehaviour
         if (debugMode)
         {
             Debug.Log("Default shape changed to: " + shape);
+        }
+    }
+
+    // Method to update circle size at runtime
+    public void SetCircleSize(float newSize)
+    {
+        if (newSize <= 0) return;
+
+        circleSize = newSize;
+        float worldSize = newSize / scaleFactor;
+
+        // Update the solid circle scale
+        if (circleIndicator != null && circleIndicator.transform.childCount > 0)
+        {
+            GameObject disc = circleIndicator.transform.GetChild(0).gameObject;
+            disc.transform.localScale = new Vector3(worldSize, 0.001f, worldSize);
+        }
+
+        // Update the ring
+        if (lineRenderer != null)
+        {
+            // Update geometry and thickness
+            UpdateRingGeometry(worldSize);
+            lineRenderer.widthMultiplier = GetScaledThickness(newSize);
         }
     }
 }

@@ -1,0 +1,596 @@
+{
+    "placements": [
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/CCgoingup_3.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 26.3680362701416,
+                "y": -1.084259033203125,
+                "z": 105.62676239013672
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.48326942324638369,
+                "z": 0.0,
+                "w": 0.8754716515541077
+            },
+            "prefabType": "Carnival"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/beachhide.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 24.485492706298829,
+                "y": -0.7923870086669922,
+                "z": 109.53591918945313
+            },
+            "rotation": {
+                "x": -1.8318679906315084e-15,
+                "y": 0.8080291748046875,
+                "z": -8.881784197001253e-16,
+                "w": -0.5891425013542175
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/heightsonaquaduct.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 20.25543212890625,
+                "y": -0.5613155364990234,
+                "z": 110.50140380859375
+            },
+            "rotation": {
+                "x": -2.220446049250313e-16,
+                "y": 0.41749802231788638,
+                "z": -8.881784197001253e-16,
+                "w": -0.9086778163909912
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/longwaiwaipoolhelmet.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 16.863195419311525,
+                "y": -0.9238853454589844,
+                "z": 107.79618072509766
+            },
+            "rotation": {
+                "x": 1.1102230246251566e-16,
+                "y": 0.9321449398994446,
+                "z": -2.220446049250313e-15,
+                "w": -0.36208540201187136
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit_injected.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 16.863191604614259,
+                "y": -0.8080291748046875,
+                "z": 103.45734405517578
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.4819198548793793,
+                "z": 0.0,
+                "w": -0.8762152791023254
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/mfnhead_injected.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 20.25543212890625,
+                "y": -0.9449729919433594,
+                "z": 100.75212097167969
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.6543421149253845,
+                "z": 0.0,
+                "w": -0.7561986446380615
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/shorterpoolmfn.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 24.485492706298829,
+                "y": -1.2586860656738282,
+                "z": 101.71760559082031
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.04749736189842224,
+                "z": 0.0,
+                "w": -0.9988713264465332
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/shortwaiwaipoolhelmet.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 23.85285186767578,
+                "y": -1.1212730407714844,
+                "z": 98.08885192871094
+            },
+            "rotation": {
+                "x": -6.661338147750939e-16,
+                "y": 0.6429457664489746,
+                "z": -4.440892098500626e-16,
+                "w": -0.7659116983413696
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Isle of Wight/bembridgemfn.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 16.846298217773439,
+                "y": -0.5691127777099609,
+                "z": 99.9200439453125
+            },
+            "rotation": {
+                "x": 8.881784197001253e-16,
+                "y": 0.7576023936271668,
+                "z": 3.3306690738754698e-16,
+                "w": 0.652716338634491
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Oman/baymiddlemfn.mp4",
+            "zoneName": "Mindfulness",
+            "position": {
+                "x": 28.170637130737306,
+                "y": -1.038198471069336,
+                "z": 108.9688491821289
+            },
+            "rotation": {
+                "x": 4.440892098500626e-16,
+                "y": 0.03250640630722046,
+                "z": -4.440892098500626e-16,
+                "w": -0.9994714856147766
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/CCgoingup_3.mp4",
+            "zoneName": "Smoking",
+            "position": {
+                "x": -2.1423492431640627,
+                "y": 1.0,
+                "z": 8.499366760253907
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.948106586933136,
+                "z": 0.0,
+                "w": -0.3179526925086975
+            },
+            "prefabType": "Carnival"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/aquaductwalk.mp4",
+            "zoneName": "Travel",
+            "position": {
+                "x": -46.20316696166992,
+                "y": 24.85187530517578,
+                "z": 7.300745010375977
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.9734240770339966,
+                "z": 0.0,
+                "w": 0.22901004552841187
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/heightsonaquaduct.mp4",
+            "zoneName": "Travel",
+            "position": {
+                "x": -48.085716247558597,
+                "y": 24.01753807067871,
+                "z": 11.2099027633667
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.026502041146159173,
+                "z": 0.0,
+                "w": -0.9996487498283386
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/longwaiwaipoolhelmet.mp4",
+            "zoneName": "Travel",
+            "position": {
+                "x": 2.6425743103027345,
+                "y": -59.03847885131836,
+                "z": 35.84748840332031
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.5497308373451233,
+                "z": 0.0,
+                "w": 0.8353418707847595
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/aquaductwalk.mp4",
+            "zoneName": "Heights",
+            "position": {
+                "x": -8.896930694580079,
+                "y": -5.31389045715332,
+                "z": -10.991874694824219
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.9929635524749756,
+                "z": -8.881784197001253e-16,
+                "w": 0.11842092871665955
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/beachhide.mp4",
+            "zoneName": "Heights",
+            "position": {
+                "x": -8.913442611694336,
+                "y": -5.396209716796875,
+                "z": -6.860610008239746
+            },
+            "rotation": {
+                "x": 2.220446049250313e-16,
+                "y": 0.028972238302230836,
+                "z": -4.440892098500626e-16,
+                "w": 0.9995802640914917
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/heightsonaquaduct.mp4",
+            "zoneName": "Heights",
+            "position": {
+                "x": -8.88759994506836,
+                "y": -6.209835052490234,
+                "z": -16.015087127685548
+            },
+            "rotation": {
+                "x": 8.881784197001253e-16,
+                "y": 0.9998167753219605,
+                "z": 0.0,
+                "w": -0.019143521785736085
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/beachhide.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -183.5570831298828,
+                "y": -259.6671447753906,
+                "z": -144.35931396484376
+            },
+            "rotation": {
+                "x": 4.440892098500626e-16,
+                "y": 0.9975888133049011,
+                "z": -4.440892098500626e-16,
+                "w": -0.06940186023712158
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/dependent solution_injected.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": 43.567440032958987,
+                "y": -11.091777801513672,
+                "z": -202.43624877929688
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.999708890914917,
+                "z": 0.0,
+                "w": -0.024128403514623643
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/longwaiwaipoolhelmet.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -189.6696319580078,
+                "y": -260.60638427734377,
+                "z": -139.4846649169922
+            },
+            "rotation": {
+                "x": 4.440892098500626e-16,
+                "y": 0.9803488254547119,
+                "z": 2.220446049250313e-16,
+                "w": -0.19727197289466859
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit_injected.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": 35.94514465332031,
+                "y": -11.885770797729493,
+                "z": -204.17599487304688
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.7304467558860779,
+                "z": 0.0,
+                "w": 0.6829696297645569
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/mfnhead_injected.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": 35.94514465332031,
+                "y": -10.621856689453125,
+                "z": -208.51483154296876
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0539286769926548,
+                "z": 0.0,
+                "w": 0.9985448122024536
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/shorterpoolmfn.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -189.66966247558595,
+                "y": -258.69110107421877,
+                "z": -149.23394775390626
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.36295655369758608,
+                "z": 1.1102230246251566e-15,
+                "w": -0.9318060874938965
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/shortwaiwaipoolhelmet.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -185.43959045410157,
+                "y": -260.1850280761719,
+                "z": -148.2684783935547
+            },
+            "rotation": {
+                "x": -1.3322676295501879e-15,
+                "y": 0.8162864446640015,
+                "z": -1.6653345369377349e-16,
+                "w": -0.5776472687721252
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Isle of Wight/bembridgemfn.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -187.05014038085938,
+                "y": -259.7589416503906,
+                "z": -136.83424377441407
+            },
+            "rotation": {
+                "x": 2.220446049250313e-16,
+                "y": 0.2564847767353058,
+                "z": -4.440892098500626e-16,
+                "w": 0.9665482640266419
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Oman/baymiddlemfn.mp4",
+            "zoneName": "Beaches",
+            "position": {
+                "x": -181.8284149169922,
+                "y": -260.93060302734377,
+                "z": -148.01031494140626
+            },
+            "rotation": {
+                "x": -8.881784197001253e-16,
+                "y": 0.8351799249649048,
+                "z": -1.3322676295501879e-15,
+                "w": -0.5499768257141113
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/Recognising Dependency to Alcohol_injected.mp4",
+            "zoneName": "Alcohol",
+            "position": {
+                "x": -2.3728885650634767,
+                "y": 1.0,
+                "z": -9.274360656738282
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.5359107255935669,
+                "z": 0.0,
+                "w": 0.844274640083313
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit_injected.mp4",
+            "zoneName": "Sport",
+            "position": {
+                "x": 2.0338382720947267,
+                "y": 1.0,
+                "z": 8.274869918823243
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.6268530488014221,
+                "z": 0.0,
+                "w": 0.7791374921798706
+            },
+            "prefabType": ""
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/dependent solution",
+            "zoneName": "injected.mp4_Beaches",
+            "position": {
+                "x": 43.56744384765625,
+                "y": -11.091781616210938,
+                "z": -202.4362335205078
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.999708890914917,
+                "z": 0.0,
+                "w": -0.024128437042236329
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit",
+            "zoneName": "injected.mp4_Beaches",
+            "position": {
+                "x": 35.94514083862305,
+                "y": -11.885772705078125,
+                "z": -204.17599487304688
+            },
+            "rotation": {
+                "x": -2.7755575615628915e-16,
+                "y": 0.7304466962814331,
+                "z": 4.440892098500626e-16,
+                "w": 0.6829696297645569
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/mfnhead",
+            "zoneName": "injected.mp4_Beaches",
+            "position": {
+                "x": 35.94513702392578,
+                "y": -10.621856689453125,
+                "z": -208.51483154296876
+            },
+            "rotation": {
+                "x": 4.440892098500626e-16,
+                "y": 0.0539286732673645,
+                "z": 0.0,
+                "w": 0.9985448122024536
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/CCgoingup",
+            "zoneName": "3.mp4_Mindfulness",
+            "position": {
+                "x": 26.368038177490236,
+                "y": -1.084259033203125,
+                "z": 105.62676239013672
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.4832693934440613,
+                "z": 1.1102230246251566e-16,
+                "w": 0.8754717111587524
+            },
+            "prefabType": "Carnival"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit",
+            "zoneName": "injected.mp4_Mindfulness",
+            "position": {
+                "x": 16.863197326660158,
+                "y": -0.8080291748046875,
+                "z": 103.45734405517578
+            },
+            "rotation": {
+                "x": -4.440892098500626e-16,
+                "y": 0.48191988468170168,
+                "z": 0.0,
+                "w": -0.8762153387069702
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/mfnhead",
+            "zoneName": "injected.mp4_Mindfulness",
+            "position": {
+                "x": 20.25543212890625,
+                "y": -0.9449729919433594,
+                "z": 100.75212097167969
+            },
+            "rotation": {
+                "x": -7.771561172376096e-16,
+                "y": 0.6543421149253845,
+                "z": -8.881784197001253e-16,
+                "w": -0.7561986446380615
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/Heights/CCgoingup",
+            "zoneName": "3.mp4_Smoking",
+            "position": {
+                "x": -2.14239501953125,
+                "y": 1.0,
+                "z": 8.499313354492188
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.948106586933136,
+                "z": 0.0,
+                "w": -0.3179527223110199
+            },
+            "prefabType": "Carnival"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/Recognising Dependency to Alcohol",
+            "zoneName": "injected.mp4_Alcohol",
+            "position": {
+                "x": -2.3728885650634767,
+                "y": 1.0,
+                "z": -9.274360656738282
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.5359107255935669,
+                "z": 0.0,
+                "w": 0.844274640083313
+            },
+            "prefabType": "Default"
+        },
+        {
+            "videoUrl": "https://storage.googleapis.com/masterchange/behaviourchange/mfn/Brasil/lucasedit",
+            "zoneName": "injected.mp4_Sport",
+            "position": {
+                "x": 2.0338382720947267,
+                "y": 1.0,
+                "z": 8.274869918823243
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.6268530488014221,
+                "z": 0.0,
+                "w": 0.7791374921798706
+            },
+            "prefabType": "Default"
+        }
+    ]
+}

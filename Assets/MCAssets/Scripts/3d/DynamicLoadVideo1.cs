@@ -84,8 +84,7 @@ public class DynamicLoadVideo1 : MonoBehaviour
                 }
 
                 //     print("---->>>" + PlayerPrefs.GetString("VideoUrl"));
-                StartUp = FindFirstObjectByType<StartUp>();
-                StartUp.ResetScene();
+              SceneManager.LoadScene("360VideoApp", LoadSceneMode.Single);  
                 //   
             }
         }

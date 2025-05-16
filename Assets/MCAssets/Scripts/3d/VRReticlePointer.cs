@@ -33,7 +33,9 @@ public class VRReticlePointer : MonoBehaviour
 
     private Camera mainCamera;
     private GameObject currentTarget;
-    private WorldSpaceFocusIndicator focusIndicator;
+
+    // UPDATED: Changed to look for SpriteBasedFocusIndicator instead
+    private SpriteBasedFocusIndicator focusIndicator;
 
     private bool isRotating = false;
     private Vector2 previousLookInput;
@@ -44,13 +46,15 @@ public class VRReticlePointer : MonoBehaviour
     {
         playerInput = GetComponent<PlayerInput>();
         mainCamera = GetComponentInChildren<Camera>();
-        focusIndicator = GetComponent<WorldSpaceFocusIndicator>();
+
+        // UPDATED: Changed to get SpriteBasedFocusIndicator
+        focusIndicator = GetComponent<SpriteBasedFocusIndicator>();
 
         if (focusIndicator == null)
         {
             // Try adding the component if it doesn't exist
-            focusIndicator = gameObject.AddComponent<WorldSpaceFocusIndicator>();
-            Debug.Log("Added WorldSpaceFocusIndicator component");
+            focusIndicator = gameObject.AddComponent<SpriteBasedFocusIndicator>();
+            Debug.Log("Added SpriteBasedFocusIndicator component");
         }
 
         if (playerInput == null)
@@ -280,32 +284,76 @@ public class VRReticlePointer : MonoBehaviour
 
     private void TriggerPointerEnter(GameObject target)
     {
+        if (target == null) return;
+
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            var enterEntry = eventTrigger.triggers.Find(
-                trigger => trigger.eventID == EventTriggerType.PointerEnter);
+            // Create a properly initialized pointer event data
+            PointerEventData eventData = new PointerEventData(EventSystem.current);
+            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
 
-            if (enterEntry != null)
+            // Manually trigger the pointer enter using ExecuteEvents
+            ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerEnterHandler);
+
+            // Check for EventTrigger component's entries
+            if (eventTrigger.triggers != null)
             {
-                var eventData = new PointerEventData(EventSystem.current);
-                enterEntry.callback.Invoke(eventData);
+                EventTrigger.Entry enterEntry = null;
+
+                // Find the pointer enter entry
+                foreach (EventTrigger.Entry entry in eventTrigger.triggers)
+                {
+                    if (entry.eventID == EventTriggerType.PointerEnter)
+                    {
+                        enterEntry = entry;
+                        break;
+                    }
+                }
+
+                // Invoke the callback if found
+                if (enterEntry != null && enterEntry.callback != null)
+                {
+                    enterEntry.callback.Invoke(eventData);
+                }
             }
         }
     }
 
     private void TriggerPointerExit(GameObject target)
     {
+        if (target == null) return;
+
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            var exitEntry = eventTrigger.triggers.Find(
-                trigger => trigger.eventID == EventTriggerType.PointerExit);
+            // Create a properly initialized pointer event data
+            PointerEventData eventData = new PointerEventData(EventSystem.current);
+            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
 
-            if (exitEntry != null)
+            // Manually trigger the pointer exit using ExecuteEvents
+            ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerExitHandler);
+
+            // Check for EventTrigger component's entries
+            if (eventTrigger.triggers != null)
             {
-                var eventData = new PointerEventData(EventSystem.current);
-                exitEntry.callback.Invoke(eventData);
+                EventTrigger.Entry exitEntry = null;
+
+                // Find the pointer exit entry
+                foreach (EventTrigger.Entry entry in eventTrigger.triggers)
+                {
+                    if (entry.eventID == EventTriggerType.PointerExit)
+                    {
+                        exitEntry = entry;
+                        break;
+                    }
+                }
+
+                // Invoke the callback if found
+                if (exitEntry != null && exitEntry.callback != null)
+                {
+                    exitEntry.callback.Invoke(eventData);
+                }
             }
         }
     }

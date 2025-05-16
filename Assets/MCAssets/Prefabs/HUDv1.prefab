@@ -11,8 +11,6 @@ GameObject:
   - component: {fileID: 6594081260048689046}
   - component: {fileID: 5084601858504836520}
   - component: {fileID: 4339613509769402616}
-  - component: {fileID: 8615024589450082788}
-  - component: {fileID: 3898116307109885763}
   m_Layer: 0
   m_Name: Text (TMP) (4)
   m_TagString: Untagged
@@ -178,72 +176,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 5084601858504836520}
   m_maskType: 0
---- !u!65 &8615024589450082788
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 124507915738669480}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 25.966587, y: 6.2025743, z: 0}
-  m_Center: {x: -0.25447035, y: 0.17328979, z: -0.000000007450581}
---- !u!114 &3898116307109885763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 124507915738669480}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Delegates:
-  - eventID: 0
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8685748663295900830}
-          m_TargetAssemblyTypeName: MoveCamera, Assembly-CSharp
-          m_MethodName: MouseHoverChangeScene
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-  - eventID: 1
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8685748663295900830}
-          m_TargetAssemblyTypeName: MoveCamera, Assembly-CSharp
-          m_MethodName: MouseExit
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
 --- !u!1 &996184550421455144
 GameObject:
   m_ObjectHideFlags: 0
@@ -1813,8 +1745,6 @@ GameObject:
   - component: {fileID: 4528141364069222633}
   - component: {fileID: 3253134948291307339}
   - component: {fileID: 6961219938679089756}
-  - component: {fileID: 8561758667789872651}
-  - component: {fileID: 6330923504812646991}
   m_Layer: 0
   m_Name: Text (TMP) (3)
   m_TagString: Untagged
@@ -1980,72 +1910,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 3253134948291307339}
   m_maskType: 0
---- !u!65 &8561758667789872651
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2804111069806659110}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 31.199253, y: 7.5728703, z: 0}
-  m_Center: {x: 0.20621586, y: -0.51182765, z: -0.000000007450581}
---- !u!114 &6330923504812646991
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2804111069806659110}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Delegates:
-  - eventID: 0
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: BCTUserJourneyLaunch, Assembly-CSharp
-          m_MethodName: MouseHoverLaunchBCT
-          m_Mode: 3
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 1
-            m_FloatArgument: 0
-            m_StringArgument: Smoking_tgt
-            m_BoolArgument: 0
-          m_CallState: 2
-  - eventID: 1
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: BCTUserJourneyLaunch, Assembly-CSharp
-          m_MethodName: MouseExit
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
 --- !u!1 &4843860562266260450
 GameObject:
   m_ObjectHideFlags: 0
@@ -2978,6 +2842,8 @@ MonoBehaviour:
   hasText: 0
   StartUp: {fileID: 0}
   riroStopGoV2: {fileID: 0}
+  category: 
+  zoneName: 
 --- !u!1 &6853987543265195752
 GameObject:
   m_ObjectHideFlags: 0

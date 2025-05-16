@@ -48,11 +48,29 @@ EditorBuildSettings:
     path: Assets/MCAssets/MC360Video/360VideoApp.unity
     guid: e4dd21c736fb67242b545e46107da794
   - enabled: 1
+    path: Assets/MCAssets/MC360Video/tips.unity
+    guid: d5f29a4a0e875274db2ec796ae07805a
+  - enabled: 1
     path: Assets/MCAssets/Scenes/2D/settings.unity
     guid: ca6d1798658a47b46b3160eb3a2ab30a
   - enabled: 0
     path: Assets/MCAssets/Scenes/3D/GyroTestScene.unity
     guid: 748bbbd6bd2edfa47b9aff673b8a9e09
+  - enabled: 0
+    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/WavesExample.unity
+    guid: fa17db9327e1c48428a5dd79735795a2
+  - enabled: 0
+    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/RiverDemo.unity
+    guid: 79e4a25f666bb4b4db875688ece67899
+  - enabled: 0
+    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/ParticleShowcase.unity
+    guid: 70d36081346f63e46b926a02b76297f6
+  - enabled: 0
+    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/Diorama.unity
+    guid: 8fc702386a902044baccac39c7259277
+  - enabled: 0
+    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/StylizedWaterDemo.unity
+    guid: a5038591c0ad967448d7dd84f554169e
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: dc71dac186f3fba41ad1c02d949fdf64, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e4d40cac255e863438fc3792a2d2880b, type: 2}

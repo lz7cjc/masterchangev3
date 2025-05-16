@@ -1659,26 +1659,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d927e7b686a4b4942bb1b21b369e4a3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  posturllive: https://masterchange.today/php_scripts/setgetriros.php
-  recordtip: https://masterchange.today/php_scripts/filmvote.php
-  errorMessage: {fileID: 1319602327}
-  problembutton: {fileID: 709742244}
-  mousehover: 0
-  counter: 0
-  tip1500: 0
-  tip1000: 0
-  tip750: 0
-  tip500: 0
-  tip250: 0
-  tip100: 0
-  voteSkip: 0
-  goRegister: 0
-  userid: 0
-  rirosSpent: 0
-  rirosBalance: 0
-  rirosPaid: 0
-  rirosBought: 0
-  creditURL: 
 --- !u!114 &718097377
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1701,6 +1681,8 @@ MonoBehaviour:
   - {fileID: 1080520825}
   - {fileID: 1391632599}
   - {fileID: 378430540}
+  useAdditiveSceneLoading: 1
+  debugMode: 1
 --- !u!1 &853898317
 GameObject:
   m_ObjectHideFlags: 0

@@ -82,7 +82,7 @@ public class StartUp : MonoBehaviour
 
         // Retrieve values from PlayerPrefs
         stage = PlayerPrefs.GetInt("stage", 0);
-        lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home_tgt");
+        lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home");
         currentZone = lastKnownZone; // Set currentZone to the value of lastKnownZone
 
         Debug.Log($"[StartUp] Marker: PlayerPrefs - bct: {PlayerPrefs.GetString("bct")}, lastknownzone: {lastKnownZone}, stagesmoking: {PlayerPrefs.GetInt("stagesmoking")}");
@@ -132,7 +132,7 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: IsBCTZone");
         return zone switch
         {
-            "Smoking_tgt" or "Alcohol_tgt" or "MFN_tgt" => true,
+            "Smoking" or "Alcohol" or "MFN" => true,
             _ => false
         };
     }
@@ -161,31 +161,41 @@ public class StartUp : MonoBehaviour
     {
         Debug.Log($"[StartUp] Marker: MovePlayerToCurrentZone -> currentZone: {currentZone}");
 
-        switch (currentZone)
+        // Try to use ZoneManager if available
+        ZoneManager zoneManager = FindFirstObjectByType<ZoneManager>();
+        if (zoneManager != null)
         {
-            case "Alcohol_tgt":
-                SetPlayerToTarget(targetAlcohol);
-                break;
+            zoneManager.MoveToZoneByName(currentZone);
+        }
+        else
+        {
+            // Fallback to original code
+            switch (currentZone)
+            {
+                case "Alcohol":
+                    SetPlayerToTarget(targetAlcohol);
+                    break;
 
-            case "Smoking_tgt":
-                SetPlayerToTarget(targetSmoking);
-                break;
+                case "Smoking":
+                    SetPlayerToTarget(targetSmoking);
+                    break;
 
-            case "MFN_tgt":
-                SetPlayerToTarget(targetMfn);
-                break;
+                case "MFN":
+                    SetPlayerToTarget(targetMfn);
+                    break;
 
-            case "Travel_tgt":
-                SetPlayerToTarget(targetTravel);
-                break;
+                case "Travel":
+                    SetPlayerToTarget(targetTravel);
+                    break;
 
-            case "Beaches_tgt":
-                SetPlayerToTarget(targetBeaches);
-                break;
+                case "Beaches":
+                    SetPlayerToTarget(targetBeaches);
+                    break;
 
-            default:
-                SetPlayerToTarget(targetHome);
-                break;
+                default:
+                    SetPlayerToTarget(targetHome);
+                    break;
+            }
         }
     }
 
@@ -195,15 +205,15 @@ public class StartUp : MonoBehaviour
 
         switch (currentZone)
         {
-            case "Alcohol_tgt":
+            case "Alcohol":
                 HandleAlcoholTreatment();
                 break;
 
-            case "Smoking_tgt":
+            case "Smoking":
                 HandleSmokingTreatment();
                 break;
 
-            case "MFN_tgt":
+            case "MFN":
                 SetPlayerToTarget(targetMfn);
                 break;
 
@@ -221,11 +231,11 @@ public class StartUp : MonoBehaviour
 
         switch (currentZone)
         {
-            case "Travel_tgt":
+            case "Travel":
                 SetPlayerToTarget(targetTravel);
                 break;
 
-            case "Beaches_tgt":
+            case "Beaches":
                 SetPlayerToTarget(targetBeaches);
                 break;
 
@@ -264,11 +274,7 @@ public class StartUp : MonoBehaviour
         switch (stage)
         {
             case 1:
-                PlayerPrefs.SetString("VideoUrl", "https://storage.googleapis.com/masterchange/behaviourchange/smoking/StacyXRayWelcome.mp4");
-                PlayerPrefs.SetInt("stageSmoking", 2);
-                PlayerPrefs.Save();
-                SceneManager.LoadScene("360VideoApp", LoadSceneMode.Single);
-
+                welcomeSmoking.SetActive(true);
                 break;
 
             case 2:
@@ -286,6 +292,10 @@ public class StartUp : MonoBehaviour
                 break;
             case 5:
                 InitialConsultation.SetActive(true);
+                break;
+
+            default:
+                SetPlayerToTarget(targetHome);
                 break;
         }
 

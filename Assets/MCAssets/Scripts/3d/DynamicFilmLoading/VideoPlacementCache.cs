@@ -3,148 +3,135 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
-/// Models and utilities for serializing video placement data
+/// Handles caching of video placements to allow persistence between sessions
+/// This component should be added to the same GameObject as AdvancedVideoPlacementManager
 /// </summary>
 public class VideoPlacementCache : MonoBehaviour
 {
+    [Header("Cache Settings")]
+    [SerializeField] private string cacheFolderPath = "Assets/Resources";
+    [SerializeField] private string cacheFileName = "VideoPlacementCache.json";
+    [SerializeField] private bool autoLoadOnStart = true;
+    [SerializeField] private bool autoSaveOnExit = true;
+    [SerializeField] private bool debugMode = true;
+
+    // Data structure to store and cache placement data
     [System.Serializable]
-    public class PlacementData
+    public class VideoPlacementData
     {
         public string videoUrl;
         public string zoneName;
-        public Vector3Data position;
-        public QuaternionData rotation;
+        public Vector3 position;
+        public Quaternion rotation;
         public string prefabType;
-        public string title;
-        public bool isManuallyPlaced = false;
-        public long lastModifiedTimestamp;
-
-        public PlacementData() { }
-
-        public PlacementData(VideoEntry video, Transform transform)
-        {
-            videoUrl = video.PublicUrl;
-            zoneName = video.Zones.Count > 0 ? video.Zones[0] : "";
-            position = new Vector3Data(transform.position);
-            rotation = new QuaternionData(transform.rotation);
-            prefabType = video.Prefab;
-            title = video.Title;
-            lastModifiedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        }
     }
 
     [System.Serializable]
-    public class Vector3Data
+    public class PlacementCache
     {
-        public float x;
-        public float y;
-        public float z;
-
-        public Vector3Data() { }
-
-        public Vector3Data(Vector3 vector)
-        {
-            x = vector.x;
-            y = vector.y;
-            z = vector.z;
-        }
-
-        public Vector3 ToVector3()
-        {
-            return new Vector3(x, y, z);
-        }
+        public List<VideoPlacementData> placements = new List<VideoPlacementData>();
     }
 
-    [System.Serializable]
-    public class QuaternionData
-    {
-        public float x;
-        public float y;
-        public float z;
-        public float w;
-
-        public QuaternionData() { }
-
-        public QuaternionData(Quaternion quaternion)
-        {
-            x = quaternion.x;
-            y = quaternion.y;
-            z = quaternion.z;
-            w = quaternion.w;
-        }
-
-        public Quaternion ToQuaternion()
-        {
-            return new Quaternion(x, y, z, w);
-        }
-    }
-
-    [System.Serializable]
-    public class SceneCache
-    {
-        public string sceneName;
-        public List<PlacementData> placementData = new List<PlacementData>();
-        public long lastSavedTimestamp;
-    }
-
-    [Header("Cache Settings")]
-    [SerializeField] private string cacheFilePath = "Assets/Resources/VideoPlacementCache.json";
-    [SerializeField] private bool saveOnApplicationQuit = true;
-    [SerializeField] private bool debugMode = false;
-
-    private SceneCache currentCache = new SceneCache();
-    private bool isDirty = false;
-
-    // Singleton pattern
-    private static VideoPlacementCache _instance;
-    public static VideoPlacementCache Instance
-    {
-        get
-        {
-            if (_instance == null)
-            {
-                _instance = FindObjectOfType<VideoPlacementCache>();
-                if (_instance == null)
-                {
-                    GameObject obj = new GameObject("VideoPlacementCache");
-                    _instance = obj.AddComponent<VideoPlacementCache>();
-                    DontDestroyOnLoad(obj);
-                }
-            }
-            return _instance;
-        }
-    }
+    private PlacementCache placementCache = new PlacementCache();
+    private AdvancedVideoPlacementManager placementManager;
+    private VideoDatabaseManager databaseManager;
+    private bool hasManuallyAdjusted = false;
 
     private void Awake()
     {
-        // Singleton setup
-        if (_instance != null && _instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        _instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        // Initialize cache
-        InitializeCache();
+        FindRequiredComponents();
     }
 
-    private void OnApplicationQuit()
+    private void Start()
     {
-        if (saveOnApplicationQuit && isDirty)
+        if (autoLoadOnStart && DoesCacheExist())
+        {
+            LoadCache();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (autoSaveOnExit && hasManuallyAdjusted)
         {
             SaveCache();
         }
     }
 
-    private void InitializeCache()
+    private void FindRequiredComponents()
     {
-        currentCache.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        LoadCache();
+        // Find placement manager if not assigned
+        if (placementManager == null)
+        {
+            placementManager = GetComponent<AdvancedVideoPlacementManager>();
+            if (placementManager == null)
+            {
+                placementManager = FindObjectOfType<AdvancedVideoPlacementManager>();
+                if (placementManager == null)
+                {
+                    Debug.LogError("No AdvancedVideoPlacementManager found - cache functionality will be limited");
+                }
+            }
+        }
+
+        // Find database manager if not assigned
+        if (databaseManager == null)
+        {
+            databaseManager = FindObjectOfType<VideoDatabaseManager>();
+            if (databaseManager == null)
+            {
+                Debug.LogError("No VideoDatabaseManager found - cache functionality will be limited");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get placement data for a specific video in a zone
+    /// </summary>
+    public bool TryGetPlacementData(string videoUrl, string zoneName, out VideoPlacementData data)
+    {
+        data = placementCache.placements.Find(p =>
+            p.videoUrl == videoUrl && p.zoneName == zoneName);
+        return data != null;
+    }
+
+    /// <summary>
+    /// Add or update placement data
+    /// </summary>
+    public void AddOrUpdatePlacementData(string videoUrl, string zoneName, Vector3 position, Quaternion rotation, string prefabType = "Default")
+    {
+        hasManuallyAdjusted = true;
+
+        // Check if we already have this entry
+        VideoPlacementData existingData = placementCache.placements.Find(p =>
+            p.videoUrl == videoUrl && p.zoneName == zoneName);
+
+        if (existingData != null)
+        {
+            // Update existing data
+            existingData.position = position;
+            existingData.rotation = rotation;
+            existingData.prefabType = prefabType;
+        }
+        else
+        {
+            // Create new entry
+            VideoPlacementData newData = new VideoPlacementData
+            {
+                videoUrl = videoUrl,
+                zoneName = zoneName,
+                position = position,
+                rotation = rotation,
+                prefabType = prefabType
+            };
+
+            placementCache.placements.Add(newData);
+        }
     }
 
     /// <summary>
@@ -154,213 +141,235 @@ public class VideoPlacementCache : MonoBehaviour
     {
         try
         {
-            string fullPath = Path.GetFullPath(cacheFilePath);
+            string fullCachePath = Path.Combine(cacheFolderPath, cacheFileName);
 
-            if (!File.Exists(fullPath))
+            if (!File.Exists(fullCachePath))
             {
-                if (debugMode) Debug.Log($"Cache file not found at {fullPath}. Starting with empty cache.");
-                currentCache.placementData.Clear();
-                currentCache.lastSavedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (debugMode) Debug.Log($"No placement cache file found at: {fullCachePath}");
                 return;
             }
 
-            string json = File.ReadAllText(fullPath);
-            currentCache = JsonUtility.FromJson<SceneCache>(json);
+            string json = File.ReadAllText(fullCachePath);
+            placementCache = JsonUtility.FromJson<PlacementCache>(json);
 
-            if (currentCache == null)
-            {
-                currentCache = new SceneCache();
-                currentCache.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-                currentCache.placementData = new List<PlacementData>();
-                currentCache.lastSavedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            }
+            if (debugMode) Debug.Log($"Loaded placement cache with {placementCache.placements.Count} entries from {fullCachePath}");
 
-            if (debugMode) Debug.Log($"Loaded placement cache with {currentCache.placementData.Count} entries");
-
-            isDirty = false;
+            // Apply cache to videos in scene
+            RestoreVideoPositions();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError($"Error loading placement cache: {e.Message}");
-
-            // Reset to empty cache
-            currentCache = new SceneCache();
-            currentCache.sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-            currentCache.placementData = new List<PlacementData>();
-            currentCache.lastSavedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            Debug.LogError($"Error loading placement cache: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Save the current placement cache to disk
+    /// Save the placement cache to disk
     /// </summary>
     public void SaveCache()
     {
+        // Update cache with current positions first
+        CollectVideoPositions();
+
         try
         {
-            // Update timestamp
-            currentCache.lastSavedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            // Get the full cache path
+            string fullCachePath = Path.Combine(cacheFolderPath, cacheFileName);
 
             // Create directory if it doesn't exist
-            string directory = Path.GetDirectoryName(cacheFilePath);
-            if (!Directory.Exists(directory))
+            if (!Directory.Exists(cacheFolderPath))
             {
-                Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(cacheFolderPath);
+                if (debugMode) Debug.Log($"Created cache directory: {cacheFolderPath}");
             }
 
-            string json = JsonUtility.ToJson(currentCache, true);
-            File.WriteAllText(cacheFilePath, json);
+            // Save as JSON
+            string json = JsonUtility.ToJson(placementCache, true);
+            File.WriteAllText(fullCachePath, json);
 
-            if (debugMode) Debug.Log($"Saved placement cache with {currentCache.placementData.Count} entries");
+            if (debugMode) Debug.Log($"Saved placement cache with {placementCache.placements.Count} entries to {fullCachePath}");
 
-            isDirty = false;
+#if UNITY_EDITOR
+            // Refresh asset database in editor
+            AssetDatabase.Refresh();
+#endif
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError($"Error saving placement cache: {e.Message}");
+            Debug.LogError($"Error saving placement cache: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Update or create a placement entry for a video
+    /// Collect current positions of all videos in the scene
     /// </summary>
-    public void UpdatePlacement(VideoEntry video, Transform transform, bool isManual = false)
+    private void CollectVideoPositions()
     {
-        if (video == null || transform == null) return;
+        // Find all EnhancedVideoPlayer components
+        EnhancedVideoPlayer[] videoPlayers = FindObjectsOfType<EnhancedVideoPlayer>();
 
-        // Find existing entry
-        PlacementData existingData = currentCache.placementData.Find(p => p.videoUrl == video.PublicUrl);
-
-        if (existingData != null)
+        foreach (EnhancedVideoPlayer player in videoPlayers)
         {
-            // Update existing entry
-            existingData.position = new Vector3Data(transform.position);
-            existingData.rotation = new QuaternionData(transform.rotation);
+            if (player == null || string.IsNullOrEmpty(player.VideoUrlLink)) continue;
 
-            if (isManual)
+            string videoUrl = player.VideoUrlLink;
+            string zoneName = player.zoneName;
+
+            // If zone name is empty, try to extract it from the GameObject's path
+            if (string.IsNullOrEmpty(zoneName))
             {
-                existingData.isManuallyPlaced = true;
+                zoneName = ExtractZoneFromPath(player.gameObject);
+                player.zoneName = zoneName;
             }
 
-            existingData.lastModifiedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        }
-        else
-        {
-            // Create new entry
-            PlacementData newData = new PlacementData(video, transform);
-            newData.isManuallyPlaced = isManual;
-            currentCache.placementData.Add(newData);
-        }
+            if (string.IsNullOrEmpty(zoneName))
+            {
+                // Skip videos with no zone
+                continue;
+            }
 
-        isDirty = true;
+            // Add to cache
+            AddOrUpdatePlacementData(
+                videoUrl,
+                zoneName,
+                player.transform.position,
+                player.transform.rotation,
+                player.prefabType
+            );
+        }
     }
 
     /// <summary>
-    /// Get the placement data for a video if it exists
+    /// Extract zone name from GameObject hierarchy path
     /// </summary>
-    public bool TryGetPlacement(string videoUrl, out Vector3 position, out Quaternion rotation)
+    private string ExtractZoneFromPath(GameObject obj)
     {
-        position = Vector3.zero;
-        rotation = Quaternion.identity;
+        // Try to extract zone from path
+        // Assuming structure like Zone/Films/Video
+        if (obj == null) return "";
 
-        if (string.IsNullOrEmpty(videoUrl)) return false;
+        Transform parent = obj.transform.parent;
+        if (parent == null) return "";
 
-        PlacementData data = currentCache.placementData.Find(p => p.videoUrl == videoUrl);
-
-        if (data != null)
+        // If parent is "Films", get grandparent
+        if (parent.name == "Films")
         {
-            position = data.position.ToVector3();
-            rotation = data.rotation.ToQuaternion();
-            return true;
+            Transform grandparent = parent.parent;
+            if (grandparent != null)
+            {
+                return grandparent.name;
+            }
         }
 
-        return false;
+        // Otherwise use parent name
+        return parent.name;
     }
 
     /// <summary>
-    /// Remove a video from the cache
+    /// Apply cached positions to videos in the scene
     /// </summary>
-    public void RemoveVideo(string videoUrl)
+    private void RestoreVideoPositions()
     {
-        if (string.IsNullOrEmpty(videoUrl)) return;
+        // Find all EnhancedVideoPlayer components
+        EnhancedVideoPlayer[] videoPlayers = FindObjectsOfType<EnhancedVideoPlayer>();
 
-        int index = currentCache.placementData.FindIndex(p => p.videoUrl == videoUrl);
-
-        if (index >= 0)
+        // Check each video if it has a cached position
+        foreach (EnhancedVideoPlayer player in videoPlayers)
         {
-            currentCache.placementData.RemoveAt(index);
-            isDirty = true;
+            if (player == null || string.IsNullOrEmpty(player.VideoUrlLink)) continue;
+
+            string videoUrl = player.VideoUrlLink;
+            string zoneName = player.zoneName;
+
+            // If zone name is empty, try to extract it from the GameObject's path
+            if (string.IsNullOrEmpty(zoneName))
+            {
+                zoneName = ExtractZoneFromPath(player.gameObject);
+                player.zoneName = zoneName;
+            }
+
+            if (string.IsNullOrEmpty(zoneName))
+            {
+                // Skip videos with no zone
+                continue;
+            }
+
+            // Try to get cached position
+            if (TryGetPlacementData(videoUrl, zoneName, out VideoPlacementData data))
+            {
+                // Apply position and rotation
+                player.transform.position = data.position;
+                player.transform.rotation = data.rotation;
+
+                if (debugMode) Debug.Log($"Applied cached position to video: {player.title} in zone: {zoneName}");
+            }
         }
     }
 
     /// <summary>
-    /// Clear all cached placements
+    /// Check if a cache file exists
+    /// </summary>
+    public bool DoesCacheExist()
+    {
+        string fullCachePath = Path.Combine(cacheFolderPath, cacheFileName);
+        return File.Exists(fullCachePath);
+    }
+
+    /// <summary>
+    /// Clear the cache
     /// </summary>
     public void ClearCache()
     {
-        currentCache.placementData.Clear();
-        currentCache.lastSavedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        isDirty = true;
+        placementCache.placements.Clear();
 
-        if (debugMode) Debug.Log("Cleared placement cache");
+        if (debugMode) Debug.Log("Placement cache cleared");
     }
-
-    /// <summary>
-    /// Get all placement data for a specific zone
-    /// </summary>
-    public List<PlacementData> GetPlacementsForZone(string zoneName)
-    {
-        if (string.IsNullOrEmpty(zoneName)) return new List<PlacementData>();
-
-        return currentCache.placementData.FindAll(p => p.zoneName == zoneName);
-    }
-
-    /// <summary>
-    /// Get all manually placed videos
-    /// </summary>
-    public List<PlacementData> GetManualPlacements()
-    {
-        return currentCache.placementData.FindAll(p => p.isManuallyPlaced);
-    }
-}
 
 #if UNITY_EDITOR
-[UnityEditor.CustomEditor(typeof(VideoPlacementCache))]
-public class VideoPlacementCacheEditor : UnityEditor.Editor
-{
-    public override void OnInspectorGUI()
+    [CustomEditor(typeof(VideoPlacementCache))]
+    public class VideoPlacementCacheEditor : Editor
     {
-        DrawDefaultInspector();
-
-        VideoPlacementCache cache = (VideoPlacementCache)target;
-
-        UnityEditor.EditorGUILayout.Space(10);
-
-        if (GUILayout.Button("Load Cache"))
+        public override void OnInspectorGUI()
         {
-            cache.LoadCache();
-        }
+            DrawDefaultInspector();
 
-        if (GUILayout.Button("Save Cache"))
-        {
-            cache.SaveCache();
-        }
+            VideoPlacementCache cacheManager = (VideoPlacementCache)target;
 
-        if (GUILayout.Button("Clear Cache"))
-        {
-            if (UnityEditor.EditorUtility.DisplayDialog("Clear Cache",
-                "Are you sure you want to clear the video placement cache?",
-                "Yes", "No"))
+            EditorGUILayout.Space(10);
+
+            EditorGUILayout.LabelField("Cache Controls", EditorStyles.boldLabel);
+
+            GUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Load Cache"))
             {
-                cache.ClearCache();
+                cacheManager.LoadCache();
             }
-        }
 
-        UnityEditor.EditorGUILayout.HelpBox(
-            "This component manages saving and loading of video placement data.\n" +
-            "It automatically caches positions when videos are manually moved and\n" +
-            "restores them when the scene is loaded.",
-            UnityEditor.MessageType.Info);
+            if (GUILayout.Button("Save Cache"))
+            {
+                cacheManager.SaveCache();
+            }
+
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Clear Cache", GUILayout.Height(25)))
+            {
+                if (EditorUtility.DisplayDialog("Clear Cache",
+                    "Are you sure you want to clear the placement cache? This will delete all saved positions.",
+                    "Clear Cache", "Cancel"))
+                {
+                    cacheManager.ClearCache();
+                }
+            }
+
+            EditorGUILayout.Space(5);
+
+            EditorGUILayout.HelpBox(
+                "This component manages the saving and loading of video positions. " +
+                "Videos positions are cached to disk and can be restored between sessions.",
+                MessageType.Info);
+        }
     }
-}
 #endif
+}

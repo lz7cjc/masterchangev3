@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System;
 using TMPro;
 using System.Collections;
+using UnityEngine.Rendering;
 
 public class VideoControllerV2 : MonoBehaviour
 {
@@ -14,6 +15,12 @@ public class VideoControllerV2 : MonoBehaviour
     public float counter = 0;
     private string videoAction;
     public float delay = 3.0f; // Delay in seconds
+
+    private bool pause;
+    private bool play;
+    private bool ff;
+    private bool stop;
+    private bool ffff;
 
     private int totalfilmlength;
     private showfilm showfilm;
@@ -168,15 +175,13 @@ public class VideoControllerV2 : MonoBehaviour
     private void StopAndReset()
     {
         videoPlayer.Stop();
-        ResetIcons();
-        foreach (GameObject obj in objectsToHideOnStop)
-        {
-            obj.SetActive(false);
-        }
-        foreach (GameObject obj in objectsToShowOnStop)
-        {
-            obj.SetActive(true);
-        }
+        PlayerPrefs.DeleteKey("VideoUrl");
+        //added when split scene 24/12
+        //    SceneManager.LoadScene("everything");
+        showfilm = FindObjectOfType<showfilm>();
+        showfilm.tipping();
+        //SceneManager.LoadScene("videoVote");  
+        stop = false;
     }
 
     public void MouseHover(string action)

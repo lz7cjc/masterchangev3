@@ -10,7 +10,7 @@
             "Zone": "Mindfulness",
             "Zones": [
                 "Mindfulness",
-                "Smoking"
+                "Heights"
             ]
         },
         {
@@ -54,18 +54,7 @@
                 "Heights"
             ]
         },
-        {
-            "FileName": "",
-            "PublicUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/Recognising Dependency to Alcohol_injected.mp4",
-            "BucketPath": "",
-            "Title": "About your drinking",
-            "Description": "Dependency",
-            "Prefab": "",
-            "Zone": "Alcohol",
-            "Zones": [
-                "Alcohol"
-            ]
-        },
+   
         {
             "FileName": "",
             "PublicUrl": "https://storage.googleapis.com/masterchange/behaviourchange/alcohol/dependent solution_injected.mp4",
@@ -180,7 +169,7 @@
             "Prefab": "Football",
             "Zone": "Mindfulness",
             "Zones": [
-                "Mindfulness"
+                "Sport"
             ]
         }
     ]

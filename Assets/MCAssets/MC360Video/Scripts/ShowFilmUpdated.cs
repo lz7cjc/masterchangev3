@@ -9,7 +9,7 @@ public class ShowfilmUpdated : MonoBehaviour
     public UpdatedFilmvotes2 filmVotes;
 
     [Header("Video Player")]
-    public MergedVideoController videoController;
+    //public MergedVideoController videoController;
 
     private bool tippingActive = false;
 
@@ -30,10 +30,10 @@ public class ShowfilmUpdated : MonoBehaviour
             }
         }
 
-        if (videoController == null)
-        {
-            videoController = FindObjectOfType<MergedVideoController>();
-        }
+        //if (videoController == null)
+        //{
+        //    videoController = FindObjectOfType<MergedVideoController>();
+        //}
 
         // Initially hide tips panel
         if (tipsPanel != null)

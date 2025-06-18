@@ -12,11 +12,14 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject targetAlcohol;
     [SerializeField] private GameObject targetSmoking;
     [SerializeField] private GameObject targetMfn;
+    [SerializeField] private GameObject targetHeights;
 
     [Header("Regular World Targets")]
     [SerializeField] private GameObject targetTravel;
     [SerializeField] private GameObject targetBeaches;
+    [SerializeField] private GameObject targetSport;
     [SerializeField] private GameObject targetHome;
+
 
     [Header("UI References")]
     [SerializeField] private closeAllHuds closeAllHuds;
@@ -132,7 +135,7 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: IsBCTZone");
         return zone switch
         {
-            "Smoking" or "Alcohol" or "MFN" => true,
+            "Smoking" or "Alcohol" or "Mindfulness" => true,
             _ => false
         };
     }
@@ -180,7 +183,7 @@ public class StartUp : MonoBehaviour
                     SetPlayerToTarget(targetSmoking);
                     break;
 
-                case "MFN":
+                case "Mindfulness":
                     SetPlayerToTarget(targetMfn);
                     break;
 
@@ -190,6 +193,14 @@ public class StartUp : MonoBehaviour
 
                 case "Beaches":
                     SetPlayerToTarget(targetBeaches);
+                    break;
+
+                case "Sport":
+                    SetPlayerToTarget(targetSport);
+                    break;
+
+                case "Heights":
+                    SetPlayerToTarget(targetHeights);
                     break;
 
                 default:
@@ -213,7 +224,7 @@ public class StartUp : MonoBehaviour
                 HandleSmokingTreatment();
                 break;
 
-            case "MFN":
+            case "Mindfulness":
                 SetPlayerToTarget(targetMfn);
                 break;
 
@@ -237,6 +248,14 @@ public class StartUp : MonoBehaviour
 
             case "Beaches":
                 SetPlayerToTarget(targetBeaches);
+                break;
+
+            case "Sport":
+                SetPlayerToTarget(targetSport);
+                break;
+
+            case "Heights":
+                SetPlayerToTarget(targetHeights);
                 break;
 
             default:

@@ -2,32 +2,7 @@
 using UnityEditor;
 using System.Linq;
 
-
 // Custom inspector for FilmZoneManager
-
-/*
- * FilmZoneManagerInspector.cs
- * 
- * This script provides a custom editor for the FilmZoneManager component,
- * allowing users to manage zones, prefabs, and settings in a user-friendly way.
- * It includes sections for zones, film prefabs, zone prefabs, settings, and debug information.
- *
- *
- *Main Purpose: Custom Unity Inspector that provides a user-friendly interface for configuring the FilmZoneManager.
-Key Features:
-
-Zone Overview: Shows all zones with statistics and quick actions
-Film Prefab Setup: Configure which prefabs to use for specific film types
-Zone Prefab Setup: Assign default prefabs for entire zones
-System Validation: Checks setup and reports issues
-Quick Actions: Buttons for common tasks like focusing on zones or selecting videos
-Priority Explanation: Clear display of how the 3-tier prefab system works
-
-What it does: Makes the FilmZoneManager component easy to configure without diving into complex settings. Like a "settings panel" with validation and shortcuts.*/
-
-
-
-
 [CustomEditor(typeof(FilmZoneManager))]
 public class FilmZoneManagerInspector : Editor
 {
@@ -89,7 +64,8 @@ public class FilmZoneManagerInspector : Editor
         EditorGUILayout.LabelField($"Zone Prefabs: {zoneManager.zonePrefabMappings.Count}", EditorStyles.miniLabel);
         EditorGUILayout.EndHorizontal();
 
-        int totalVideos = Object.FindObjectsOfType<VideoZonePrefab>().Length;
+        // Updated to use EnhancedVideoPlayer instead of VideoZonePrefab
+        int totalVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>().Length;
         EditorGUILayout.LabelField($"Videos in Scene: {totalVideos}", EditorStyles.miniLabel);
 
         EditorGUILayout.EndVertical();
@@ -175,9 +151,9 @@ public class FilmZoneManagerInspector : Editor
             EditorGUILayout.LabelField($"Zone Prefab: {zonePrefab.name}", EditorStyles.miniLabel);
         }
 
-        // Count videos in this zone
-        VideoZonePrefab[] videosInZone = Object.FindObjectsOfType<VideoZonePrefab>()
-            .Where(v => v.zoneName.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
+        // Count videos in this zone - UPDATED to use EnhancedVideoPlayer
+        EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
+            .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
         EditorGUILayout.LabelField($"Videos in Zone: {videosInZone.Length}", EditorStyles.miniLabel);
@@ -397,8 +373,9 @@ public class FilmZoneManagerInspector : Editor
 
         foreach (var zone in zoneManager.zones)
         {
-            VideoZonePrefab[] videosInZone = Object.FindObjectsOfType<VideoZonePrefab>()
-                .Where(v => v.zoneName.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
+            // UPDATED to use EnhancedVideoPlayer instead of VideoZonePrefab
+            EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
+                .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
             var zonePrefab = zoneManager.GetZonePrefab(zone.zoneName);
@@ -463,7 +440,8 @@ public class FilmZoneManagerInspector : Editor
 
         if (GUILayout.Button("Select All Videos"))
         {
-            VideoZonePrefab[] allVideos = Object.FindObjectsOfType<VideoZonePrefab>();
+            // UPDATED to use EnhancedVideoPlayer instead of VideoZonePrefab
+            EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
             Selection.objects = allVideos.Select(v => v.gameObject).ToArray();
         }
 
@@ -508,12 +486,12 @@ public class FilmZoneManagerInspector : Editor
 
     private void AutoDetectPrefabMappings()
     {
-        // This would analyze existing video entries to suggest prefab mappings
-        VideoZonePrefab[] allVideos = Object.FindObjectsOfType<VideoZonePrefab>();
+        // UPDATED to analyze existing EnhancedVideoPlayer entries
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
 
         var uniquePrefabTypes = allVideos
-            .Where(v => v.videoPlayer != null && !string.IsNullOrEmpty(v.videoPlayer.prefabType))
-            .Select(v => v.videoPlayer.prefabType)
+            .Where(v => !string.IsNullOrEmpty(v.prefabType))
+            .Select(v => v.prefabType)
             .Distinct()
             .ToList();
 
@@ -594,16 +572,16 @@ public class FilmZoneManagerInspector : Editor
         int completeZoneMappings = zoneManager.zonePrefabMappings.Count(m => !string.IsNullOrEmpty(m.zoneName) && m.prefab != null);
         report.AppendLine($"🏠 Zone prefab mappings: {completeZoneMappings}/{zoneManager.zonePrefabMappings.Count} complete");
 
-        // Check video prefabs in scene
-        VideoZonePrefab[] allVideos = Object.FindObjectsOfType<VideoZonePrefab>();
-        report.AppendLine($"🎬 Video prefabs in scene: {allVideos.Length}");
+        // Check video prefabs in scene - UPDATED to use EnhancedVideoPlayer
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        report.AppendLine($"🎬 Enhanced Video Players in scene: {allVideos.Length}");
 
         // Check for orphaned videos (videos not in any zone)
         int orphanedVideos = 0;
         foreach (var video in allVideos)
         {
-            if (string.IsNullOrEmpty(video.zoneName) ||
-                !zoneManager.zones.Any(z => z.zoneName.Equals(video.zoneName, System.StringComparison.OrdinalIgnoreCase)))
+            if (string.IsNullOrEmpty(video.LastKnownZone) ||
+                !zoneManager.zones.Any(z => z.zoneName.Equals(video.LastKnownZone, System.StringComparison.OrdinalIgnoreCase)))
             {
                 orphanedVideos++;
             }

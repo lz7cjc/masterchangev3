@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4615899308783264504}
   - component: {fileID: 2300194510473761127}
-  - component: {fileID: -7393815217004880893}
-  - component: {fileID: 7283380879146098122}
+  - component: {fileID: 5607541305740197387}
+  - component: {fileID: 3799480601373758993}
   m_Layer: 0
   m_Name: SignageTravel
   m_TagString: Untagged
@@ -59,42 +59,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &-7393815217004880893
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 222016292094316922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 514cb85843e178d49a5298e9cf95a2bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  VideoUrlLink: 
-  title: 
-  description: 
-  prefabType: 
-  hoverTimeRequired: 3
-  mouseHover: 0
-  returntoscene: 
-  nextscene: 
-  returnstage: 0
-  behaviour: 
-  useAdditiveLoading: 1
-  TMP_title: {fileID: 5368301611954484179}
-  TMP_description: {fileID: 5694000888583134133}
-  hasText: 1
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hoverColor: {r: 0, g: 1, b: 0, a: 1}
-  useProgressIndicator: 1
-  StartUp: {fileID: 0}
-  riroStopGoV2: {fileID: 0}
-  rotateOnHover: 1
-  debugMode: 0
-  category: 
-  zoneName: 
---- !u!114 &7283380879146098122
+--- !u!114 &5607541305740197387
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -111,7 +76,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: -7393815217004880893}
+        - m_Target: {fileID: 3799480601373758993}
           m_TargetAssemblyTypeName: EnhancedVideoPlayer, Assembly-CSharp
           m_MethodName: MouseHoverChangeScene
           m_Mode: 1
@@ -127,7 +92,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: -7393815217004880893}
+        - m_Target: {fileID: 3799480601373758993}
           m_TargetAssemblyTypeName: EnhancedVideoPlayer, Assembly-CSharp
           m_MethodName: MouseExit
           m_Mode: 1
@@ -143,7 +108,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: -7393815217004880893}
+        - m_Target: {fileID: 3799480601373758993}
           m_TargetAssemblyTypeName: EnhancedVideoPlayer, Assembly-CSharp
           m_MethodName: MouseHoverChangeScene
           m_Mode: 1
@@ -155,6 +120,39 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+--- !u!114 &3799480601373758993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 222016292094316922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 514cb85843e178d49a5298e9cf95a2bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  VideoUrlLink: 
+  title: 
+  description: 
+  prefabType: 
+  LastKnownZone: Home
+  hoverTimeRequired: 3
+  mouseHover: 0
+  returntoscene: mainVR
+  nextscene: 360VideoApp
+  useAdditiveLoading: 1
+  TMP_title: {fileID: 5368301611954484179}
+  TMP_description: {fileID: 5694000888583134133}
+  hasText: 1
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  hoverColor: {r: 0, g: 1, b: 0, a: 1}
+  useProgressIndicator: 1
+  riroStopGoV2: {fileID: 0}
+  rotateOnHover: 1
+  debugMode: 1
+  category: 
+  zoneName: 
 --- !u!1 &1349814347951242472
 GameObject:
   m_ObjectHideFlags: 0
@@ -525,12 +523,11 @@ MonoBehaviour:
   title: 
   description: 
   prefabType: 
+  LastKnownZone: Home
   hoverTimeRequired: 3
   mouseHover: 0
   returntoscene: 
   nextscene: 
-  returnstage: 0
-  behaviour: 
   useAdditiveLoading: 1
   TMP_title: {fileID: 5368301611954484179}
   TMP_description: {fileID: 5694000888583134133}
@@ -538,7 +535,6 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 0, g: 1, b: 0, a: 1}
   useProgressIndicator: 1
-  StartUp: {fileID: 0}
   riroStopGoV2: {fileID: 0}
   rotateOnHover: 1
   debugMode: 1

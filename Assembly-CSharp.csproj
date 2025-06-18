@@ -160,6 +160,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\EventTriggerFixer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />

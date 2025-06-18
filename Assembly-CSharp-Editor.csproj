@@ -91,6 +91,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\TextureTargetingTools.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\BuildToolNotInitializedException.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AndroidBuildTools.cs" />
+    <Compile Include="Assets\Editor\Scripts\EventTriggerFixerEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\AndroidBuildHelper.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\Editor\Mac\Plist.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\AndroidBuildException.cs" />

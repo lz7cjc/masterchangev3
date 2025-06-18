@@ -3,19 +3,7 @@ using UnityEngine.Events;
 using TMPro;
 using UnityEngine.EventSystems;
 
-/*
- Main Purpose: Bridges the zone system with Unity's Event System for VR and mouse interactions.
-Key Features:
-
-Event Handling: Manages hover, click, and VR pointer interactions
-Progress Indicators: Shows visual feedback during hover delays
-PlayerPrefs Integration: Stores video information for scene transitions
-VR Compatibility: Works with VR reticle pointers and gaze-based selection
-Customizable Events: Allows other scripts to respond to video interactions
-
-What it does: Handles all the user interaction logic - what happens when someone looks at, hovers over, or clicks on a video in VR or with a mouse.*/
-
-// Helper component that bridges the zone system with your existing Event Trigger approach
+// Helper component that bridges the zone system with Unity's Event System for VR and mouse interactions
 [System.Serializable]
 public class VideoEvents
 {
@@ -42,7 +30,8 @@ public class VideoIntegrationHelper : MonoBehaviour
     public TMP_Text videoCountLabel;
     public GameObject progressIndicator;
 
-    private VideoZonePrefab zonePrefab;
+    // Updated to work with EnhancedVideoPlayer instead of VideoZonePrefab
+    private EnhancedVideoPlayer enhancedVideoPlayer;
     private EventTrigger eventTrigger;
     private FilmZoneManager zoneManager;
 
@@ -56,8 +45,8 @@ public class VideoIntegrationHelper : MonoBehaviour
 
     private void Awake()
     {
-        // Get required components
-        zonePrefab = GetComponent<VideoZonePrefab>();
+        // Get required components - UPDATED to use EnhancedVideoPlayer
+        enhancedVideoPlayer = GetComponent<EnhancedVideoPlayer>();
         eventTrigger = GetComponent<EventTrigger>();
         zoneManager = FindObjectOfType<FilmZoneManager>();
 
@@ -104,14 +93,15 @@ public class VideoIntegrationHelper : MonoBehaviour
 
     private void Start()
     {
-        if (zonePrefab != null)
+        if (enhancedVideoPlayer != null)
         {
-            currentZone = zonePrefab.zoneName;
+            // Use LastKnownZone from EnhancedVideoPlayer
+            currentZone = enhancedVideoPlayer.LastKnownZone;
 
-            // Sync hover time with zone prefab
-            if (zonePrefab.hoverTimeRequired != hoverTimeRequired)
+            // Sync hover time with EnhancedVideoPlayer
+            if (enhancedVideoPlayer.hoverTimeRequired != hoverTimeRequired)
             {
-                zonePrefab.hoverTimeRequired = hoverTimeRequired;
+                enhancedVideoPlayer.hoverTimeRequired = hoverTimeRequired;
             }
 
             UpdateUIElements();
@@ -121,7 +111,7 @@ public class VideoIntegrationHelper : MonoBehaviour
 
     private void Update()
     {
-        // Handle hover timing (matching DynamicLoadVideo1 pattern)
+        // Handle hover timing (matching EnhancedVideoPlayer pattern)
         if (isHovering)
         {
             hoverTimer += Time.deltaTime;
@@ -157,7 +147,7 @@ public class VideoIntegrationHelper : MonoBehaviour
         }
     }
 
-    // Event Trigger Callbacks (matching your existing pattern)
+    // Event Trigger Callbacks (matching EnhancedVideoPlayer pattern)
     public void OnPointerEnterEvent()
     {
         isHovering = true;
@@ -168,9 +158,15 @@ public class VideoIntegrationHelper : MonoBehaviour
             progressIndicator.SetActive(true);
         }
 
+        // Also trigger the EnhancedVideoPlayer's hover method
+        if (enhancedVideoPlayer != null)
+        {
+            enhancedVideoPlayer.MouseHoverChangeScene();
+        }
+
         videoEvents.OnVideoHoverStart?.Invoke();
 
-        Debug.Log($"Pointer enter on video: {zonePrefab?.videoTitle ?? gameObject.name}");
+        Debug.Log($"Pointer enter on video: {enhancedVideoPlayer?.title ?? gameObject.name}");
     }
 
     public void OnPointerExitEvent()
@@ -183,9 +179,15 @@ public class VideoIntegrationHelper : MonoBehaviour
             progressIndicator.SetActive(false);
         }
 
+        // Also trigger the EnhancedVideoPlayer's exit method
+        if (enhancedVideoPlayer != null)
+        {
+            enhancedVideoPlayer.MouseExit();
+        }
+
         videoEvents.OnVideoHoverEnd?.Invoke();
 
-        Debug.Log($"Pointer exit on video: {zonePrefab?.videoTitle ?? gameObject.name}");
+        Debug.Log($"Pointer exit on video: {enhancedVideoPlayer?.title ?? gameObject.name}");
     }
 
     public void OnPointerClickEvent()
@@ -201,27 +203,27 @@ public class VideoIntegrationHelper : MonoBehaviour
             progressIndicator.SetActive(false);
         }
 
-        // Update PlayerPrefs with zone information (matching DynamicLoadVideo1)
+        // Update PlayerPrefs with zone information (matching EnhancedVideoPlayer)
         if (updatePlayerPrefsOnPlay && !string.IsNullOrEmpty(currentZone))
         {
             PlayerPrefs.SetString("lastknownzone", currentZone);
 
-            if (zonePrefab != null)
+            if (enhancedVideoPlayer != null)
             {
-                PlayerPrefs.SetString("nextscene", zonePrefab.nextScene);
-                PlayerPrefs.SetString("returntoscene", zonePrefab.returnScene);
-                PlayerPrefs.SetInt("stage", zonePrefab.stage);
-                PlayerPrefs.SetString("behaviour", zonePrefab.behaviour);
-                PlayerPrefs.SetString("VideoUrl", zonePrefab.videoUrl);
+                PlayerPrefs.SetString("nextscene", enhancedVideoPlayer.nextscene);
+                PlayerPrefs.SetString("returntoscene", enhancedVideoPlayer.returntoscene);
+              //  PlayerPrefs.SetInt("stage", enhancedVideoPlayer.returnstage);
+                //PlayerPrefs.SetString("behaviour", enhancedVideoPlayer.behaviour);
+                PlayerPrefs.SetString("VideoUrl", enhancedVideoPlayer.VideoUrlLink);
 
-                if (!string.IsNullOrEmpty(zonePrefab.videoTitle))
+                if (!string.IsNullOrEmpty(enhancedVideoPlayer.title))
                 {
-                    PlayerPrefs.SetString("videoTitle", zonePrefab.videoTitle);
+                    PlayerPrefs.SetString("videoTitle", enhancedVideoPlayer.title);
                 }
 
-                if (!string.IsNullOrEmpty(zonePrefab.videoDescription))
+                if (!string.IsNullOrEmpty(enhancedVideoPlayer.description))
                 {
-                    PlayerPrefs.SetString("videoDescription", zonePrefab.videoDescription);
+                    PlayerPrefs.SetString("videoDescription", enhancedVideoPlayer.description);
                 }
             }
 
@@ -233,8 +235,16 @@ public class VideoIntegrationHelper : MonoBehaviour
 
         Debug.Log($"Video play triggered in zone: {currentZone}");
 
-        // Load the scene (matching your existing pattern)
-        UnityEngine.SceneManagement.SceneManager.LoadScene("360VideoApp", UnityEngine.SceneManagement.LoadSceneMode.Single);
+        // Use EnhancedVideoPlayer's SetVideoUrl method if available
+        if (enhancedVideoPlayer != null)
+        {
+            enhancedVideoPlayer.SetVideoUrl();
+        }
+        else
+        {
+            // Fallback: Load the scene directly
+            UnityEngine.SceneManagement.SceneManager.LoadScene("360VideoApp", UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
     }
 
     private void UpdateUIElements()
@@ -254,12 +264,13 @@ public class VideoIntegrationHelper : MonoBehaviour
     {
         if (string.IsNullOrEmpty(currentZone)) return;
 
-        VideoZonePrefab[] allVideos = FindObjectsOfType<VideoZonePrefab>();
+        // UPDATED to count EnhancedVideoPlayer components instead of VideoZonePrefab
+        EnhancedVideoPlayer[] allVideos = FindObjectsOfType<EnhancedVideoPlayer>();
         videosInCurrentZone = 0;
 
         foreach (var video in allVideos)
         {
-            if (video.zoneName.Equals(currentZone, System.StringComparison.OrdinalIgnoreCase))
+            if (video.LastKnownZone.Equals(currentZone, System.StringComparison.OrdinalIgnoreCase))
             {
                 videosInCurrentZone++;
             }
@@ -281,9 +292,10 @@ public class VideoIntegrationHelper : MonoBehaviour
             string oldZone = currentZone;
             currentZone = newZone;
 
-            if (zonePrefab != null)
+            if (enhancedVideoPlayer != null)
             {
-                zonePrefab.zoneName = newZone;
+                enhancedVideoPlayer.LastKnownZone = newZone;
+                enhancedVideoPlayer.zoneName = newZone;
             }
 
             CountVideosInZone();
@@ -337,7 +349,7 @@ public class ZoneStatistics
     public float hoverProgress;
 }
 
-// Compatibility component for working with your VR system
+// Compatibility component for working with VR systems
 public class VRCompatibleVideoTrigger : MonoBehaviour
 {
     [Header("VR Integration")]
@@ -387,5 +399,77 @@ public class VRCompatibleVideoTrigger : MonoBehaviour
         {
             integrationHelper.OnPointerClickEvent();
         }
+    }
+}
+
+// Additional helper for backward compatibility if needed
+public class EnhancedVideoPlayerBridge : MonoBehaviour
+{
+    [Header("Bridge Settings")]
+    public bool autoSetupOnStart = true;
+
+    private EnhancedVideoPlayer enhancedPlayer;
+    private VideoIntegrationHelper integrationHelper;
+
+    private void Start()
+    {
+        if (autoSetupOnStart)
+        {
+            SetupBridge();
+        }
+    }
+
+    public void SetupBridge()
+    {
+        // Ensure we have both components
+        enhancedPlayer = GetComponent<EnhancedVideoPlayer>();
+        if (enhancedPlayer == null)
+        {
+            enhancedPlayer = gameObject.AddComponent<EnhancedVideoPlayer>();
+        }
+
+        integrationHelper = GetComponent<VideoIntegrationHelper>();
+        if (integrationHelper == null)
+        {
+            integrationHelper = gameObject.AddComponent<VideoIntegrationHelper>();
+        }
+
+        // Sync settings
+        if (enhancedPlayer != null && integrationHelper != null)
+        {
+            integrationHelper.hoverTimeRequired = enhancedPlayer.hoverTimeRequired;
+        }
+
+        Debug.Log($"EnhancedVideoPlayer bridge setup complete for: {gameObject.name}");
+    }
+
+    // Public method to manually configure video data
+    public void ConfigureVideo(string videoUrl, string title, string description, string zoneName)
+    {
+        if (enhancedPlayer != null)
+        {
+            enhancedPlayer.VideoUrlLink = videoUrl;
+            enhancedPlayer.title = title;
+            enhancedPlayer.description = description;
+            enhancedPlayer.zoneName = zoneName;
+            enhancedPlayer.LastKnownZone = zoneName;
+        }
+
+        if (integrationHelper != null)
+        {
+            integrationHelper.SetZone(zoneName);
+        }
+
+        Debug.Log($"Configured video: {title} in zone: {zoneName}");
+    }
+
+    // Utility method to get the current video info
+    public string GetVideoInfo()
+    {
+        if (enhancedPlayer != null)
+        {
+            return $"Title: {enhancedPlayer.title}, Zone: {enhancedPlayer.LastKnownZone}, URL: {enhancedPlayer.VideoUrlLink}";
+        }
+        return "No EnhancedVideoPlayer found";
     }
 }

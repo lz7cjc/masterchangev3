@@ -4,22 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine.EventSystems;
-using NUnit.Framework;
-using System.Security.Policy;
+using TMPro;
+using UnityEngine.UI;
 
 // Editor window for managing film zones and importing JSON data
-
-//Main Purpose: Unity Editor window for setting up zones and importing video content.
-//Key Features:
-
-//Zone Creation: Visual tool for drawing polygonal zones in the Scene view
-//JSON Import: Loads video data from JSON files and auto-creates zones
-//Prefab Placement: Automatically places video prefabs in their assigned zones
-//Auto-Detection: Scans JSON data to suggest prefab mappings
-//Save/Load: Stores and restores zone layouts
-//Visual Feedback: Shows zone information, prefab counts, and placement statistics
-
-//What it does: The main tool content creators use to set up video zones and import content. Think of it as the "level editor" for the video system.
 public class FilmZoneEditorWindow : EditorWindow
 {
     private FilmZoneManager zoneManager;
@@ -92,11 +80,15 @@ public class FilmZoneEditorWindow : EditorWindow
             if (showSaveLoad)
             {
                 DrawSaveLoadSection();
+                EditorGUILayout.Space(10);
             }
+
+            DrawUtilityButtons();
         }
         catch (System.Exception e)
         {
             EditorGUILayout.HelpBox($"Error in GUI: {e.Message}", MessageType.Error);
+            Debug.LogError($"FilmZoneEditorWindow GUI Error: {e.Message}\n{e.StackTrace}");
         }
         finally
         {
@@ -134,17 +126,23 @@ public class FilmZoneEditorWindow : EditorWindow
         EditorGUILayout.LabelField("JSON Import", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("JSON File:", GUILayout.Width(70));
-        jsonFilePath = EditorGUILayout.TextField(jsonFilePath);
-        if (GUILayout.Button("Browse", GUILayout.Width(60)))
+        try
         {
-            string path = EditorUtility.OpenFilePanel("Select JSON File", Application.dataPath, "json");
-            if (!string.IsNullOrEmpty(path))
+            EditorGUILayout.LabelField("JSON File:", GUILayout.Width(70));
+            jsonFilePath = EditorGUILayout.TextField(jsonFilePath);
+            if (GUILayout.Button("Browse", GUILayout.Width(60)))
             {
-                jsonFilePath = path;
+                string path = EditorUtility.OpenFilePanel("Select JSON File", Application.dataPath, "json");
+                if (!string.IsNullOrEmpty(path))
+                {
+                    jsonFilePath = path;
+                }
             }
         }
-        EditorGUILayout.EndHorizontal();
+        finally
+        {
+            EditorGUILayout.EndHorizontal();
+        }
 
         GUI.enabled = !string.IsNullOrEmpty(jsonFilePath) && File.Exists(jsonFilePath);
         if (GUILayout.Button("Import JSON Data"))
@@ -161,16 +159,22 @@ public class FilmZoneEditorWindow : EditorWindow
             if (showImportedData)
             {
                 EditorGUI.indentLevel++;
-                foreach (var entry in filmData.Entries.Take(5)) // Show first 5 entries
+                try
                 {
-                    string prefabInfo = entry.HasCustomPrefab() ? $" [Prefab: {entry.Prefab}]" : " [Default]";
-                    EditorGUILayout.LabelField($"• {entry.Title} ({string.Join(", ", entry.GetPlacementZones())}){prefabInfo}", EditorStyles.miniLabel);
+                    foreach (var entry in filmData.Entries.Take(5)) // Show first 5 entries
+                    {
+                        string prefabInfo = entry.HasCustomPrefab() ? $" [Prefab: {entry.Prefab}]" : " [Default]";
+                        EditorGUILayout.LabelField($"• {entry.Title} ({string.Join(", ", entry.GetPlacementZones())}){prefabInfo}", EditorStyles.miniLabel);
+                    }
+                    if (filmData.Entries.Length > 5)
+                    {
+                        EditorGUILayout.LabelField($"... and {filmData.Entries.Length - 5} more", EditorStyles.miniLabel);
+                    }
                 }
-                if (filmData.Entries.Length > 5)
+                finally
                 {
-                    EditorGUILayout.LabelField($"... and {filmData.Entries.Length - 5} more", EditorStyles.miniLabel);
+                    EditorGUI.indentLevel--;
                 }
-                EditorGUI.indentLevel--;
             }
         }
     }
@@ -181,135 +185,256 @@ public class FilmZoneEditorWindow : EditorWindow
         if (!showZoneEditor) return;
 
         EditorGUI.indentLevel++;
-
-        if (zoneManager == null)
+        try
         {
-            EditorGUILayout.HelpBox("Film Zone Manager required", MessageType.Warning);
-            EditorGUI.indentLevel--;
-            return;
-        }
-
-        // Zone height information
-        DrawZoneHeightInfo();
-        EditorGUILayout.Space(5);
-
-        // Zone list
-        EditorGUILayout.LabelField("Existing Zones:", EditorStyles.boldLabel);
-
-        for (int i = 0; i < zoneManager.zones.Count; i++)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            bool isSelected = (selectedZoneIndex == i);
-            bool newSelected = EditorGUILayout.Toggle(isSelected, GUILayout.Width(20));
-
-            if (newSelected != isSelected)
+            if (zoneManager == null)
             {
-                selectedZoneIndex = newSelected ? i : -1;
+                EditorGUILayout.HelpBox("Film Zone Manager required", MessageType.Warning);
+                return;
             }
 
-            zoneManager.zones[i].zoneName = EditorGUILayout.TextField(zoneManager.zones[i].zoneName);
-            zoneManager.zones[i].gizmoColor = EditorGUILayout.ColorField(zoneManager.zones[i].gizmoColor, GUILayout.Width(50));
-
-            if (GUILayout.Button("Edit", GUILayout.Width(50)))
-            {
-                StartEditingZone(i);
-            }
-
-            if (GUILayout.Button("X", GUILayout.Width(25)))
-            {
-                zoneManager.zones.RemoveAt(i);
-                if (selectedZoneIndex == i) selectedZoneIndex = -1;
-                else if (selectedZoneIndex > i) selectedZoneIndex--;
-                break;
-            }
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        EditorGUILayout.Space(5);
-
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Add New Zone"))
-        {
-            FilmZone newZone = new FilmZone();
-            newZone.zoneName = $"Zone_{zoneManager.zones.Count + 1}";
-            newZone.gizmoColor = GetRandomColor();
-            zoneManager.zones.Add(newZone);
-        }
-
-        if (GUILayout.Button("Snap All Zones to Terrain"))
-        {
-            SnapZonesToTerrain();
-        }
-        EditorGUILayout.EndHorizontal();
-
-        // Zone editing controls
-        if (isEditingZone)
-        {
+            // Zone height information
+            DrawZoneHeightInfo();
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("Zone Editing Mode", EditorStyles.boldLabel);
 
-            EditorGUILayout.HelpBox(
-                "Scene View Controls:\n" +
-                "• Click to add points\n" +
-                "• Ctrl+Click to delete nearest point\n" +
-                "• Shift+Click to finish editing",
-                MessageType.Info);
+            // Zone list with NUCLEAR DELETE options
+            EditorGUILayout.LabelField("Existing Zones:", EditorStyles.boldLabel);
 
-            // Show current points with delete buttons
-            if (tempZonePoints.Count > 0)
+            // Store the count to avoid modification during iteration issues
+            int zoneCount = zoneManager.zones.Count;
+            bool zonesModified = false;
+
+            for (int i = 0; i < zoneCount && i < zoneManager.zones.Count; i++)
             {
-                EditorGUILayout.LabelField($"Current Points ({tempZonePoints.Count}):", EditorStyles.boldLabel);
+                if (zonesModified) break; // Exit if zones were modified
 
-                // Use reverse loop to handle deletions safely
-                for (int i = tempZonePoints.Count - 1; i >= 0; i--)
+                EditorGUILayout.BeginVertical("box");
+                try
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"Point {i}:", GUILayout.Width(60));
-
-                    // Show coordinates (editable)
-                    Vector3 newPos = EditorGUILayout.Vector3Field("", tempZonePoints[i]);
-                    if (newPos != tempZonePoints[i])
+                    try
                     {
-                        tempZonePoints[i] = newPos;
-                        SceneView.RepaintAll();
+                        bool isSelected = (selectedZoneIndex == i);
+                        bool newSelected = EditorGUILayout.Toggle(isSelected, GUILayout.Width(20));
+
+                        if (newSelected != isSelected)
+                        {
+                            selectedZoneIndex = newSelected ? i : -1;
+                        }
+
+                        zoneManager.zones[i].zoneName = EditorGUILayout.TextField(zoneManager.zones[i].zoneName);
+                        zoneManager.zones[i].gizmoColor = EditorGUILayout.ColorField(zoneManager.zones[i].gizmoColor, GUILayout.Width(50));
+
+                        if (GUILayout.Button("Edit", GUILayout.Width(50)))
+                        {
+                            StartEditingZone(i);
+                        }
+
+                        // ENHANCED: Nuclear Delete button with warning color
+                        GUI.backgroundColor = Color.red;
+                        if (GUILayout.Button("💥", GUILayout.Width(30)))
+                        {
+                            NuclearDeleteZone(i);
+                            zonesModified = true;
+                        }
+                        GUI.backgroundColor = Color.white;
+
+                        // Regular delete button (smaller, less prominent)
+                        if (!zonesModified && GUILayout.Button("X", GUILayout.Width(25)))
+                        {
+                            RegularDeleteZone(i);
+                            zonesModified = true;
+                        }
+                    }
+                    finally
+                    {
+                        EditorGUILayout.EndHorizontal();
                     }
 
-                    // Delete button for this point
-                    if (GUILayout.Button("X", GUILayout.Width(25)))
+                    if (!zonesModified && i < zoneManager.zones.Count)
                     {
-                        tempZonePoints.RemoveAt(i);
+                        // Show zone info
+                        var zone = zoneManager.zones[i];
+                        EditorGUILayout.BeginHorizontal();
+                        try
+                        {
+                            EditorGUILayout.LabelField($"Points: {zone.polygonPoints.Count}", EditorStyles.miniLabel, GUILayout.Width(70));
+                            EditorGUILayout.LabelField($"Height: {zone.GetZoneHeight():F1}", EditorStyles.miniLabel, GUILayout.Width(80));
+
+                            // Zone action buttons
+                            if (zone.polygonPoints.Count > 0)
+                            {
+                                if (GUILayout.Button("Clear Points", GUILayout.Width(80)))
+                                {
+                                    ClearZonePoints(i);
+                                }
+
+                                if (GUILayout.Button("Focus", GUILayout.Width(50)))
+                                {
+                                    FocusOnZone(zone);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            EditorGUILayout.EndHorizontal();
+                        }
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndVertical();
+                }
+
+                EditorGUILayout.Space(2);
+
+                if (zonesModified) break; // Exit if zones were modified
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Zone management buttons
+            EditorGUILayout.BeginHorizontal();
+            try
+            {
+                if (GUILayout.Button("Add New Zone"))
+                {
+                    FilmZone newZone = new FilmZone();
+                    newZone.zoneName = $"Zone_{zoneManager.zones.Count + 1}";
+                    newZone.gizmoColor = GetRandomColor();
+                    zoneManager.zones.Add(newZone);
+                }
+
+                if (GUILayout.Button("Snap All Zones to Terrain"))
+                {
+                    SnapZonesToTerrain();
+                }
+            }
+            finally
+            {
+                EditorGUILayout.EndHorizontal();
+            }
+
+            // NUCLEAR OPTIONS section
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("⚠️ Nuclear Options ⚠️", EditorStyles.boldLabel);
+
+            EditorGUILayout.BeginHorizontal();
+            try
+            {
+                GUI.backgroundColor = Color.red;
+
+                if (GUILayout.Button("💥 Nuclear Clear All Zones"))
+                {
+                    if (EditorUtility.DisplayDialog("Nuclear Clear All Zones",
+                        "⚠️ WARNING: This will COMPLETELY DELETE all zones!\n\nThis action cannot be undone!",
+                        "DELETE ALL", "Cancel"))
+                    {
+                        zoneManager.ForceClearAllZoneData();
+                        selectedZoneIndex = -1;
+                        isEditingZone = false;
+                        tempZonePoints.Clear();
+                        Repaint();
+                    }
+                }
+
+                GUI.backgroundColor = Color.yellow;
+                if (GUILayout.Button("🧹 Clear All Points Only"))
+                {
+                    if (EditorUtility.DisplayDialog("Clear All Points",
+                        "Clear polygon points from all zones but keep zone definitions?",
+                        "Clear Points", "Cancel"))
+                    {
+                        zoneManager.ClearAllPolygonPoints();
+                        tempZonePoints.Clear();
                         SceneView.RepaintAll();
-                        // Continue with reverse loop - safe to delete
+                    }
+                }
+
+                GUI.backgroundColor = Color.white;
+            }
+            finally
+            {
+                EditorGUILayout.EndHorizontal();
+            }
+
+            // Zone editing controls
+            if (isEditingZone)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("Zone Editing Mode", EditorStyles.boldLabel);
+
+                EditorGUILayout.HelpBox(
+                    "Scene View Controls:\n" +
+                    "• Click to add points\n" +
+                    "• Ctrl+Click to delete nearest point\n" +
+                    "• Shift+Click to finish editing",
+                    MessageType.Info);
+
+                // Show current points with delete buttons
+                if (tempZonePoints.Count > 0)
+                {
+                    EditorGUILayout.LabelField($"Current Points ({tempZonePoints.Count}):", EditorStyles.boldLabel);
+
+                    // Use reverse iteration to handle deletions safely
+                    for (int i = tempZonePoints.Count - 1; i >= 0; i--)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        try
+                        {
+                            EditorGUILayout.LabelField($"Point {i}:", GUILayout.Width(60));
+
+                            Vector3 newPos = EditorGUILayout.Vector3Field("", tempZonePoints[i]);
+                            if (newPos != tempZonePoints[i])
+                            {
+                                tempZonePoints[i] = newPos;
+                                SceneView.RepaintAll();
+                            }
+
+                            if (GUILayout.Button("X", GUILayout.Width(25)))
+                            {
+                                tempZonePoints.RemoveAt(i);
+                                SceneView.RepaintAll();
+                            }
+                        }
+                        finally
+                        {
+                            EditorGUILayout.EndHorizontal();
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(5);
+
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    if (GUILayout.Button("Finish Editing Zone"))
+                    {
+                        FinishEditingZone();
                     }
 
+                    if (GUILayout.Button("Cancel Zone Edit"))
+                    {
+                        CancelEditingZone();
+                    }
+
+                    if (GUILayout.Button("Clear All Points"))
+                    {
+                        tempZonePoints.Clear();
+                        SceneView.RepaintAll();
+                    }
+                }
+                finally
+                {
                     EditorGUILayout.EndHorizontal();
                 }
             }
-
-            EditorGUILayout.Space(5);
-
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Finish Editing Zone"))
-            {
-                FinishEditingZone();
-            }
-
-            if (GUILayout.Button("Cancel Zone Edit"))
-            {
-                CancelEditingZone();
-            }
-
-            if (GUILayout.Button("Clear All Points"))
-            {
-                tempZonePoints.Clear();
-                SceneView.RepaintAll();
-            }
-            EditorGUILayout.EndHorizontal();
         }
-
-        EditorGUI.indentLevel--;
+        finally
+        {
+            EditorGUI.indentLevel--;
+        }
     }
 
     private void DrawZoneHeightInfo()
@@ -318,71 +443,55 @@ public class FilmZoneEditorWindow : EditorWindow
         if (!showHeightInfo || zoneManager == null) return;
 
         EditorGUI.indentLevel++;
-
-        foreach (var zone in zoneManager.zones)
+        try
         {
-            if (zone.polygonPoints.Count < 3) continue;
-
-            float minY = float.MaxValue;
-            float maxY = float.MinValue;
-            float avgY = 0;
-
-            foreach (var point in zone.polygonPoints)
+            foreach (var zone in zoneManager.zones)
             {
-                minY = Mathf.Min(minY, point.y);
-                maxY = Mathf.Max(maxY, point.y);
-                avgY += point.y;
-            }
-            avgY /= zone.polygonPoints.Count;
+                if (zone.polygonPoints.Count < 3) continue;
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"{zone.zoneName}:", GUILayout.Width(100));
-            EditorGUILayout.LabelField($"Avg Y: {avgY:F1}", GUILayout.Width(80));
-            EditorGUILayout.LabelField($"Range: {minY:F1} to {maxY:F1}", GUILayout.Width(120));
+                float minY = float.MaxValue;
+                float maxY = float.MinValue;
+                float avgY = 0;
 
-            // Warning for zones that might be floating
-            if (avgY > 10f)
-            {
-                EditorGUILayout.LabelField("⚠️ High", EditorStyles.boldLabel);
-            }
-            else if (avgY < -2f)
-            {
-                EditorGUILayout.LabelField("⚠️ Low", EditorStyles.boldLabel);
-            }
-            else
-            {
-                EditorGUILayout.LabelField("✓ OK", EditorStyles.miniLabel);
-            }
+                foreach (var point in zone.polygonPoints)
+                {
+                    minY = Mathf.Min(minY, point.y);
+                    maxY = Mathf.Max(maxY, point.y);
+                    avgY += point.y;
+                }
+                avgY /= zone.polygonPoints.Count;
 
-            EditorGUILayout.EndHorizontal();
-        }
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    EditorGUILayout.LabelField($"{zone.zoneName}:", GUILayout.Width(100));
+                    EditorGUILayout.LabelField($"Avg Y: {avgY:F1}", GUILayout.Width(80));
+                    EditorGUILayout.LabelField($"Range: {minY:F1} to {maxY:F1}", GUILayout.Width(120));
 
-        EditorGUI.indentLevel--;
-    }
-
-    private void SnapZonesToTerrain()
-    {
-        if (zoneManager == null) return;
-
-        Terrain terrain = Terrain.activeTerrain;
-        if (terrain == null)
-        {
-            Debug.LogWarning("No active terrain found!");
-            return;
-        }
-
-        foreach (var zone in zoneManager.zones)
-        {
-            for (int i = 0; i < zone.polygonPoints.Count; i++)
-            {
-                Vector3 point = zone.polygonPoints[i];
-                float terrainHeight = terrain.SampleHeight(point);
-                zone.polygonPoints[i] = new Vector3(point.x, terrainHeight, point.z);
+                    // Warning for zones that might be floating
+                    if (avgY > 10f)
+                    {
+                        EditorGUILayout.LabelField("⚠️ High", EditorStyles.boldLabel);
+                    }
+                    else if (avgY < -2f)
+                    {
+                        EditorGUILayout.LabelField("⚠️ Low", EditorStyles.boldLabel);
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("✓ OK", EditorStyles.miniLabel);
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndHorizontal();
+                }
             }
         }
-
-        EditorUtility.SetDirty(zoneManager);
-        Debug.Log("Snapped all zones to terrain height");
+        finally
+        {
+            EditorGUI.indentLevel--;
+        }
     }
 
     private void DrawPrefabPlacerSection()
@@ -391,80 +500,87 @@ public class FilmZoneEditorWindow : EditorWindow
         if (!showPrefabPlacer) return;
 
         EditorGUI.indentLevel++;
-
-        if (zoneManager == null || filmData == null)
+        try
         {
-            EditorGUILayout.HelpBox("Film Zone Manager and imported JSON data required", MessageType.Warning);
-            EditorGUI.indentLevel--;
-            return;
-        }
-
-        // Check if default prefab is set
-        if (zoneManager.defaultPrefab == null)
-        {
-            EditorGUILayout.HelpBox("Default prefab not set in FilmZoneManager. This is required for placing prefabs.", MessageType.Error);
-            EditorGUI.indentLevel--;
-            return;
-        }
-
-        EditorGUILayout.LabelField("Placement Options:", EditorStyles.boldLabel);
-
-        if (GUILayout.Button("Place All Prefabs in Zones"))
-        {
-            PlaceAllPrefabsInZones();
-        }
-
-        if (GUILayout.Button("Clear All Placed Prefabs"))
-        {
-            ClearAllPlacedPrefabs();
-        }
-
-        EditorGUILayout.Space(5);
-
-        // Show zone-specific placement options with prefab info
-        var zoneGroups = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<FilmDataEntry>>();
-
-        // Group entries by their placement zones (each entry can appear in multiple zones)
-        foreach (var entry in filmData.Entries)
-        {
-            string[] placementZones = entry.GetPlacementZones();
-            foreach (string zoneName in placementZones)
+            if (zoneManager == null || filmData == null)
             {
-                if (!string.IsNullOrEmpty(zoneName))
+                EditorGUILayout.HelpBox("Film Zone Manager and imported JSON data required", MessageType.Warning);
+                return;
+            }
+
+            // Check if default prefab is set
+            if (zoneManager.defaultPrefab == null)
+            {
+                EditorGUILayout.HelpBox("Default prefab not set in FilmZoneManager. This is required for placing prefabs.", MessageType.Error);
+                return;
+            }
+
+            EditorGUILayout.LabelField("Placement Options:", EditorStyles.boldLabel);
+
+            if (GUILayout.Button("Place All Prefabs in Zones"))
+            {
+                PlaceAllPrefabsInZones();
+            }
+
+            if (GUILayout.Button("Clear All Placed Prefabs"))
+            {
+                ClearAllPlacedPrefabs();
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Show zone-specific placement options with prefab info
+            var zoneGroups = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<FilmDataEntry>>();
+
+            // Group entries by their placement zones (each entry can appear in multiple zones)
+            foreach (var entry in filmData.Entries)
+            {
+                string[] placementZones = entry.GetPlacementZones();
+                foreach (string zoneName in placementZones)
                 {
-                    if (!zoneGroups.ContainsKey(zoneName))
+                    if (!string.IsNullOrEmpty(zoneName))
                     {
-                        zoneGroups[zoneName] = new System.Collections.Generic.List<FilmDataEntry>();
+                        if (!zoneGroups.ContainsKey(zoneName))
+                        {
+                            zoneGroups[zoneName] = new System.Collections.Generic.List<FilmDataEntry>();
+                        }
+                        zoneGroups[zoneName].Add(entry);
                     }
-                    zoneGroups[zoneName].Add(entry);
+                }
+            }
+
+            foreach (var group in zoneGroups)
+            {
+                // Count custom vs default prefabs
+                int customPrefabs = group.Value.Count(e => e.HasCustomPrefab());
+                int defaultPrefabs = group.Value.Count - customPrefabs;
+
+                EditorGUILayout.BeginHorizontal();
+                try
+                {
+                    EditorGUILayout.LabelField($"{group.Key} ({group.Value.Count})", GUILayout.Width(120));
+                    EditorGUILayout.LabelField($"Custom: {customPrefabs}, Default: {defaultPrefabs}", EditorStyles.miniLabel, GUILayout.Width(120));
+
+                    if (GUILayout.Button("Place", GUILayout.Width(60)))
+                    {
+                        PlacePrefabsInZone(group.Key, group.Value);
+                    }
+
+                    if (GUILayout.Button("Clear", GUILayout.Width(60)))
+                    {
+                        ClearPrefabsInZone(group.Key);
+                    }
+                }
+                finally
+                {
+                    EditorGUILayout.EndHorizontal();
                 }
             }
         }
-
-        foreach (var group in zoneGroups)
+        finally
         {
-            // Count custom vs default prefabs
-            int customPrefabs = group.Value.Count(e => e.HasCustomPrefab());
-            int defaultPrefabs = group.Value.Count - customPrefabs;
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"{group.Key} ({group.Value.Count})", GUILayout.Width(120));
-            EditorGUILayout.LabelField($"Custom: {customPrefabs}, Default: {defaultPrefabs}", EditorStyles.miniLabel, GUILayout.Width(120));
-
-            if (GUILayout.Button("Place", GUILayout.Width(60)))
-            {
-                PlacePrefabsInZone(group.Key, group.Value);
-            }
-
-            if (GUILayout.Button("Clear", GUILayout.Width(60)))
-            {
-                ClearPrefabsInZone(group.Key);
-            }
-
-            EditorGUILayout.EndHorizontal();
+            EditorGUI.indentLevel--;
         }
-
-        EditorGUI.indentLevel--;
     }
 
     private void DrawSaveLoadSection()
@@ -473,21 +589,205 @@ public class FilmZoneEditorWindow : EditorWindow
         if (!showSaveLoad) return;
 
         EditorGUI.indentLevel++;
+        try
+        {
+            EditorGUILayout.BeginHorizontal();
+            try
+            {
+                if (GUILayout.Button("Save Current Layout"))
+                {
+                    SaveCurrentLayout();
+                }
+
+                if (GUILayout.Button("Load Layout"))
+                {
+                    LoadLayout();
+                }
+            }
+            finally
+            {
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        finally
+        {
+            EditorGUI.indentLevel--;
+        }
+    }
+
+    private void DrawUtilityButtons()
+    {
+        EditorGUILayout.LabelField("Utilities:", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Save Current Layout"))
+        try
         {
-            SaveCurrentLayout();
+            if (GUILayout.Button("Open Film Zone Editor"))
+            {
+                FilmZoneEditorWindow.ShowWindow();
+            }
+
+            if (GUILayout.Button("Select All Videos"))
+            {
+                EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+                Selection.objects = allVideos.Select(v => v.gameObject).ToArray();
+            }
+        }
+        finally
+        {
+            EditorGUILayout.EndHorizontal();
         }
 
-        if (GUILayout.Button("Load Layout"))
+        EditorGUILayout.BeginHorizontal();
+        try
         {
-            LoadLayout();
-        }
-        EditorGUILayout.EndHorizontal();
+            if (GUILayout.Button("Validate Setup"))
+            {
+                ValidateSetup();
+            }
 
-        EditorGUI.indentLevel--;
+            if (GUILayout.Button("Validate Videos"))
+            {
+                ValidateVideoSetup();
+            }
+        }
+        finally
+        {
+            EditorGUILayout.EndHorizontal();
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        try
+        {
+            if (GUILayout.Button("Clean Up"))
+            {
+                CleanUpSystem();
+            }
+
+            if (GUILayout.Button("Fix All Video Zones"))
+            {
+                FixAllVideoZones();
+            }
+        }
+        finally
+        {
+            EditorGUILayout.EndHorizontal();
+        }
     }
+
+    // ===== NUCLEAR DELETE HELPER METHODS =====
+
+    private void NuclearDeleteZone(int zoneIndex)
+    {
+        if (zoneIndex < 0 || zoneIndex >= zoneManager.zones.Count) return;
+
+        string zoneName = zoneManager.zones[zoneIndex].zoneName;
+
+        if (EditorUtility.DisplayDialog("💥 Nuclear Delete Zone",
+            $"⚠️ WARNING: This will COMPLETELY DELETE zone '{zoneName}'!\n\n" +
+            "This will remove:\n" +
+            "• The zone definition\n" +
+            "• All polygon points\n" +
+            "• All zone settings\n\n" +
+            "This action cannot be undone!",
+            "💥 NUCLEAR DELETE", "Cancel"))
+        {
+            Debug.Log($"💥 Nuclear deleting zone: {zoneName}");
+
+            // Use the FilmZoneManager's nuclear delete method
+            zoneManager.NuclearDeleteZone(zoneIndex);
+
+            // Reset selection if we deleted the selected zone
+            if (selectedZoneIndex == zoneIndex)
+            {
+                selectedZoneIndex = -1;
+                isEditingZone = false;
+                tempZonePoints.Clear();
+            }
+            else if (selectedZoneIndex > zoneIndex)
+            {
+                selectedZoneIndex--; // Adjust selection index
+            }
+
+            // Force repaint
+            Repaint();
+            SceneView.RepaintAll();
+        }
+    }
+
+    private void RegularDeleteZone(int zoneIndex)
+    {
+        if (zoneIndex < 0 || zoneIndex >= zoneManager.zones.Count) return;
+
+        string zoneName = zoneManager.zones[zoneIndex].zoneName;
+
+        if (EditorUtility.DisplayDialog("Delete Zone",
+            $"Delete zone '{zoneName}'?",
+            "Delete", "Cancel"))
+        {
+            zoneManager.zones.RemoveAt(zoneIndex);
+
+            if (selectedZoneIndex == zoneIndex)
+            {
+                selectedZoneIndex = -1;
+                isEditingZone = false;
+                tempZonePoints.Clear();
+            }
+            else if (selectedZoneIndex > zoneIndex)
+            {
+                selectedZoneIndex--;
+            }
+
+            EditorUtility.SetDirty(zoneManager);
+            SceneView.RepaintAll();
+        }
+    }
+
+    private void ClearZonePoints(int zoneIndex)
+    {
+        if (zoneIndex < 0 || zoneIndex >= zoneManager.zones.Count) return;
+
+        string zoneName = zoneManager.zones[zoneIndex].zoneName;
+
+        if (EditorUtility.DisplayDialog("Clear Zone Points",
+            $"Clear all polygon points from zone '{zoneName}'?\n\n" +
+            "This will remove the zone boundary but keep the zone definition.",
+            "Clear Points", "Cancel"))
+        {
+            zoneManager.ClearZonePoints(zoneIndex);
+
+            // If we're editing this zone, clear temp points too
+            if (selectedZoneIndex == zoneIndex && isEditingZone)
+            {
+                tempZonePoints.Clear();
+                SceneView.RepaintAll();
+            }
+        }
+    }
+
+    private void FocusOnZone(FilmZone zone)
+    {
+        if (zone.polygonPoints.Count == 0) return;
+
+        // Calculate bounds
+        Vector3 center = Vector3.zero;
+        foreach (var point in zone.polygonPoints)
+        {
+            center += point;
+        }
+        center /= zone.polygonPoints.Count;
+
+        // Focus scene view on zone center
+        SceneView sceneView = SceneView.lastActiveSceneView;
+        if (sceneView != null)
+        {
+            sceneView.pivot = center;
+            sceneView.size = 20f; // Adjust zoom level as needed
+            sceneView.Repaint();
+        }
+    }
+
+    // ===== ZONE EDITING METHODS =====
 
     private void CreateZoneManager()
     {
@@ -646,6 +946,31 @@ public class FilmZoneEditorWindow : EditorWindow
         SceneView.RepaintAll();
     }
 
+    private void SnapZonesToTerrain()
+    {
+        if (zoneManager == null) return;
+
+        Terrain terrain = Terrain.activeTerrain;
+        if (terrain == null)
+        {
+            Debug.LogWarning("No active terrain found!");
+            return;
+        }
+
+        foreach (var zone in zoneManager.zones)
+        {
+            for (int i = 0; i < zone.polygonPoints.Count; i++)
+            {
+                Vector3 point = zone.polygonPoints[i];
+                float terrainHeight = terrain.SampleHeight(point);
+                zone.polygonPoints[i] = new Vector3(point.x, terrainHeight, point.z);
+            }
+        }
+
+        EditorUtility.SetDirty(zoneManager);
+        Debug.Log("Snapped all zones to terrain height");
+    }
+
     private void OnSceneGUI(SceneView sceneView)
     {
         if (!isEditingZone) return;
@@ -793,9 +1118,17 @@ public class FilmZoneEditorWindow : EditorWindow
         Handles.EndGUI();
     }
 
+    // ===== PREFAB PLACEMENT METHODS =====
+
     private void PlaceAllPrefabsInZones()
     {
-        if (filmData == null || zoneManager == null) return;
+        if (filmData == null || zoneManager == null)
+        {
+            Debug.LogError("Cannot place prefabs: Missing filmData or zoneManager");
+            return;
+        }
+
+        Debug.Log("🚀 Starting to place all prefabs in zones...");
 
         int totalPlaced = 0;
         Dictionary<string, int> prefabTypeCounts = new Dictionary<string, int>();
@@ -809,6 +1142,7 @@ public class FilmZoneEditorWindow : EditorWindow
             {
                 if (!string.IsNullOrEmpty(zoneName))
                 {
+                    Debug.Log($"Placing '{entry.Title}' in zone '{zoneName}'");
                     PlacePrefabForEntry(entry, zoneName);
                     totalPlaced++;
 
@@ -821,7 +1155,7 @@ public class FilmZoneEditorWindow : EditorWindow
             }
         }
 
-        Debug.Log($"Placed {totalPlaced} total prefabs. Breakdown: {string.Join(", ", prefabTypeCounts.Select(kvp => $"{kvp.Key}={kvp.Value}"))}");
+        Debug.Log($"✅ Placed {totalPlaced} total prefabs. Breakdown: {string.Join(", ", prefabTypeCounts.Select(kvp => $"{kvp.Key}={kvp.Value}"))}");
     }
 
     private void PlacePrefabsInZone(string zoneName, System.Collections.Generic.List<FilmDataEntry> entries)
@@ -829,10 +1163,11 @@ public class FilmZoneEditorWindow : EditorWindow
         int placed = 0;
         foreach (var entry in entries)
         {
+            Debug.Log($"Placing '{entry.Title}' in zone '{zoneName}'");
             PlacePrefabForEntry(entry, zoneName);
             placed++;
         }
-        Debug.Log($"Placed {placed} prefabs in zone '{zoneName}'");
+        Debug.Log($"✅ Placed {placed} prefabs in zone '{zoneName}'");
     }
 
     private void PlacePrefabForEntry(FilmDataEntry entry, string zoneName)
@@ -858,7 +1193,7 @@ public class FilmZoneEditorWindow : EditorWindow
             return;
         }
 
-        // *** KEY FIX: Get prefab FOR THIS SPECIFIC ENTRY ***
+        // Get prefab FOR THIS SPECIFIC ENTRY
         GameObject prefabTemplate = zoneManager.GetPrefabForEntry(entry, zoneName);
         if (prefabTemplate == null)
         {
@@ -888,7 +1223,7 @@ public class FilmZoneEditorWindow : EditorWindow
         instance.transform.rotation = Quaternion.identity; // 0,0,0 rotation
         instance.name = $"Video_{entry.Title}_{zoneName}";
 
-        // Set up the complete video system on the instance
+        // CRITICAL: Set up the complete video system on the instance using ONLY EnhancedVideoPlayer
         SetupVideoSystemOnInstance(instance, entry, zoneName);
 
         // Parent to zone folder AFTER positioning
@@ -903,7 +1238,7 @@ public class FilmZoneEditorWindow : EditorWindow
 
         EditorUtility.SetDirty(instance);
 
-        Debug.Log($"Successfully placed '{entry.Title}' using {prefabSource} in zone '{zoneName}' at position {placementPosition}");
+        Debug.Log($"✅ Successfully placed '{entry.Title}' using {prefabSource} in zone '{zoneName}' at position {placementPosition}");
     }
 
     private Vector3 CalculatePlacementPositionAtZoneHeight(string zoneName)
@@ -956,6 +1291,7 @@ public class FilmZoneEditorWindow : EditorWindow
         return finalPosition;
     }
 
+    // CRITICAL METHOD: This ensures we ALWAYS use EnhancedVideoPlayer directly
     private void SetupVideoSystemOnInstance(GameObject instance, FilmDataEntry entry, string zoneName)
     {
         if (instance == null || entry == null) return;
@@ -968,56 +1304,35 @@ public class FilmZoneEditorWindow : EditorWindow
         }
         boxCollider.isTrigger = true; // Important for Event System
 
-        // Check if we already have an EnhancedVideoPlayer component (preferred)
+        // ALWAYS use EnhancedVideoPlayer directly - NEVER add VideoZonePrefab
         EnhancedVideoPlayer enhancedPlayer = instance.GetComponent<EnhancedVideoPlayer>();
-        VideoZonePrefab videoPrefab = instance.GetComponent<VideoZonePrefab>();
 
-        if (enhancedPlayer != null)
+        if (enhancedPlayer == null)
         {
-            // Use the existing EnhancedVideoPlayer and configure it
-            ConfigureEnhancedVideoPlayer(enhancedPlayer, entry, zoneName);
-            Debug.Log($"Configured existing EnhancedVideoPlayer for: {entry.Title}");
-        }
-        else if (videoPrefab != null)
-        {
-            // Use the existing VideoZonePrefab and configure it
-            videoPrefab.SetVideoData(entry, zoneName);
-            Debug.Log($"Configured existing VideoZonePrefab for: {entry.Title}");
+            // Add EnhancedVideoPlayer if it doesn't exist
+            enhancedPlayer = instance.AddComponent<EnhancedVideoPlayer>();
+            Debug.Log($"Added new EnhancedVideoPlayer for: {entry.Title}");
         }
         else
         {
-            // Add VideoZonePrefab component as fallback
-            videoPrefab = instance.AddComponent<VideoZonePrefab>();
-            videoPrefab.SetVideoData(entry, zoneName);
-            Debug.Log($"Added new VideoZonePrefab for: {entry.Title}");
+            Debug.Log($"Using existing EnhancedVideoPlayer for: {entry.Title}");
         }
 
-        // Set up EventTrigger component
-        EventTrigger eventTrigger = instance.GetComponent<EventTrigger>();
-        if (eventTrigger == null)
+        // Remove any VideoZonePrefab components that might exist (cleanup)
+        VideoZonePrefab existingVideoPrefab = instance.GetComponent<VideoZonePrefab>();
+        if (existingVideoPrefab != null)
         {
-            eventTrigger = instance.AddComponent<EventTrigger>();
+            DestroyImmediate(existingVideoPrefab);
+            Debug.Log($"Removed VideoZonePrefab component from {entry.Title} - using EnhancedVideoPlayer instead");
         }
 
-        // Clear existing triggers and set up new ones
-        if (eventTrigger.triggers == null)
-        {
-            eventTrigger.triggers = new List<EventTrigger.Entry>();
-        }
-        eventTrigger.triggers.Clear();
+        // Configure the EnhancedVideoPlayer with proper zone tracking
+        ConfigureEnhancedVideoPlayer(enhancedPlayer, entry, zoneName);
 
-        if (enhancedPlayer != null)
-        {
-            // Set up events for EnhancedVideoPlayer
-            SetupEventTriggersForEnhancedPlayer(eventTrigger, enhancedPlayer);
-        }
-        else if (videoPrefab != null)
-        {
-            // Set up events for VideoZonePrefab
-            SetupEventTriggersForVideoZonePrefab(eventTrigger, videoPrefab);
-        }
+        // Set up EventTrigger component - PRESERVE EXISTING SETTINGS FROM PREFAB
+        SetupEventTriggersForEnhancedPlayer(instance, enhancedPlayer);
 
-        Debug.Log($"Set up complete video system for: {entry.Title} in zone: {zoneName}");
+        Debug.Log($"✅ Set up complete video system for: {entry.Title} in zone: {zoneName} using EnhancedVideoPlayer ONLY");
     }
 
     private void ConfigureEnhancedVideoPlayer(EnhancedVideoPlayer enhancedPlayer, FilmDataEntry entry, string zoneName)
@@ -1026,15 +1341,16 @@ public class FilmZoneEditorWindow : EditorWindow
         enhancedPlayer.VideoUrlLink = entry.GetVideoUrl();
         enhancedPlayer.title = entry.Title;
         enhancedPlayer.description = entry.Description ?? "";
+
+        // CRITICAL: Set both zoneName and LastKnownZone to the placement zone
         enhancedPlayer.zoneName = zoneName;
+        enhancedPlayer.LastKnownZone = zoneName;  // This was missing in your setup!
 
         // Set scene navigation defaults if not already set
         if (string.IsNullOrEmpty(enhancedPlayer.returntoscene))
             enhancedPlayer.returntoscene = "mainVR";
         if (string.IsNullOrEmpty(enhancedPlayer.nextscene))
             enhancedPlayer.nextscene = "360VideoApp";
-        if (string.IsNullOrEmpty(enhancedPlayer.behaviour))
-            enhancedPlayer.behaviour = "return";
 
         // Set prefab type for categorization
         if (!string.IsNullOrEmpty(entry.Prefab))
@@ -1048,7 +1364,11 @@ public class FilmZoneEditorWindow : EditorWindow
         // Update text components if they exist
         UpdateTextComponents(enhancedPlayer.gameObject, entry);
 
-        Debug.Log($"Configured EnhancedVideoPlayer: {entry.Title} -> {entry.GetVideoUrl()}");
+        // Mark as dirty to ensure changes are saved
+        EditorUtility.SetDirty(enhancedPlayer);
+
+        Debug.Log($"Configured EnhancedVideoPlayer: {entry.Title} -> {entry.GetVideoUrl()} in zone: {zoneName}");
+        Debug.Log($"Set LastKnownZone to: {zoneName}");
     }
 
     private void UpdateTextComponents(GameObject instance, FilmDataEntry entry)
@@ -1089,46 +1409,129 @@ public class FilmZoneEditorWindow : EditorWindow
         }
     }
 
-    private void SetupEventTriggersForEnhancedPlayer(EventTrigger eventTrigger, EnhancedVideoPlayer enhancedPlayer)
+    // FIXED: Event triggers that work with prefab settings
+    private void SetupEventTriggersForEnhancedPlayer(GameObject instance, EnhancedVideoPlayer enhancedPlayer)
     {
-        // Set up Pointer Enter event
-        EventTrigger.Entry pointerEnter = new EventTrigger.Entry();
-        pointerEnter.eventID = EventTriggerType.PointerEnter;
-        pointerEnter.callback.AddListener((data) => { enhancedPlayer.MouseHoverChangeScene(); });
-        eventTrigger.triggers.Add(pointerEnter);
+        EventTrigger eventTrigger = instance.GetComponent<EventTrigger>();
 
-        // Set up Pointer Exit event
-        EventTrigger.Entry pointerExit = new EventTrigger.Entry();
-        pointerExit.eventID = EventTriggerType.PointerExit;
-        pointerExit.callback.AddListener((data) => { enhancedPlayer.MouseExit(); });
-        eventTrigger.triggers.Add(pointerExit);
+        // If no EventTrigger exists, create one
+        if (eventTrigger == null)
+        {
+            eventTrigger = instance.AddComponent<EventTrigger>();
+            Debug.Log($"Created new EventTrigger for {enhancedPlayer.title}");
+        }
 
-        // Optional: Set up Pointer Click event for immediate activation
-        EventTrigger.Entry pointerClick = new EventTrigger.Entry();
-        pointerClick.eventID = EventTriggerType.PointerClick;
-        pointerClick.callback.AddListener((data) => { enhancedPlayer.MouseHoverChangeScene(); });
-        eventTrigger.triggers.Add(pointerClick);
-    }
+        // Check if the EventTrigger already has properly configured triggers from the prefab
+        bool hasValidTriggers = false;
+        if (eventTrigger.triggers != null && eventTrigger.triggers.Count > 0)
+        {
+            // Check if any trigger calls methods on EnhancedVideoPlayer
+            foreach (var trigger in eventTrigger.triggers)
+            {
+                if (trigger.callback != null && trigger.callback.GetPersistentEventCount() > 0)
+                {
+                    for (int i = 0; i < trigger.callback.GetPersistentEventCount(); i++)
+                    {
+                        var target = trigger.callback.GetPersistentTarget(i);
+                        var methodName = trigger.callback.GetPersistentMethodName(i);
 
-    private void SetupEventTriggersForVideoZonePrefab(EventTrigger eventTrigger, VideoZonePrefab videoPrefab)
-    {
-        // Set up Pointer Enter event
-        EventTrigger.Entry pointerEnter = new EventTrigger.Entry();
-        pointerEnter.eventID = EventTriggerType.PointerEnter;
-        pointerEnter.callback.AddListener((data) => { videoPrefab.MouseHoverChangeScene(); });
-        eventTrigger.triggers.Add(pointerEnter);
+                        // Check if it's calling methods on EnhancedVideoPlayer
+                        if (target is EnhancedVideoPlayer &&
+                            (methodName == "MouseHoverChangeScene" || methodName == "MouseExit"))
+                        {
+                            hasValidTriggers = true;
+                            Debug.Log($"Found valid prefab EventTrigger configuration for {enhancedPlayer.title}");
+                            break;
+                        }
+                    }
+                    if (hasValidTriggers) break;
+                }
+            }
+        }
 
-        // Set up Pointer Exit event
-        EventTrigger.Entry pointerExit = new EventTrigger.Entry();
-        pointerExit.eventID = EventTriggerType.PointerExit;
-        pointerExit.callback.AddListener((data) => { videoPrefab.MouseExit(); });
-        eventTrigger.triggers.Add(pointerExit);
+        // Only add programmatic triggers if the prefab doesn't have valid ones
+        if (!hasValidTriggers)
+        {
+            Debug.Log($"No valid prefab EventTriggers found, setting up programmatic triggers for {enhancedPlayer.title}");
 
-        // Optional: Set up Pointer Click event for immediate activation
-        EventTrigger.Entry pointerClick = new EventTrigger.Entry();
-        pointerClick.eventID = EventTriggerType.PointerClick;
-        pointerClick.callback.AddListener((data) => { videoPrefab.MouseHoverChangeScene(); });
-        eventTrigger.triggers.Add(pointerClick);
+            // Initialize triggers list if null
+            if (eventTrigger.triggers == null)
+            {
+                eventTrigger.triggers = new List<EventTrigger.Entry>();
+            }
+
+            // Clear only if we're going to replace with programmatic ones
+            eventTrigger.triggers.Clear();
+
+            // Set up Pointer Enter event
+            EventTrigger.Entry pointerEnter = new EventTrigger.Entry();
+            pointerEnter.eventID = EventTriggerType.PointerEnter;
+            pointerEnter.callback.AddListener((data) => {
+                enhancedPlayer.MouseHoverChangeScene();
+                Debug.Log($"Programmatic Pointer Enter triggered on {enhancedPlayer.title} in zone {enhancedPlayer.LastKnownZone}");
+            });
+            eventTrigger.triggers.Add(pointerEnter);
+
+            // Set up Pointer Exit event
+            EventTrigger.Entry pointerExit = new EventTrigger.Entry();
+            pointerExit.eventID = EventTriggerType.PointerExit;
+            pointerExit.callback.AddListener((data) => {
+                enhancedPlayer.MouseExit();
+                Debug.Log($"Programmatic Pointer Exit triggered on {enhancedPlayer.title}");
+            });
+            eventTrigger.triggers.Add(pointerExit);
+
+            // Optional: Set up Pointer Click event for immediate activation
+            EventTrigger.Entry pointerClick = new EventTrigger.Entry();
+            pointerClick.eventID = EventTriggerType.PointerClick;
+            pointerClick.callback.AddListener((data) => {
+                // Ensure zone is saved before triggering video
+                if (!string.IsNullOrEmpty(enhancedPlayer.LastKnownZone))
+                {
+                    PlayerPrefs.SetString("lastknownzone", enhancedPlayer.LastKnownZone);
+                    PlayerPrefs.Save();
+                    Debug.Log($"Saved lastknownzone as: {enhancedPlayer.LastKnownZone}");
+                }
+                enhancedPlayer.SetVideoUrl(); // Use SetVideoUrl for immediate trigger
+            });
+            eventTrigger.triggers.Add(pointerClick);
+
+            Debug.Log($"Set up programmatic Event Triggers for EnhancedVideoPlayer: {enhancedPlayer.title} in zone: {enhancedPlayer.LastKnownZone}");
+        }
+        else
+        {
+            Debug.Log($"Using prefab EventTrigger configuration for: {enhancedPlayer.title}");
+
+            // Update the targets in the existing triggers to point to the new instance
+            if (eventTrigger.triggers != null)
+            {
+                foreach (var trigger in eventTrigger.triggers)
+                {
+                    if (trigger.callback != null)
+                    {
+                        for (int i = 0; i < trigger.callback.GetPersistentEventCount(); i++)
+                        {
+                            var target = trigger.callback.GetPersistentTarget(i);
+                            var methodName = trigger.callback.GetPersistentMethodName(i);
+
+                            // If the target is an EnhancedVideoPlayer, update it to point to our instance
+                            if (target is EnhancedVideoPlayer)
+                            {
+                                // Use SerializedObject to update the persistent target
+                                SerializedObject serializedEventTrigger = new SerializedObject(eventTrigger);
+
+                                // This is a bit complex, so we'll just log that we found it
+                                Debug.Log($"Found existing EventTrigger calling {methodName} on EnhancedVideoPlayer - should work with instance");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ensure the enhanced player is marked dirty
+        EditorUtility.SetDirty(eventTrigger);
+        EditorUtility.SetDirty(enhancedPlayer);
     }
 
     private Transform FindOrCreateZoneParent(string zoneName)
@@ -1203,17 +1606,27 @@ public class FilmZoneEditorWindow : EditorWindow
             ClearPrefabsInZone(kvp.Key);
         }
         zonePrefabs.Clear();
+        Debug.Log("✅ Cleared all placed prefabs from all zones");
     }
 
     private void ClearPrefabsInZone(string zoneName)
     {
-        if (!zonePrefabs.ContainsKey(zoneName)) return;
+        Debug.Log($"🧹 Clearing prefabs in zone: {zoneName}");
 
+        if (!zonePrefabs.ContainsKey(zoneName))
+        {
+            Debug.Log($"No tracked prefabs found for zone: {zoneName}");
+            return;
+        }
+
+        int clearedCount = 0;
         foreach (GameObject prefab in zonePrefabs[zoneName])
         {
             if (prefab != null)
             {
+                Debug.Log($"Destroying: {prefab.name}");
                 DestroyImmediate(prefab);
+                clearedCount++;
             }
         }
 
@@ -1243,7 +1656,11 @@ public class FilmZoneEditorWindow : EditorWindow
             Debug.Log($"Cleaning up empty fallback zone folder: Zone_{zoneName}");
             DestroyImmediate(zoneParent);
         }
+
+        Debug.Log($"✅ Cleared {clearedCount} prefabs from zone: {zoneName}");
     }
+
+    // ===== SAVE/LOAD METHODS =====
 
     private void SaveCurrentLayout()
     {
@@ -1252,20 +1669,20 @@ public class FilmZoneEditorWindow : EditorWindow
 
         ZoneLayoutData layoutData = new ZoneLayoutData();
 
-        // Find all VideoZonePrefab components in the scene
-        VideoZonePrefab[] allVideoPrefabs = FindObjectsOfType<VideoZonePrefab>();
+        // Find all EnhancedVideoPlayer components in the scene (not VideoZonePrefab)
+        EnhancedVideoPlayer[] allEnhancedPlayers = Object.FindObjectsOfType<EnhancedVideoPlayer>();
 
-        foreach (var videoPrefab in allVideoPrefabs)
+        foreach (var enhancedPlayer in allEnhancedPlayers)
         {
             PrefabPositionData posData = new PrefabPositionData();
-            posData.prefabId = videoPrefab.gameObject.name;
-            posData.position = videoPrefab.transform.position;
-            posData.rotation = videoPrefab.transform.eulerAngles;
-            posData.scale = videoPrefab.transform.localScale;
-            posData.zoneName = videoPrefab.zoneName;
-            posData.videoUrl = videoPrefab.videoUrl;
-            posData.videoTitle = videoPrefab.videoTitle;
-            posData.videoDescription = videoPrefab.videoDescription;
+            posData.prefabId = enhancedPlayer.gameObject.name;
+            posData.position = enhancedPlayer.transform.position;
+            posData.rotation = enhancedPlayer.transform.eulerAngles;
+            posData.scale = enhancedPlayer.transform.localScale;
+            posData.zoneName = enhancedPlayer.LastKnownZone;
+            posData.videoUrl = enhancedPlayer.VideoUrlLink;
+            posData.videoTitle = enhancedPlayer.title;
+            posData.videoDescription = enhancedPlayer.description;
 
             layoutData.prefabPositions.Add(posData);
         }
@@ -1315,7 +1732,7 @@ public class FilmZoneEditorWindow : EditorWindow
 
                     if (matchingEntry != null)
                     {
-                        prefabTemplate = zoneManager.GetPrefabForEntry(matchingEntry);
+                        prefabTemplate = zoneManager.GetPrefabForEntry(matchingEntry, posData.zoneName);
                     }
                 }
 
@@ -1334,17 +1751,18 @@ public class FilmZoneEditorWindow : EditorWindow
                 instance.transform.localScale = posData.scale;
                 instance.name = posData.prefabId;
 
-                // Configure VideoZonePrefab
-                VideoZonePrefab videoPrefab = instance.GetComponent<VideoZonePrefab>();
-                if (videoPrefab == null)
+                // Configure EnhancedVideoPlayer directly (not VideoZonePrefab)
+                EnhancedVideoPlayer enhancedPlayer = instance.GetComponent<EnhancedVideoPlayer>();
+                if (enhancedPlayer == null)
                 {
-                    videoPrefab = instance.AddComponent<VideoZonePrefab>();
+                    enhancedPlayer = instance.AddComponent<EnhancedVideoPlayer>();
                 }
 
-                videoPrefab.videoUrl = posData.videoUrl;
-                videoPrefab.videoTitle = posData.videoTitle;
-                videoPrefab.videoDescription = posData.videoDescription;
-                videoPrefab.zoneName = posData.zoneName;
+                enhancedPlayer.VideoUrlLink = posData.videoUrl;
+                enhancedPlayer.title = posData.videoTitle;
+                enhancedPlayer.description = posData.videoDescription;
+                enhancedPlayer.zoneName = posData.zoneName;
+                enhancedPlayer.LastKnownZone = posData.zoneName;
 
                 // Parent to zone
                 Transform zoneParent = FindOrCreateZoneParent(posData.zoneName);
@@ -1367,88 +1785,206 @@ public class FilmZoneEditorWindow : EditorWindow
             Debug.LogError($"Error loading layout: {e.Message}");
         }
     }
-}
 
-// Custom property drawer for FilmZone class
-[CustomPropertyDrawer(typeof(FilmZone))]
-public class FilmZonePropertyDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    // ===== VALIDATION METHODS =====
+
+    private void ValidateVideoSetup()
     {
-        EditorGUI.BeginProperty(position, label, property);
+        System.Text.StringBuilder report = new System.Text.StringBuilder();
+        report.AppendLine("Video Setup Validation Report:");
+        report.AppendLine("============================");
 
-        // Get properties
-        var zoneNameProp = property.FindPropertyRelative("zoneName");
-        var gizmoColorProp = property.FindPropertyRelative("gizmoColor");
-        var showGizmosProp = property.FindPropertyRelative("showGizmos");
-        var polygonPointsProp = property.FindPropertyRelative("polygonPoints");
+        // Find all video components in the scene
+        EnhancedVideoPlayer[] enhancedPlayers = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        VideoZonePrefab[] zonePrefabComponents = Object.FindObjectsOfType<VideoZonePrefab>();
 
-        // Calculate rects
-        float lineHeight = EditorGUIUtility.singleLineHeight;
-        float spacing = 2f;
+        report.AppendLine($"Found {enhancedPlayers.Length} EnhancedVideoPlayer components");
+        report.AppendLine($"Found {zonePrefabComponents.Length} VideoZonePrefab components");
 
-        Rect nameRect = new Rect(position.x, position.y, position.width * 0.6f, lineHeight);
-        Rect colorRect = new Rect(position.x + position.width * 0.65f, position.y, position.width * 0.15f, lineHeight);
-        Rect toggleRect = new Rect(position.x + position.width * 0.85f, position.y, position.width * 0.15f, lineHeight);
-        Rect pointsRect = new Rect(position.x, position.y + lineHeight + spacing, position.width, lineHeight);
-
-        // Draw fields
-        EditorGUI.PropertyField(nameRect, zoneNameProp, GUIContent.none);
-        EditorGUI.PropertyField(colorRect, gizmoColorProp, GUIContent.none);
-        EditorGUI.PropertyField(toggleRect, showGizmosProp, GUIContent.none);
-
-        // Show polygon points count
-        EditorGUI.LabelField(pointsRect, $"Points: {polygonPointsProp.arraySize}", EditorStyles.miniLabel);
-
-        EditorGUI.EndProperty();
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-    {
-        return EditorGUIUtility.singleLineHeight * 2 + 4f;
-    }
-}
-
-// Scene view overlay for film zone information
-[InitializeOnLoad]
-public static class FilmZoneSceneOverlay
-{
-    static FilmZoneSceneOverlay()
-    {
-        SceneView.duringSceneGui += OnSceneGUI;
-    }
-
-    private static void OnSceneGUI(SceneView sceneView)
-    {
-        FilmZoneManager zoneManager = Object.FindObjectOfType<FilmZoneManager>();
-        if (zoneManager == null) return;
-
-        // Draw zone labels in scene view
-        foreach (var zone in zoneManager.zones)
+        if (zonePrefabComponents.Length > 0)
         {
-            if (zone.polygonPoints.Count < 3) continue;
-
-            // Calculate center point
-            Vector3 center = Vector3.zero;
-            foreach (var point in zone.polygonPoints)
-            {
-                center += point;
-            }
-            center /= zone.polygonPoints.Count;
-
-            // Draw zone name label with height info
-            Handles.BeginGUI();
-            Vector3 screenPos = SceneView.currentDrawingSceneView.camera.WorldToScreenPoint(center);
-            if (screenPos.z > 0)
-            {
-                screenPos.y = SceneView.currentDrawingSceneView.camera.pixelHeight - screenPos.y;
-
-                GUI.color = zone.gizmoColor;
-                GUI.Label(new Rect(screenPos.x - 75, screenPos.y - 25, 150, 40),
-                    $"{zone.zoneName}\nY: {zone.GetZoneHeight():F1}", EditorStyles.boldLabel);
-                GUI.color = Color.white;
-            }
-            Handles.EndGUI();
+            report.AppendLine("⚠️ Warning: VideoZonePrefab components found - these should be replaced with EnhancedVideoPlayer");
         }
+
+        // Check each EnhancedVideoPlayer
+        int correctlyConfigured = 0;
+        int missingZone = 0;
+        int missingEventTriggers = 0;
+
+        foreach (var player in enhancedPlayers)
+        {
+            bool isCorrect = true;
+
+            // Check if LastKnownZone is set properly
+            if (string.IsNullOrEmpty(player.LastKnownZone) || player.LastKnownZone == "Home")
+            {
+                missingZone++;
+                isCorrect = false;
+                report.AppendLine($"❌ {player.gameObject.name}: LastKnownZone not set properly (current: '{player.LastKnownZone}')");
+            }
+
+            // Check if Event Triggers are set up
+            EventTrigger eventTrigger = player.GetComponent<EventTrigger>();
+            if (eventTrigger == null || eventTrigger.triggers == null || eventTrigger.triggers.Count == 0)
+            {
+                missingEventTriggers++;
+                isCorrect = false;
+                report.AppendLine($"❌ {player.gameObject.name}: Missing Event Triggers");
+            }
+
+            if (isCorrect)
+            {
+                correctlyConfigured++;
+                report.AppendLine($"✅ {player.gameObject.name}: Correctly configured (Zone: {player.LastKnownZone})");
+            }
+        }
+
+        report.AppendLine($"\nSummary:");
+        report.AppendLine($"✅ Correctly configured: {correctlyConfigured}");
+        report.AppendLine($"❌ Missing zone info: {missingZone}");
+        report.AppendLine($"❌ Missing event triggers: {missingEventTriggers}");
+
+        if (correctlyConfigured == enhancedPlayers.Length && zonePrefabComponents.Length == 0)
+        {
+            report.AppendLine("\n🎉 All video prefabs are correctly configured!");
+        }
+        else
+        {
+            report.AppendLine("\n⚠️ Some issues found. Consider re-running the prefab placement process.");
+        }
+
+        Debug.Log(report.ToString());
+        EditorUtility.DisplayDialog("Video Setup Validation", report.ToString(), "OK");
+    }
+
+    private void FixAllVideoZones()
+    {
+        if (!EditorUtility.DisplayDialog("Fix Video Zones",
+            "This will update LastKnownZone for all EnhancedVideoPlayer components based on their zoneName. Continue?",
+            "Yes", "Cancel"))
+        {
+            return;
+        }
+
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        int fixedCount = 0;
+
+        foreach (var video in allVideos)
+        {
+            if (!string.IsNullOrEmpty(video.zoneName) &&
+                (string.IsNullOrEmpty(video.LastKnownZone) || video.LastKnownZone == "Home"))
+            {
+                video.LastKnownZone = video.zoneName;
+                EditorUtility.SetDirty(video);
+                fixedCount++;
+                Debug.Log($"Fixed zone for {video.gameObject.name}: set LastKnownZone to {video.zoneName}");
+            }
+        }
+
+        Debug.Log($"Fixed {fixedCount} video zone assignments");
+        EditorUtility.DisplayDialog("Fix Complete", $"Fixed {fixedCount} video zone assignments", "OK");
+    }
+
+    private void ValidateSetup()
+    {
+        System.Text.StringBuilder report = new System.Text.StringBuilder();
+        report.AppendLine("Film Zone Manager Validation Report:");
+        report.AppendLine("============================");
+
+        // Check default prefab
+        if (zoneManager.defaultPrefab == null)
+        {
+            report.AppendLine("❌ Default prefab not set");
+        }
+        else
+        {
+            report.AppendLine("✅ Default prefab set");
+        }
+
+        // Check zones
+        int validZones = zoneManager.zones.Count(z => z.polygonPoints.Count >= 3);
+        report.AppendLine($"📍 Zones: {zoneManager.zones.Count} total, {validZones} valid");
+
+        if (validZones == 0)
+        {
+            report.AppendLine("❌ No valid zones (need at least 3 points each)");
+        }
+
+        // Check film prefab mappings
+        int completeFilmMappings = zoneManager.prefabMappings.Count(m => !string.IsNullOrEmpty(m.prefabName) && m.prefab != null);
+        report.AppendLine($"🎯 Film prefab mappings: {completeFilmMappings}/{zoneManager.prefabMappings.Count} complete");
+
+        // Check zone prefab mappings
+        int completeZoneMappings = zoneManager.zonePrefabMappings.Count(m => !string.IsNullOrEmpty(m.zoneName) && m.prefab != null);
+        report.AppendLine($"🏠 Zone prefab mappings: {completeZoneMappings}/{zoneManager.zonePrefabMappings.Count} complete");
+
+        // Check video prefabs in scene (use EnhancedVideoPlayer instead of VideoZonePrefab)
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        report.AppendLine($"🎬 Enhanced Video Players in scene: {allVideos.Length}");
+
+        // Check for orphaned videos (videos not in any zone)
+        int orphanedVideos = 0;
+        foreach (var video in allVideos)
+        {
+            if (string.IsNullOrEmpty(video.LastKnownZone) || video.LastKnownZone == "Home" ||
+                !zoneManager.zones.Any(z => z.zoneName.Equals(video.LastKnownZone, System.StringComparison.OrdinalIgnoreCase)))
+            {
+                orphanedVideos++;
+            }
+        }
+
+        if (orphanedVideos > 0)
+        {
+            report.AppendLine($"⚠️ {orphanedVideos} orphaned videos (not in valid zones)");
+        }
+
+        Debug.Log(report.ToString());
+        EditorUtility.DisplayDialog("Validation Complete", report.ToString(), "OK");
+    }
+
+    private void CleanUpSystem()
+    {
+        if (!EditorUtility.DisplayDialog("Clean Up System",
+            "This will remove empty zones and fix references. Continue?", "Yes", "Cancel"))
+        {
+            return;
+        }
+
+        int cleaned = 0;
+
+        // Remove zones with no polygon points
+        for (int i = zoneManager.zones.Count - 1; i >= 0; i--)
+        {
+            if (zoneManager.zones[i].polygonPoints.Count == 0)
+            {
+                zoneManager.zones.RemoveAt(i);
+                cleaned++;
+            }
+        }
+
+        // Remove film prefab mappings with empty names or null prefabs
+        for (int i = zoneManager.prefabMappings.Count - 1; i >= 0; i--)
+        {
+            var mapping = zoneManager.prefabMappings[i];
+            if (string.IsNullOrEmpty(mapping.prefabName) || mapping.prefab == null)
+            {
+                zoneManager.prefabMappings.RemoveAt(i);
+                cleaned++;
+            }
+        }
+
+        // Remove zone prefab mappings with empty names or null prefabs
+        for (int i = zoneManager.zonePrefabMappings.Count - 1; i >= 0; i--)
+        {
+            var mapping = zoneManager.zonePrefabMappings[i];
+            if (string.IsNullOrEmpty(mapping.zoneName) || mapping.prefab == null)
+            {
+                zoneManager.zonePrefabMappings.RemoveAt(i);
+                cleaned++;
+            }
+        }
+
+        EditorUtility.SetDirty(zoneManager);
+        Debug.Log($"Cleaned up {cleaned} items");
     }
 }

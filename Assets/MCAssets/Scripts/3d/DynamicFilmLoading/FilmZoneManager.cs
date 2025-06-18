@@ -10,21 +10,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Main Purpose: Manages video placement in 3D zones with a smart prefab selection system.
-//Key Features:
-
-//Zone Management: Defines polygonal areas in 3D space where videos can be placed
-//3-Tier Prefab System: Automatically selects the right prefab for each video:
-
-//Film - specific prefab(from JSON data)
-//Zone - specific prefab(themed for each zone)
-//    Default prefab(fallback)
-
-
-//JSON Data Handling: Parses video information from JSON files
-//Spatial Calculations: Determines if points are inside zones, calculates heights, finds random positions
-//Video Components: Manages VideoZonePrefab components that handle individual video interactions
-
-//What it does: Acts as the central brain that decides which prefab to use for each video and where to place it in the 3D world.
+/// ENHANCED VERSION: Includes comprehensive clearing functionality for persistent zone data
 /// </summary>
 
 // Data structures for JSON parsing
@@ -245,6 +231,19 @@ public class FilmZone
 
         return center;
     }
+
+    // ENHANCED: Clear all polygon points for this zone
+    public void ClearAllPoints()
+    {
+        polygonPoints.Clear();
+        Debug.Log($"Cleared all polygon points for zone: {zoneName}");
+    }
+
+    // ENHANCED: Get debug info about this zone
+    public string GetDebugInfo()
+    {
+        return $"Zone '{zoneName}': {polygonPoints.Count} points, Color: {gizmoColor}, ShowGizmos: {showGizmos}";
+    }
 }
 
 // Main film zone manager component
@@ -265,6 +264,12 @@ public class FilmZoneManager : MonoBehaviour
 
     [Header("Debug")]
     public bool showZoneGizmos = true;
+    public bool showDebugInfo = false;
+
+    // ENHANCED: Force clear options
+    [Header("Enhanced Clearing (Debug)")]
+    [SerializeField] private bool forceShowAllGizmos = false;
+    [SerializeField] private bool enableDebugLogging = true;
 
     private Dictionary<string, GameObject> prefabDict;
 
@@ -297,6 +302,27 @@ public class FilmZoneManager : MonoBehaviour
                 }
             }
         }
+
+        // ENHANCED: Debug logging
+        if (enableDebugLogging)
+        {
+            LogZoneDebugInfo();
+        }
+    }
+
+    // ENHANCED: Debug logging method
+    private void LogZoneDebugInfo()
+    {
+        Debug.Log($"=== FilmZoneManager Debug Info ===");
+        Debug.Log($"Total zones: {zones.Count}");
+        Debug.Log($"Show zone gizmos: {showZoneGizmos}");
+        Debug.Log($"Force show all gizmos: {forceShowAllGizmos}");
+
+        for (int i = 0; i < zones.Count; i++)
+        {
+            Debug.Log($"Zone {i}: {zones[i].GetDebugInfo()}");
+        }
+        Debug.Log($"=== End Debug Info ===");
     }
 
     public FilmZone GetZoneByName(string zoneName)
@@ -426,13 +452,377 @@ public class FilmZoneManager : MonoBehaviour
         return worldPosition;
     }
 
+    // ===== ENHANCED CLEARING METHODS =====
+
+    /// <summary>
+    /// NUCLEAR OPTION: Clear all zone data completely
+    /// </summary>
+    [ContextMenu("Force Clear All Zone Data")]
+    public void ForceClearAllZoneData()
+    {
+        Debug.Log("🔥 FORCE CLEARING ALL ZONE DATA 🔥");
+
+        if (zones != null)
+        {
+            zones.Clear();
+        }
+        else
+        {
+            zones = new List<FilmZone>();
+        }
+
+        // Force Unity to mark this object as dirty
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+
+        // Force scene view repaint
+        UnityEditor.SceneView.RepaintAll();
+#endif
+
+        Debug.Log("✅ All zone data has been forcibly cleared!");
+        LogZoneDebugInfo();
+    }
+
+    /// <summary>
+    /// SINGLE ZONE NUCLEAR OPTION: Completely remove a specific zone by name
+    /// </summary>
+    public void NuclearDeleteZone(string zoneName)
+    {
+        if (zones == null || string.IsNullOrEmpty(zoneName))
+        {
+            Debug.LogWarning("Cannot delete zone: zones list is null or zone name is empty");
+            return;
+        }
+
+        Debug.Log($"🔥 NUCLEAR DELETE for zone: '{zoneName}' 🔥");
+
+        // Find and remove the zone
+        for (int i = zones.Count - 1; i >= 0; i--)
+        {
+            if (zones[i] != null && zones[i].zoneName.Equals(zoneName, StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.Log($"💥 Completely destroying zone: '{zones[i].zoneName}' at index {i}");
+                zones.RemoveAt(i);
+
+                // Force Unity to mark this object as dirty
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(this);
+
+                // Force scene view repaint
+                UnityEditor.SceneView.RepaintAll();
+#endif
+
+                Debug.Log($"✅ Zone '{zoneName}' has been NUCLEAR DELETED!");
+                LogZoneDebugInfo();
+                return;
+            }
+        }
+
+        Debug.LogWarning($"❌ Zone '{zoneName}' not found for nuclear deletion!");
+        LogZoneDebugInfo();
+    }
+
+    /// <summary>
+    /// SINGLE ZONE NUCLEAR OPTION: Completely remove a specific zone by index
+    /// </summary>
+    public void NuclearDeleteZone(int zoneIndex)
+    {
+        if (zones == null)
+        {
+            Debug.LogWarning("Cannot delete zone: zones list is null");
+            return;
+        }
+
+        if (zoneIndex < 0 || zoneIndex >= zones.Count)
+        {
+            Debug.LogWarning($"Cannot delete zone: invalid index {zoneIndex} (valid range: 0-{zones.Count - 1})");
+            return;
+        }
+
+        string zoneName = zones[zoneIndex]?.zoneName ?? "Unknown";
+        Debug.Log($"🔥 NUCLEAR DELETE for zone at index {zoneIndex}: '{zoneName}' 🔥");
+
+        zones.RemoveAt(zoneIndex);
+
+        // Force Unity to mark this object as dirty
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+
+        // Force scene view repaint
+        UnityEditor.SceneView.RepaintAll();
+#endif
+
+        Debug.Log($"✅ Zone '{zoneName}' at index {zoneIndex} has been NUCLEAR DELETED!");
+        LogZoneDebugInfo();
+    }
+
+    /// <summary>
+    /// Interactive method to select and nuclear delete a zone
+    /// </summary>
+    [ContextMenu("Nuclear Delete Zone (Interactive)")]
+    public void InteractiveNuclearDeleteZone()
+    {
+        if (zones == null || zones.Count == 0)
+        {
+            Debug.LogWarning("No zones available to delete!");
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.DisplayDialog("No Zones", "No zones available to delete!", "OK");
+#endif
+            return;
+        }
+
+        ShowZoneSelectionForDeletion();
+    }
+
+    private void ShowZoneSelectionForDeletion()
+    {
+        System.Text.StringBuilder message = new System.Text.StringBuilder();
+        message.AppendLine("⚠️ NUCLEAR DELETE ZONE ⚠️");
+        message.AppendLine("This will COMPLETELY REMOVE the zone!");
+        message.AppendLine();
+        message.AppendLine("Available zones:");
+
+        for (int i = 0; i < zones.Count; i++)
+        {
+            string zoneName = zones[i]?.zoneName ?? $"Zone_{i}";
+            int pointCount = zones[i]?.polygonPoints?.Count ?? 0;
+            message.AppendLine($"{i}: {zoneName} ({pointCount} points)");
+        }
+
+        message.AppendLine();
+        message.AppendLine("Use the console to call:");
+        message.AppendLine("NuclearDeleteZone(\"ZoneName\") or NuclearDeleteZone(index)");
+
+        Debug.Log(message.ToString());
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.DisplayDialog("Nuclear Delete Zone", message.ToString(), "OK");
+#endif
+    }
+
+    /// <summary>
+    /// Clear all polygon points from all zones but keep zone definitions
+    /// </summary>
+    [ContextMenu("Clear All Polygon Points")]
+    public void ClearAllPolygonPoints()
+    {
+        Debug.Log("🧹 Clearing all polygon points from all zones...");
+
+        int clearedCount = 0;
+        if (zones != null)
+        {
+            foreach (var zone in zones)
+            {
+                if (zone.polygonPoints.Count > 0)
+                {
+                    zone.ClearAllPoints();
+                    clearedCount++;
+                }
+            }
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        UnityEditor.SceneView.RepaintAll();
+#endif
+
+        Debug.Log($"✅ Cleared polygon points from {clearedCount} zones!");
+        LogZoneDebugInfo();
+    }
+
+    /// <summary>
+    /// Clear polygon points from a specific zone
+    /// </summary>
+    public void ClearZonePoints(string zoneName)
+    {
+        var zone = GetZoneByName(zoneName);
+        if (zone != null)
+        {
+            zone.ClearAllPoints();
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.SceneView.RepaintAll();
+#endif
+            Debug.Log($"✅ Cleared points from zone: {zoneName}");
+        }
+        else
+        {
+            Debug.LogWarning($"Zone '{zoneName}' not found!");
+        }
+    }
+
+    /// <summary>
+    /// Clear specific zone by index
+    /// </summary>
+    public void ClearZonePoints(int zoneIndex)
+    {
+        if (zones != null && zoneIndex >= 0 && zoneIndex < zones.Count)
+        {
+            zones[zoneIndex].ClearAllPoints();
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.SceneView.RepaintAll();
+#endif
+            Debug.Log($"✅ Cleared points from zone at index {zoneIndex}: {zones[zoneIndex].zoneName}");
+        }
+        else
+        {
+            Debug.LogWarning($"Invalid zone index: {zoneIndex}");
+        }
+    }
+
+    /// <summary>
+    /// Toggle gizmo visibility for all zones
+    /// </summary>
+    [ContextMenu("Toggle All Zone Gizmos")]
+    public void ToggleAllZoneGizmos()
+    {
+        showZoneGizmos = !showZoneGizmos;
+
+        if (zones != null)
+        {
+            foreach (var zone in zones)
+            {
+                zone.showGizmos = showZoneGizmos;
+            }
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        UnityEditor.SceneView.RepaintAll();
+#endif
+
+        Debug.Log($"🎯 All zone gizmos: {(showZoneGizmos ? "ENABLED" : "DISABLED")}");
+    }
+
+    /// <summary>
+    /// Force hide all gizmos (emergency option)
+    /// </summary>
+    [ContextMenu("Force Hide All Gizmos")]
+    public void ForceHideAllGizmos()
+    {
+        showZoneGizmos = false;
+        forceShowAllGizmos = false;
+
+        if (zones != null)
+        {
+            foreach (var zone in zones)
+            {
+                zone.showGizmos = false;
+            }
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        UnityEditor.SceneView.RepaintAll();
+#endif
+
+        Debug.Log("🚫 FORCE DISABLED all zone gizmos!");
+    }
+
+    /// <summary>
+    /// Get comprehensive debug report
+    /// </summary>
+    [ContextMenu("Generate Debug Report")]
+    public void GenerateDebugReport()
+    {
+        LogZoneDebugInfo();
+
+        // Additional detailed report
+        System.Text.StringBuilder report = new System.Text.StringBuilder();
+        report.AppendLine("=== COMPREHENSIVE ZONE DEBUG REPORT ===");
+        report.AppendLine($"GameObject: {gameObject.name}");
+        report.AppendLine($"showZoneGizmos: {showZoneGizmos}");
+        report.AppendLine($"forceShowAllGizmos: {forceShowAllGizmos}");
+        report.AppendLine($"showDebugInfo: {showDebugInfo}");
+        report.AppendLine($"enableDebugLogging: {enableDebugLogging}");
+        report.AppendLine();
+
+        if (zones == null)
+        {
+            report.AppendLine("⚠️ zones list is NULL!");
+        }
+        else
+        {
+            report.AppendLine($"Total zones: {zones.Count}");
+
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var zone = zones[i];
+                if (zone == null)
+                {
+                    report.AppendLine($"Zone {i}: NULL");
+                }
+                else
+                {
+                    report.AppendLine($"Zone {i}: '{zone.zoneName}'");
+                    report.AppendLine($"  - Points: {zone.polygonPoints?.Count ?? 0}");
+                    report.AppendLine($"  - Color: {zone.gizmoColor}");
+                    report.AppendLine($"  - ShowGizmos: {zone.showGizmos}");
+
+                    if (zone.polygonPoints != null && zone.polygonPoints.Count > 0)
+                    {
+                        report.AppendLine($"  - First point: {zone.polygonPoints[0]}");
+                        report.AppendLine($"  - Last point: {zone.polygonPoints[zone.polygonPoints.Count - 1]}");
+                    }
+                }
+                report.AppendLine();
+            }
+        }
+
+        report.AppendLine("=== END REPORT ===");
+        Debug.Log(report.ToString());
+    }
+
+    // ===== ENHANCED GIZMO DRAWING =====
+
     private void OnDrawGizmos()
     {
-        if (!showZoneGizmos || zones == null) return;
+        // ENHANCED: Multiple exit conditions
+        if (!showZoneGizmos && !forceShowAllGizmos)
+        {
+            return;
+        }
+
+        if (zones == null)
+        {
+            if (enableDebugLogging)
+                Debug.LogWarning("FilmZoneManager: zones list is null!");
+            return;
+        }
+
+        if (zones.Count == 0)
+        {
+            if (enableDebugLogging)
+                Debug.Log("FilmZoneManager: No zones to draw");
+            return;
+        }
+
+        // ENHANCED: Draw with debug info
+        int drawnZones = 0;
+        int totalPoints = 0;
 
         foreach (var zone in zones)
         {
-            if (zone == null || !zone.showGizmos || zone.polygonPoints.Count < 3) continue;
+            if (zone == null)
+            {
+                if (enableDebugLogging)
+                    Debug.LogWarning("FilmZoneManager: Found null zone in list!");
+                continue;
+            }
+
+            if (!zone.showGizmos && !forceShowAllGizmos) continue;
+
+            if (zone.polygonPoints == null)
+            {
+                if (enableDebugLogging)
+                    Debug.LogWarning($"FilmZoneManager: Zone '{zone.zoneName}' has null polygonPoints!");
+                continue;
+            }
+
+            if (zone.polygonPoints.Count < 3) continue;
+
+            totalPoints += zone.polygonPoints.Count;
+            drawnZones++;
 
             Gizmos.color = zone.gizmoColor;
 
@@ -447,6 +837,14 @@ public class FilmZoneManager : MonoBehaviour
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(current, current + Vector3.down * 2f);
                 Gizmos.color = zone.gizmoColor;
+
+                // ENHANCED: Draw point numbers if debug info is enabled
+                if (showDebugInfo)
+                {
+                    Gizmos.color = Color.white;
+                    Gizmos.DrawSphere(current, 0.2f);
+                    Gizmos.color = zone.gizmoColor;
+                }
             }
 
             // Draw zone center with height indicator
@@ -466,6 +864,57 @@ public class FilmZoneManager : MonoBehaviour
                 // Draw height indicator line
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(center, center + Vector3.down * 5f);
+
+                // ENHANCED: Draw zone name in scene view if debug enabled
+                if (showDebugInfo)
+                {
+                    Gizmos.color = Color.white;
+                    // Note: Can't draw text in OnDrawGizmos, but we make the center more visible
+                    Gizmos.DrawSphere(center + Vector3.up * 2f, 0.3f);
+                }
+            }
+        }
+
+        // ENHANCED: Debug logging for gizmo drawing
+        if (enableDebugLogging && drawnZones > 0)
+        {
+            Debug.Log($"FilmZoneManager: Drew {drawnZones} zones with {totalPoints} total points");
+        }
+    }
+
+    // ENHANCED: OnDrawGizmosSelected for more detailed info
+    private void OnDrawGizmosSelected()
+    {
+        if (!showDebugInfo) return;
+
+        OnDrawGizmos(); // Draw normal gizmos
+
+        // Draw additional debug info when selected
+        if (zones != null)
+        {
+            Gizmos.color = Color.yellow;
+            foreach (var zone in zones)
+            {
+                if (zone?.polygonPoints != null && zone.polygonPoints.Count >= 3)
+                {
+                    // Draw bounding box
+                    Vector3 min = zone.polygonPoints[0];
+                    Vector3 max = zone.polygonPoints[0];
+
+                    foreach (var point in zone.polygonPoints)
+                    {
+                        if (point.x < min.x) min.x = point.x;
+                        if (point.y < min.y) min.y = point.y;
+                        if (point.z < min.z) min.z = point.z;
+                        if (point.x > max.x) max.x = point.x;
+                        if (point.y > max.y) max.y = point.y;
+                        if (point.z > max.z) max.z = point.z;
+                    }
+
+                    Vector3 size = max - min;
+                    Vector3 center = (min + max) * 0.5f;
+                    Gizmos.DrawWireCube(center, size);
+                }
             }
         }
     }
@@ -488,8 +937,6 @@ public class VideoZonePrefab : MonoBehaviour
     [Header("Scene Navigation")]
     public string returnScene = "mainVR";
     public string nextScene = "360VideoApp";
-    public string behaviour = "return";
-    public int stage = 0;
 
     [Header("Components")]
     public EnhancedVideoPlayer videoPlayer;
@@ -629,8 +1076,6 @@ public class VideoZonePrefab : MonoBehaviour
         videoPlayer.nextscene = nextScene;
         videoPlayer.zoneName = zoneName;
         videoPlayer.returntoscene = returnScene;
-        videoPlayer.behaviour = behaviour;
-        videoPlayer.returnstage = stage;
 
         // Set hover time to match this component
         videoPlayer.hoverTimeRequired = hoverTimeRequired;
@@ -716,8 +1161,6 @@ public class VideoZonePrefab : MonoBehaviour
         // Set PlayerPrefs exactly like DynamicLoadVideo1
         PlayerPrefs.SetString("nextscene", nextScene);
         PlayerPrefs.SetString("returntoscene", returnScene);
-        PlayerPrefs.SetInt("stage", stage);
-        PlayerPrefs.SetString("behaviour", behaviour);
         PlayerPrefs.SetString("VideoUrl", videoUrl);
         PlayerPrefs.SetString("lastknownzone", zoneName);
 

@@ -1,0 +1,49 @@
+MATERIAL ASSIGNMENT GUIDE
+=============================
+
+MAIN MARINA GENERATOR:
+- Water Material → Marina Water
+- Sand Material → Beach Sand  
+- Concrete Material → Concrete
+- Grass Material → Grass
+- Dock Material → Marina Wood
+
+TENNIS COURT GENERATOR:
+- Court Surface Material → Tennis Court Surface
+- Line Material → Court Lines
+- Net Material → Tennis Net
+- Post Material → Net Posts
+
+BEACH TENNIS GENERATOR:
+- Sand Material → Beach Sand
+- Line Material → Court Lines
+- Net Material → Tennis Net
+
+SWIMMING POOL GENERATOR:
+- Water Material → Pool Water
+- Pool Deck Material → Pool Deck
+- Lane Material → Lane Markers
+
+DOCK GENERATOR:
+- Wood Material → Marina Wood
+- Metal Material → Marina Metal
+
+WATER SPORTS PLATFORM:
+- Platform Material → Platform Surface
+- Railing Material → Safety Railing
+- Equipment Material → Equipment Material
+
+STREET LIGHT GENERATOR:
+- Pole Material → Light Pole
+- Fixture Material → Light Fixture
+
+SIGNAGE GENERATOR:
+- Sign Material → Sign Board
+- Post Material → Sign Post
+- Text Material → Sign Text
+
+BIKE TRAIL GENERATOR:
+- Trail Material → Trail Surface
+- Marker Material → Trail Markers
+
+All materials saved to: Assets/MCAssets/Materials

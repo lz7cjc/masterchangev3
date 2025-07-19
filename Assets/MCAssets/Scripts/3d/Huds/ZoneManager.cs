@@ -60,12 +60,19 @@ public class ZoneManager : MonoBehaviour
 
             if (hoverCounter >= hoverDelay)
             {
-                MoveToZone(currentHoverZone);
-                ResetHoverState();
+                // Store reference before moving (in case MoveToZone clears it)
+                ZoneDefinition zoneToMoveTo = currentHoverZone;
+
+                // Move to zone (this will reset hover state)
+                MoveToZone(zoneToMoveTo);
+
+                // Ensure state is completely reset
+                isHovering = false;
+                currentHoverZone = null;
+                hoverCounter = 0f;
             }
         }
     }
-
     // Add these methods to match what other scripts are expecting
     // ----------------------------------------------------------
     // Called from other scripts that expect the StartHovering method
@@ -152,6 +159,9 @@ public class ZoneManager : MonoBehaviour
     {
         if (zone == null || zone.zoneTarget == null) return;
 
+        // IMMEDIATELY reset hover state to prevent re-triggering
+        ResetHoverState();
+
         // Update visual to selected state
         if (zone.iconRenderer != null && zone.selectedSprite != null)
         {
@@ -164,22 +174,33 @@ public class ZoneManager : MonoBehaviour
             closeAllHuds.CloseTheHuds();
         }
 
-        // Set physics properties
+        // Set physics properties and move player
         if (player != null)
         {
+            // First, unparent the player to avoid transform conflicts
+            player.transform.SetParent(null);
+
+            // Stop all physics
+            player.isKinematic = true;
+            player.linearVelocity = Vector3.zero;
+            player.angularVelocity = Vector3.zero;
+
+            // Set position directly in world space instead of parenting
+            player.transform.position = zone.zoneTarget.transform.position;
+            player.transform.rotation = zone.zoneTarget.transform.rotation;
+            player.transform.localScale = Vector3.one;
+
+            // Set gravity after positioning
             player.useGravity = useGravity;
 
-            // Set the player as a child of the target
-            player.transform.SetParent(zone.zoneTarget.transform);
-            player.transform.localPosition = Vector3.zero;
+            // Optional: Only parent if you specifically need the player to follow the zone target
+            // player.transform.SetParent(zone.zoneTarget.transform);
         }
 
         // Save to PlayerPrefs
         PlayerPrefs.SetString("lastknownzone", zone.zoneName);
-        Debug.Log($"Moving to zone: {zone.zoneName}");
+        Debug.Log($"Successfully moved to zone: {zone.zoneName} at position {zone.zoneTarget.transform.position}");
     }
-
-    // Helper method to find zone by name
     private ZoneDefinition GetZoneByName(string name)
     {
         return zones.Find(z => z.zoneName == name);
@@ -196,6 +217,27 @@ public class ZoneManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"Zone not found: {zoneName}");
+        }
+    }
+
+    // NEW METHOD: Move to zone by GameObject reference - more efficient and consistent
+    public void MoveToZoneByGameObject(GameObject targetObject)
+    {
+        if (targetObject == null)
+        {
+            Debug.LogWarning("Target GameObject is null");
+            return;
+        }
+
+        // Find the zone that matches this target GameObject
+        ZoneDefinition zone = zones.Find(z => z.zoneTarget == targetObject);
+        if (zone != null)
+        {
+            MoveToZone(zone);
+        }
+        else
+        {
+            Debug.LogWarning($"No zone found for target GameObject: {targetObject.name}");
         }
     }
 

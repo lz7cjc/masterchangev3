@@ -20,7 +20,6 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject targetSport;
     [SerializeField] private GameObject targetHome;
 
-
     [Header("UI References")]
     [SerializeField] private closeAllHuds closeAllHuds;
     [SerializeField] private SetVrState setVrState;
@@ -49,6 +48,11 @@ public class StartUp : MonoBehaviour
 
     private void Start()
     {
+        //if (!PlayerPrefs.HasKey("lastknownzone"))
+        //{
+        //    // If no last known zone, set default to Home
+        //    PlayerPrefs.SetString("lastknownzone", "Home");
+        //}
         StartCoroutine(WaitForAddressablesAndSetupScene());
     }
 
@@ -85,15 +89,29 @@ public class StartUp : MonoBehaviour
 
         // Retrieve values from PlayerPrefs
         stage = PlayerPrefs.GetInt("stage", 0);
+
+        // Check if lastknownzone exists - DON'T set it yet
+        bool hasLastKnownZone = PlayerPrefs.HasKey("lastknownzone");
         lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home");
-        currentZone = lastKnownZone; // Set currentZone to the value of lastKnownZone
+        currentZone = lastKnownZone;
 
-        Debug.Log($"[StartUp] Marker: PlayerPrefs - bct: {PlayerPrefs.GetString("bct")}, lastknownzone: {lastKnownZone}, stagesmoking: {PlayerPrefs.GetInt("stagesmoking")}");
+        Debug.Log($"[StartUp] Has lastknownzone PlayerPref: {hasLastKnownZone}");
+        Debug.Log($"[StartUp] lastKnownZone value: '{lastKnownZone}'");
+        Debug.Log($"[StartUp] currentZone: '{currentZone}'");
 
-        InitializeScene();
+        // Store this for use in other methods
+        bool isNewPlayer = !hasLastKnownZone;
+
+        InitializeScene(); // Keep your existing method signature
         HandleZoneNavigation();
-    }
 
+        // ONLY set the PlayerPref after we've handled the startup
+        if (isNewPlayer)
+        {
+            PlayerPrefs.SetString("lastknownzone", "Home");
+            Debug.Log("[StartUp] Set default lastknownzone to 'Home' for new player");
+        }
+    }
     private void InitializeScene()
     {
         Debug.Log("[StartUp] Marker: InitializeScene");
@@ -145,14 +163,23 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: SetPlayerToTarget");
         if (target != null && player != null)
         {
-            // Move the player to the target location and set it as a child of the target
-            player.transform.SetParent(target.transform);
-            player.transform.localPosition = Vector3.zero;
-            player.transform.localRotation = Quaternion.identity;
-            player.transform.localScale = Vector3.one;
+            // Stop all physics first
             player.isKinematic = true;
             player.linearVelocity = Vector3.zero;
             player.angularVelocity = Vector3.zero;
+
+            // Clear any existing parent
+            player.transform.SetParent(null);
+
+            // Reset to world origin first
+            player.transform.position = Vector3.zero;
+            player.transform.rotation = Quaternion.identity;
+
+            // Now set the parent and local position
+            player.transform.SetParent(target.transform);
+            player.transform.localPosition = Vector3.zero;        // Reset to (0,0,0) relative to target
+            player.transform.localRotation = Quaternion.identity;
+            player.transform.localScale = Vector3.one;
         }
         else
         {
@@ -160,53 +187,58 @@ public class StartUp : MonoBehaviour
         }
     }
 
+    // Helper method to get the target GameObject for a given zone name
+    private GameObject GetTargetForZone(string zoneName)
+    {
+        return zoneName switch
+        {
+            "Alcohol" => targetAlcohol,
+            "Smoking" => targetSmoking,
+            "Mindfulness" => targetMfn,
+            "Travel" => targetTravel,
+            "Beaches" => targetBeaches,
+            "Sport" => targetSport,
+            "Heights" => targetHeights,
+            _ => targetHome
+        };
+    }
+
     private void MovePlayerToCurrentZone()
     {
         Debug.Log($"[StartUp] Marker: MovePlayerToCurrentZone -> currentZone: {currentZone}");
+        Debug.Log($"[StartUp] Player position BEFORE move: {player?.transform.position}");
+        Debug.Log($"[StartUp] Player localPosition BEFORE move: {player?.transform.localPosition}");
 
-        // Try to use ZoneManager if available
+        // Try to use ZoneManager with direct GameObject reference for consistency
         ZoneManager zoneManager = FindFirstObjectByType<ZoneManager>();
         if (zoneManager != null)
         {
-            zoneManager.MoveToZoneByName(currentZone);
+            GameObject targetObject = GetTargetForZone(currentZone);
+            if (targetObject != null)
+            {
+                Debug.Log($"[StartUp] Using ZoneManager with target: {targetObject.name}");
+                Debug.Log($"[StartUp] Target position: {targetObject.transform.position}");
+                zoneManager.MoveToZoneByGameObject(targetObject);
+
+                // Check position after ZoneManager move
+                Debug.Log($"[StartUp] Player position AFTER ZoneManager: {player?.transform.position}");
+                Debug.Log($"[StartUp] Player localPosition AFTER ZoneManager: {player?.transform.localPosition}");
+            }
+            else
+            {
+                Debug.LogWarning($"[StartUp] No target found for zone: {currentZone}");
+            }
         }
         else
         {
-            // Fallback to original code
-            switch (currentZone)
-            {
-                case "Alcohol":
-                    SetPlayerToTarget(targetAlcohol);
-                    break;
+            Debug.Log("[StartUp] ZoneManager not found, using fallback");
+            // Fallback to direct method
+            GameObject targetObject = GetTargetForZone(currentZone);
+            SetPlayerToTarget(targetObject);
 
-                case "Smoking":
-                    SetPlayerToTarget(targetSmoking);
-                    break;
-
-                case "Mindfulness":
-                    SetPlayerToTarget(targetMfn);
-                    break;
-
-                case "Travel":
-                    SetPlayerToTarget(targetTravel);
-                    break;
-
-                case "Beaches":
-                    SetPlayerToTarget(targetBeaches);
-                    break;
-
-                case "Sport":
-                    SetPlayerToTarget(targetSport);
-                    break;
-
-                case "Heights":
-                    SetPlayerToTarget(targetHeights);
-                    break;
-
-                default:
-                    SetPlayerToTarget(targetHome);
-                    break;
-            }
+            // Check position after fallback
+            Debug.Log($"[StartUp] Player position AFTER fallback: {player?.transform.position}");
+            Debug.Log($"[StartUp] Player localPosition AFTER fallback: {player?.transform.localPosition}");
         }
     }
 
@@ -240,28 +272,8 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: NavigateToRegularZone");
         Debug.Log($"[StartUp] Marker: Navigating to regular zone: {currentZone}");
 
-        switch (currentZone)
-        {
-            case "Travel":
-                SetPlayerToTarget(targetTravel);
-                break;
-
-            case "Beaches":
-                SetPlayerToTarget(targetBeaches);
-                break;
-
-            case "Sport":
-                SetPlayerToTarget(targetSport);
-                break;
-
-            case "Heights":
-                SetPlayerToTarget(targetHeights);
-                break;
-
-            default:
-                SetPlayerToTarget(targetHome);
-                break;
-        }
+        GameObject targetObject = GetTargetForZone(currentZone);
+        SetPlayerToTarget(targetObject);
     }
 
     private void HandleAlcoholTreatment()

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 public class VRReticlePointer : MonoBehaviour
 {
@@ -25,6 +26,10 @@ public class VRReticlePointer : MonoBehaviour
     [Header("Interaction Settings")]
     [SerializeField] private float maxInteractionDistance = 10f;
     [SerializeField] private LayerMask interactableLayers = -1;
+
+    [Header("Events")]
+    [SerializeField] private UnityEvent<GameObject> OnPointerEnter;
+    [SerializeField] private UnityEvent<GameObject> OnPointerExit;
 
     private PlayerInput playerInput;
     private InputAction lookAction;
@@ -286,36 +291,54 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (target == null) return;
 
+        // Invoke our custom UnityEvent (this is safe from type conversion errors)
+        try
+        {
+            OnPointerEnter?.Invoke(target);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error invoking OnPointerEnter: {e.Message}");
+        }
+
+        // Handle EventTrigger components
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            // Create a properly initialized pointer event data
-            PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
-
-            // Manually trigger the pointer enter using ExecuteEvents
-            ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerEnterHandler);
-
-            // Check for EventTrigger component's entries
-            if (eventTrigger.triggers != null)
+            try
             {
-                EventTrigger.Entry enterEntry = null;
+                // Create a properly initialized pointer event data
+                PointerEventData eventData = new PointerEventData(EventSystem.current);
+                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
 
-                // Find the pointer enter entry
-                foreach (EventTrigger.Entry entry in eventTrigger.triggers)
+                // Manually trigger the pointer enter using ExecuteEvents
+                ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerEnterHandler);
+
+                // Check for EventTrigger component's entries
+                if (eventTrigger.triggers != null)
                 {
-                    if (entry.eventID == EventTriggerType.PointerEnter)
+                    EventTrigger.Entry enterEntry = null;
+
+                    // Find the pointer enter entry
+                    foreach (EventTrigger.Entry entry in eventTrigger.triggers)
                     {
-                        enterEntry = entry;
-                        break;
+                        if (entry.eventID == EventTriggerType.PointerEnter)
+                        {
+                            enterEntry = entry;
+                            break;
+                        }
+                    }
+
+                    // Invoke the callback if found
+                    if (enterEntry != null && enterEntry.callback != null)
+                    {
+                        enterEntry.callback.Invoke(eventData);
                     }
                 }
-
-                // Invoke the callback if found
-                if (enterEntry != null && enterEntry.callback != null)
-                {
-                    enterEntry.callback.Invoke(eventData);
-                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error triggering pointer enter for {target.name}: {e.Message}");
             }
         }
     }
@@ -324,36 +347,54 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (target == null) return;
 
+        // Invoke our custom UnityEvent (this is safe from type conversion errors)
+        try
+        {
+            OnPointerExit?.Invoke(target);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error invoking OnPointerExit: {e.Message}");
+        }
+
+        // Handle EventTrigger components
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            // Create a properly initialized pointer event data
-            PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
-
-            // Manually trigger the pointer exit using ExecuteEvents
-            ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerExitHandler);
-
-            // Check for EventTrigger component's entries
-            if (eventTrigger.triggers != null)
+            try
             {
-                EventTrigger.Entry exitEntry = null;
+                // Create a properly initialized pointer event data
+                PointerEventData eventData = new PointerEventData(EventSystem.current);
+                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
 
-                // Find the pointer exit entry
-                foreach (EventTrigger.Entry entry in eventTrigger.triggers)
+                // Manually trigger the pointer exit using ExecuteEvents
+                ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerExitHandler);
+
+                // Check for EventTrigger component's entries
+                if (eventTrigger.triggers != null)
                 {
-                    if (entry.eventID == EventTriggerType.PointerExit)
+                    EventTrigger.Entry exitEntry = null;
+
+                    // Find the pointer exit entry
+                    foreach (EventTrigger.Entry entry in eventTrigger.triggers)
                     {
-                        exitEntry = entry;
-                        break;
+                        if (entry.eventID == EventTriggerType.PointerExit)
+                        {
+                            exitEntry = entry;
+                            break;
+                        }
+                    }
+
+                    // Invoke the callback if found
+                    if (exitEntry != null && exitEntry.callback != null)
+                    {
+                        exitEntry.callback.Invoke(eventData);
                     }
                 }
-
-                // Invoke the callback if found
-                if (exitEntry != null && exitEntry.callback != null)
-                {
-                    exitEntry.callback.Invoke(eventData);
-                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error triggering pointer exit for {target.name}: {e.Message}");
             }
         }
     }

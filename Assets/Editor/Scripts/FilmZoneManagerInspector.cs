@@ -2,7 +2,10 @@
 using UnityEditor;
 using System.Linq;
 
-// Custom inspector for FilmZoneManager
+/// <summary>
+/// Custom inspector for FilmZoneManager with hierarchy organization buttons
+/// PLACE THIS FILE IN: Assets/Editor/Scripts/FilmZoneManagerInspector.cs
+/// </summary>
 [CustomEditor(typeof(FilmZoneManager))]
 public class FilmZoneManagerInspector : Editor
 {
@@ -11,6 +14,7 @@ public class FilmZoneManagerInspector : Editor
     private bool showPrefabs = true;
     private bool showZonePrefabs = true;
     private bool showSettings = true;
+    private bool showHierarchy = true;
     private bool showDebug = false;
 
     private void OnEnable()
@@ -23,6 +27,9 @@ public class FilmZoneManagerInspector : Editor
         serializedObject.Update();
 
         DrawHeader();
+        EditorGUILayout.Space(10);
+
+        DrawHierarchySection();
         EditorGUILayout.Space(10);
 
         DrawZonesSection();
@@ -64,11 +71,169 @@ public class FilmZoneManagerInspector : Editor
         EditorGUILayout.LabelField($"Zone Prefabs: {zoneManager.zonePrefabMappings.Count}", EditorStyles.miniLabel);
         EditorGUILayout.EndHorizontal();
 
-        // Updated to use EnhancedVideoPlayer instead of VideoZonePrefab
         int totalVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>().Length;
         EditorGUILayout.LabelField($"Videos in Scene: {totalVideos}", EditorStyles.miniLabel);
 
         EditorGUILayout.EndVertical();
+    }
+
+    private void DrawHierarchySection()
+    {
+        showHierarchy = EditorGUILayout.Foldout(showHierarchy, "🗂️ Hierarchy Organization", true);
+        if (!showHierarchy) return;
+
+        EditorGUI.indentLevel++;
+
+        // Hierarchy settings
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField("Hierarchy Settings", EditorStyles.boldLabel);
+
+        SerializedProperty enableHierarchyProp = serializedObject.FindProperty("enableHierarchyOrganization");
+        SerializedProperty autoOrganizeProp = serializedObject.FindProperty("autoOrganizeOnCreate");
+
+        EditorGUILayout.PropertyField(enableHierarchyProp, new GUIContent("Enable Hierarchy Organization", "When enabled, videos will be organized under Targets/[Zone]/Films/"));
+
+        if (enableHierarchyProp.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(autoOrganizeProp, new GUIContent("Auto-Organize On Create", "Automatically organize videos when they are created"));
+            EditorGUI.indentLevel--;
+        }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.Space(5);
+
+        // Action buttons
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField("Hierarchy Actions", EditorStyles.boldLabel);
+
+        // Main action buttons
+        EditorGUILayout.BeginHorizontal();
+
+        GUI.backgroundColor = new Color(0.7f, 1f, 0.7f); // Light green
+        if (GUILayout.Button("📥 Load Film Data", GUILayout.Height(35)))
+        {
+            zoneManager.LoadFilmDataAndApplyPositions();
+        }
+        GUI.backgroundColor = Color.white;
+
+        GUI.backgroundColor = new Color(0.7f, 0.9f, 1f); // Light blue
+        if (GUILayout.Button("💾 Save Positions", GUILayout.Height(35)))
+        {
+            zoneManager.SaveCurrentPositions();
+        }
+        GUI.backgroundColor = Color.white;
+
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(3);
+
+        // Hierarchy organization buttons
+        EditorGUILayout.BeginHorizontal();
+
+        GUI.backgroundColor = new Color(1f, 0.9f, 0.7f); // Light orange
+        if (GUILayout.Button("🗂️ Organize Videos", GUILayout.Height(30)))
+        {
+            zoneManager.OrganizeExistingVideosIntoHierarchy();
+        }
+        GUI.backgroundColor = Color.white;
+
+        GUI.backgroundColor = new Color(0.9f, 0.7f, 1f); // Light purple
+        if (GUILayout.Button("🔍 Validate Hierarchy", GUILayout.Height(30)))
+        {
+            zoneManager.ValidateVideoHierarchy();
+        }
+        GUI.backgroundColor = Color.white;
+
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(3);
+
+        // Structure creation button
+        if (GUILayout.Button("🏗️ Create Zone Structure", GUILayout.Height(25)))
+        {
+            zoneManager.CreateZoneHierarchyStructure();
+        }
+
+        EditorGUILayout.EndVertical();
+
+        // Hierarchy status
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField("Hierarchy Status", EditorStyles.boldLabel);
+
+        // Check current hierarchy status
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        int correctlyPlaced = 0;
+        int incorrectlyPlaced = 0;
+        int missingZone = 0;
+
+        foreach (var video in allVideos)
+        {
+            if (video == null || video.gameObject == null) continue;
+
+            string zoneName = video.LastKnownZone;
+            if (string.IsNullOrEmpty(zoneName) || zoneName == "Home")
+            {
+                missingZone++;
+                continue;
+            }
+
+            string actualPath = GetHierarchyPath(video.transform.parent);
+            if (actualPath.Contains($"Targets/{zoneName}/Films"))
+            {
+                correctlyPlaced++;
+            }
+            else
+            {
+                incorrectlyPlaced++;
+            }
+        }
+
+        // Status display
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField($"✅ Correctly placed:", GUILayout.Width(120));
+        EditorGUILayout.LabelField($"{correctlyPlaced}", EditorStyles.boldLabel);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField($"⚠️ Incorrectly placed:", GUILayout.Width(120));
+        EditorGUILayout.LabelField($"{incorrectlyPlaced}", incorrectlyPlaced > 0 ? EditorStyles.boldLabel : EditorStyles.miniLabel);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField($"❌ Missing zone:", GUILayout.Width(120));
+        EditorGUILayout.LabelField($"{missingZone}", missingZone > 0 ? EditorStyles.boldLabel : EditorStyles.miniLabel);
+        EditorGUILayout.EndHorizontal();
+
+        if (incorrectlyPlaced > 0 || missingZone > 0)
+        {
+            EditorGUILayout.HelpBox($"Found {incorrectlyPlaced + missingZone} videos that need organization. Use 'Organize Videos' button to fix.", MessageType.Warning);
+        }
+        else if (allVideos.Length > 0)
+        {
+            EditorGUILayout.HelpBox("All videos are properly organized! ✅", MessageType.Info);
+        }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUI.indentLevel--;
+    }
+
+    private string GetHierarchyPath(Transform transform)
+    {
+        if (transform == null) return "root";
+
+        string path = transform.name;
+        Transform parent = transform.parent;
+
+        while (parent != null)
+        {
+            path = parent.name + "/" + path;
+            parent = parent.parent;
+        }
+
+        return path;
     }
 
     private void DrawZonesSection()
@@ -77,8 +242,6 @@ public class FilmZoneManagerInspector : Editor
         if (!showZones) return;
 
         EditorGUI.indentLevel++;
-
-        SerializedProperty zonesProperty = serializedObject.FindProperty("zones");
 
         if (zoneManager.zones.Count == 0)
         {
@@ -151,7 +314,7 @@ public class FilmZoneManagerInspector : Editor
             EditorGUILayout.LabelField($"Zone Prefab: {zonePrefab.name}", EditorStyles.miniLabel);
         }
 
-        // Count videos in this zone - UPDATED to use EnhancedVideoPlayer
+        // Count videos in this zone
         EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
             .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
             .ToArray();
@@ -358,6 +521,20 @@ public class FilmZoneManagerInspector : Editor
 
         EditorGUILayout.PropertyField(showZoneGizmosProp);
 
+        // File paths
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField("File Paths:", EditorStyles.boldLabel);
+
+        SerializedProperty filmDataPathProp = serializedObject.FindProperty("filmDataPath");
+        SerializedProperty layoutDataPathProp = serializedObject.FindProperty("layoutDataPath");
+        SerializedProperty autoSaveProp = serializedObject.FindProperty("autoSaveOnPositionChange");
+        SerializedProperty autoCleanupProp = serializedObject.FindProperty("autoCleanupOrphanedPositions");
+
+        EditorGUILayout.PropertyField(filmDataPathProp);
+        EditorGUILayout.PropertyField(layoutDataPathProp);
+        EditorGUILayout.PropertyField(autoSaveProp);
+        EditorGUILayout.PropertyField(autoCleanupProp);
+
         EditorGUI.indentLevel--;
     }
 
@@ -373,7 +550,6 @@ public class FilmZoneManagerInspector : Editor
 
         foreach (var zone in zoneManager.zones)
         {
-            // UPDATED to use EnhancedVideoPlayer instead of VideoZonePrefab
             EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
                 .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
                 .ToArray();
@@ -386,14 +562,6 @@ public class FilmZoneManagerInspector : Editor
             EditorGUILayout.LabelField($"{videosInZone.Length} videos, {zone.polygonPoints.Count} points{zonePrefabInfo}", EditorStyles.miniLabel);
             EditorGUILayout.EndHorizontal();
         }
-
-        EditorGUILayout.Space(5);
-
-        // Prefab priority system explanation
-        EditorGUILayout.LabelField("Prefab Priority System:", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField("1. Film Prefab (from JSON 'Prefab' field)", EditorStyles.miniLabel);
-        EditorGUILayout.LabelField("2. Zone Prefab (assigned to specific zone)", EditorStyles.miniLabel);
-        EditorGUILayout.LabelField("3. Default Prefab (fallback for all)", EditorStyles.miniLabel);
 
         EditorGUILayout.Space(5);
 
@@ -427,10 +595,59 @@ public class FilmZoneManagerInspector : Editor
         EditorGUILayout.EndHorizontal();
     }
 
+    // ADD these buttons to the DrawUtilityButtons() method in FilmZoneManagerInspector.cs
+
     private void DrawUtilityButtons()
     {
         EditorGUILayout.LabelField("Utilities:", EditorStyles.boldLabel);
 
+        // DEBUG BUTTONS
+        EditorGUILayout.LabelField("Debug Tools:", EditorStyles.boldLabel);
+        EditorGUILayout.BeginHorizontal();
+
+        GUI.backgroundColor = new Color(1f, 0.8f, 0.8f); // Light red background
+        if (GUILayout.Button("🔍 Inspect Prefab Structure"))
+        {
+            zoneManager.InspectPrefabStructure();
+        }
+        GUI.backgroundColor = Color.white;
+
+        if (GUILayout.Button("🔄 Test Text Update"))
+        {
+            TestTextUpdate();
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(5);
+
+        // REPOPULATION BUTTONS
+        EditorGUILayout.LabelField("Repopulation Tools:", EditorStyles.boldLabel);
+
+        GUI.backgroundColor = new Color(0.8f, 1f, 0.8f); // Light green background
+        if (GUILayout.Button("🔄 Force Repopulate All Text", GUILayout.Height(30)))
+        {
+            ForceRepopulateAllText();
+        }
+        GUI.backgroundColor = Color.white;
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("📥 Reload & Apply"))
+        {
+            zoneManager.LoadFilmDataAndApplyPositions();
+        }
+
+        if (GUILayout.Button("💾 Save Positions"))
+        {
+            zoneManager.SaveCurrentPositions();
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(5);
+
+        // EXISTING BUTTONS
         EditorGUILayout.BeginHorizontal();
 
         if (GUILayout.Button("Open Film Zone Editor"))
@@ -440,7 +657,6 @@ public class FilmZoneManagerInspector : Editor
 
         if (GUILayout.Button("Select All Videos"))
         {
-            // UPDATED to use EnhancedVideoPlayer instead of VideoZonePrefab
             EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
             Selection.objects = allVideos.Select(v => v.gameObject).ToArray();
         }
@@ -460,8 +676,169 @@ public class FilmZoneManagerInspector : Editor
         }
 
         EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Show Layout Stats"))
+        {
+            zoneManager.ShowPersistentLayoutStats();
+        }
+
+        if (GUILayout.Button("Debug Paths"))
+        {
+            zoneManager.DebugFilePaths();
+        }
+
+        EditorGUILayout.EndHorizontal();
     }
 
+    // ADD these helper methods to FilmZoneManagerInspector.cs
+
+    private void ForceRepopulateAllText()
+    {
+        if (!EditorUtility.DisplayDialog("Force Repopulate Text",
+            "This will update all text components on existing video objects with data from the JSON. Continue?",
+            "Yes", "Cancel"))
+        {
+            return;
+        }
+
+        // Load the film data
+        FilmDataCollection filmData = LoadFilmDataForRepopulation();
+        if (filmData == null || filmData.Entries == null)
+        {
+            Debug.LogError("❌ Could not load film data for repopulation!");
+            return;
+        }
+
+        // Find all existing video objects
+        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        int updatedCount = 0;
+        int errorCount = 0;
+
+        Debug.Log($"🔄 Starting text repopulation for {allVideos.Length} video objects...");
+
+        foreach (var video in allVideos)
+        {
+            if (video == null || string.IsNullOrEmpty(video.VideoUrlLink))
+            {
+                errorCount++;
+                continue;
+            }
+
+            // Find matching film data entry
+            var matchingEntry = filmData.Entries.FirstOrDefault(entry =>
+                !string.IsNullOrEmpty(entry.PublicUrl) && entry.PublicUrl == video.VideoUrlLink);
+
+            if (matchingEntry != null)
+            {
+                try
+                {
+                    // Update the video player properties
+                    video.title = matchingEntry.Title ?? "";
+                    video.description = matchingEntry.Description ?? "";
+
+                    // Force update text components using reflection to call private method
+                    var method = typeof(FilmZoneManager).GetMethod("UpdateTextComponents",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (method != null)
+                    {
+                        method.Invoke(zoneManager, new object[] { video.gameObject, matchingEntry });
+                    }
+
+                    updatedCount++;
+                    Debug.Log($"✅ Updated text for: {matchingEntry.Title}");
+
+                    // Mark as dirty for saving
+                    EditorUtility.SetDirty(video);
+                    EditorUtility.SetDirty(video.gameObject);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"❌ Failed to update {video.gameObject.name}: {ex.Message}");
+                    errorCount++;
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"⚠️ No matching film data found for: {video.VideoUrlLink}");
+                errorCount++;
+            }
+        }
+
+        Debug.Log($"✅ Text repopulation complete! Updated: {updatedCount}, Errors: {errorCount}");
+
+        // Refresh the scene
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+    }
+
+    private void TestTextUpdate()
+    {
+        // Find a video object to test with
+        EnhancedVideoPlayer testVideo = Object.FindObjectOfType<EnhancedVideoPlayer>();
+        if (testVideo == null)
+        {
+            Debug.LogWarning("No EnhancedVideoPlayer found in scene for testing");
+            return;
+        }
+
+        Debug.Log($"🧪 Testing text update on: {testVideo.gameObject.name}");
+
+        // Create a test film entry
+        FilmDataEntry testEntry = new FilmDataEntry
+        {
+            Title = "TEST TITLE - " + System.DateTime.Now.ToString("HH:mm:ss"),
+            Description = "TEST DESCRIPTION - This is a test description",
+            PublicUrl = testVideo.VideoUrlLink
+        };
+
+        // Try to update text components
+        try
+        {
+            var method = typeof(FilmZoneManager).GetMethod("UpdateTextComponents",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (method != null)
+            {
+                method.Invoke(zoneManager, new object[] { testVideo.gameObject, testEntry });
+                Debug.Log("✅ Test text update completed - check the video object in scene");
+            }
+            else
+            {
+                Debug.LogError("❌ Could not find UpdateTextComponents method");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"❌ Test text update failed: {ex.Message}");
+        }
+    }
+
+    private FilmDataCollection LoadFilmDataForRepopulation()
+    {
+        try
+        {
+            string fullPath = System.IO.Path.Combine(Application.streamingAssetsPath, zoneManager.filmDataPath);
+
+            if (!System.IO.File.Exists(fullPath))
+            {
+                Debug.LogError($"❌ Film data file not found: {fullPath}");
+                return null;
+            }
+
+            string jsonContent = System.IO.File.ReadAllText(fullPath);
+            FilmDataCollection filmData = JsonUtility.FromJson<FilmDataCollection>(jsonContent);
+
+            Debug.Log($"✅ Loaded film data: {filmData.Entries?.Length ?? 0} entries");
+            return filmData;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"❌ Failed to load film data: {ex.Message}");
+            return null;
+        }
+    }
     private void FocusOnZone(FilmZone zone)
     {
         if (zone.polygonPoints.Count == 0) return;
@@ -486,7 +863,6 @@ public class FilmZoneManagerInspector : Editor
 
     private void AutoDetectPrefabMappings()
     {
-        // UPDATED to analyze existing EnhancedVideoPlayer entries
         EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
 
         var uniquePrefabTypes = allVideos
@@ -572,7 +948,7 @@ public class FilmZoneManagerInspector : Editor
         int completeZoneMappings = zoneManager.zonePrefabMappings.Count(m => !string.IsNullOrEmpty(m.zoneName) && m.prefab != null);
         report.AppendLine($"🏠 Zone prefab mappings: {completeZoneMappings}/{zoneManager.zonePrefabMappings.Count} complete");
 
-        // Check video prefabs in scene - UPDATED to use EnhancedVideoPlayer
+        // Check video prefabs in scene
         EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
         report.AppendLine($"🎬 Enhanced Video Players in scene: {allVideos.Length}");
 

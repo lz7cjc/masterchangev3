@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6128881184862413773}
   - component: {fileID: 7036793749659484780}
   m_Layer: 0
-  m_Name: Text (TMP)
+  m_Name: Title
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -102,7 +102,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Sample text
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 784133ed3e9b03849aa4e87d3adc56c9, type: 2}
   m_sharedMaterial: {fileID: 6239492039072275342, guid: 784133ed3e9b03849aa4e87d3adc56c9, type: 2}
@@ -129,7 +129,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 1.9
+  m_fontSize: 2
   m_fontSizeBase: 2
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -401,7 +401,6 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 0, g: 1, b: 0, a: 1}
   useProgressIndicator: 1
-  riroStopGoV2: {fileID: 0}
   rotateOnHover: 1
   debugMode: 1
   category: 
@@ -418,7 +417,7 @@ GameObject:
   - component: {fileID: 1528688239620672467}
   - component: {fileID: 3880084775078653715}
   m_Layer: 0
-  m_Name: Text (TMP) (1)
+  m_Name: Description
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -508,7 +507,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Sample text
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 784133ed3e9b03849aa4e87d3adc56c9, type: 2}
   m_sharedMaterial: {fileID: 6239492039072275342, guid: 784133ed3e9b03849aa4e87d3adc56c9, type: 2}
@@ -535,7 +534,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 6
+  m_fontSize: 2
   m_fontSizeBase: 2
   m_fontWeight: 400
   m_enableAutoSizing: 1

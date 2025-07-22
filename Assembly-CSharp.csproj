@@ -74,6 +74,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\EnhancedVideoPlayer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoIntegrationHelper.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />

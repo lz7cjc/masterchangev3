@@ -9,7 +9,8 @@ public class closeAllHuds : MonoBehaviour
     public GameObject hud1PlusOff;
     public GameObject hud1PlusOn;
     public GameObject hud1Level2;
-    public GameObject hud1Level3;
+    public GameObject hud1Level3a;
+    public GameObject hud1Level3b;
 
     private showHideHUD hudController;
     private showHideHUDcat hudCatController;
@@ -61,7 +62,8 @@ public class closeAllHuds : MonoBehaviour
             // Enhanced fallback logic
             Debug.Log("Marker: Enhanced fallback - Deactivating HUD elements");
             SafeSetActive(hud1Level2, false);
-            SafeSetActive(hud1Level3, false);
+            SafeSetActive(hud1Level3a, false);
+            SafeSetActive(hud1Level3b, false);
             SafeSetActive(hud1PlusOff, false);
             SafeSetActive(hud1PlusOn, true);
         }
@@ -85,7 +87,11 @@ public class closeAllHuds : MonoBehaviour
         {
             Debug.LogError("Marker: hud1Level2 is not assigned! Try assigning 'Level2' GameObject.");
         }
-        if (hud1Level3 == null)
+        if (hud1Level3a == null)
+        {
+            Debug.LogError("Marker: hud1Level3 is not assigned! Try assigning main Level3 container.");
+        }
+        if (hud1Level3b == null)
         {
             Debug.LogError("Marker: hud1Level3 is not assigned! Try assigning main Level3 container.");
         }
@@ -162,7 +168,8 @@ public class closeAllHuds : MonoBehaviour
     {
         return $"HUD Assignment Status:\n" +
                $"- Level2: {(hud1Level2 != null ? "✓" : "✗")}\n" +
-               $"- Level3: {(hud1Level3 != null ? "✓" : "✗")}\n" +
+               $"- Level3: {(hud1Level3a != null ? "✓" : "✗")}\n" +
+              $"- Level3: {(hud1Level3b != null ? "✓" : "✗")}\n" +
                $"- Plus Off: {(hud1PlusOff != null ? "✓" : "✗")}\n" +
                $"- Plus On: {(hud1PlusOn != null ? "✓" : "✗")}\n" +
                $"- Coordinator: {(hudCoordinator != null ? "✓" : "✗")}";
@@ -178,8 +185,10 @@ public class closeAllHuds : MonoBehaviour
         if (hud1Level2 == null)
             hud1Level2 = GameObject.Find("Level2");
 
-        if (hud1Level3 == null)
-            hud1Level3 = GameObject.Find("Level3a"); // or whatever your main Level3 is called
+        if (hud1Level3a == null)
+            hud1Level3a = GameObject.Find("Level3a"); // or whatever your main Level3 is called
+        if (hud1Level3b == null)
+            hud1Level3b = GameObject.Find("Level3a"); // or whatever your main Level3 is called
 
         if (hud1PlusOff == null)
             hud1PlusOff = GameObject.Find("closeHud");

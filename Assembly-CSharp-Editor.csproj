@@ -108,6 +108,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildAndRunner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\AssetPackConfigSerializer.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Utils\PostBuildCommandLineDialog.cs" />
+    <Compile Include="Assets\Editor\SceneSettingEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuiltInPadHelper.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\PlayServices\CommandLine.cs" />
     <Compile Include="Assets\Editor\Scripts\FilmZoneEditorWindow.cs" />

@@ -192,7 +192,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\userBehaviours.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\SceneSettingEditor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\SpriteBasedFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />

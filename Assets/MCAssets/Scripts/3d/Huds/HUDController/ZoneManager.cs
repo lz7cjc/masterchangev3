@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 
@@ -313,35 +314,85 @@ public class ZoneManager : MonoBehaviour
             closeAllHuds.CloseTheHuds($"Zone teleport to {zone.zoneName}");
         }
 
-        // Enhanced movement logic with better error handling
+        // FIXED: Use the same approach as StartUp script (parenting method)
         if (player != null)
         {
             try
             {
-                // First, unparent the player to avoid transform conflicts
-                player.transform.SetParent(null);
+                Debug.Log($"Moving to zone: {zone.zoneName}");
+                Debug.Log($"Target object: {zone.zoneTarget.name}");
+                Debug.Log($"Player current position: {player.transform.position}");
 
-                // Stop all physics
+                // Stop all physics immediately
                 player.isKinematic = true;
                 player.linearVelocity = Vector3.zero;
                 player.angularVelocity = Vector3.zero;
 
-                // Set position and rotation directly in world space
-                player.transform.position = zone.zoneTarget.transform.position;
-                player.transform.rotation = zone.zoneTarget.transform.rotation;
-                player.transform.localScale = Vector3.one;
-
-                // Re-enable physics
-                player.useGravity = useGravity;
-                player.isKinematic = false;
-
-                Debug.Log($"Player moved to zone: {zone.zoneName} at position {zone.zoneTarget.transform.position}");
+                // Use the same method as StartUp script
+                MovePlayerToPosition(Vector3.zero, Quaternion.identity, zone);
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"Error during player movement: {e.Message}");
+                Debug.LogError($"Stack trace: {e.StackTrace}");
             }
         }
+    }
+
+    private System.Collections.IEnumerator CompleteMovementAfterUnparent(Vector3 targetPosition, Quaternion targetRotation, Transform originalParent, ZoneDefinition zone)
+    {
+        yield return null; // Wait one frame
+
+        MovePlayerToPosition(targetPosition, targetRotation, zone);
+
+        // Optionally re-parent if needed (usually not necessary for teleportation)
+        // player.transform.SetParent(originalParent, true);
+    }
+
+    private void MovePlayerToPosition(Vector3 targetPosition, Quaternion targetRotation, ZoneDefinition zone)
+    {
+        // FIXED: Use the same parenting approach as StartUp script
+        if (zone.zoneTarget != null)
+        {
+            // Clear any existing parent
+            player.transform.SetParent(null);
+
+            // Reset to world origin first
+            player.transform.position = Vector3.zero;
+            player.transform.rotation = Quaternion.identity;
+
+            // Now set the parent and local position (same as StartUp script)
+            player.transform.SetParent(zone.zoneTarget.transform);
+            player.transform.localPosition = Vector3.zero;        // Reset to (0,0,0) relative to target
+            player.transform.localRotation = Quaternion.identity;
+            player.transform.localScale = Vector3.one;
+
+            Debug.Log($"Player parented to: {zone.zoneTarget.name}");
+            Debug.Log($"Local position set to: {player.transform.localPosition}");
+            Debug.Log($"World position is now: {player.transform.position}");
+        }
+        else
+        {
+            // Fallback to world position if no target
+            player.transform.position = targetPosition;
+            player.transform.rotation = targetRotation;
+            player.transform.localScale = Vector3.one;
+        }
+
+        // Re-enable physics after a small delay to ensure position is set
+        StartCoroutine(ReEnablePhysicsAfterDelay(zone));
+    }
+
+    private System.Collections.IEnumerator ReEnablePhysicsAfterDelay(ZoneDefinition zone)
+    {
+        yield return new WaitForFixedUpdate(); // Wait for physics update
+
+        // Re-enable physics
+        player.useGravity = useGravity;
+        player.isKinematic = false;
+
+        Debug.Log($"Player physics re-enabled at position: {player.transform.position}");
+        Debug.Log($"Player local position: {player.transform.localPosition}");
 
         // Save to PlayerPrefs - single source of truth
         PlayerPrefs.SetString("lastknownzone", zone.zoneName);
@@ -432,6 +483,37 @@ public class ZoneManager : MonoBehaviour
         {
             var zone = zones[i];
             Debug.Log($"  [{i}] {zone.zoneName} -> {zone.zoneTarget?.name}");
+        }
+    }
+
+    [ContextMenu("Debug Player Position")]
+    private void DebugPlayerPosition()
+    {
+        if (player != null)
+        {
+            Debug.Log($"Player Position: {player.transform.position}");
+            Debug.Log($"Player Rotation: {player.transform.rotation}");
+            Debug.Log($"Player Parent: {(player.transform.parent != null ? player.transform.parent.name : "None")}");
+            Debug.Log($"Player Scale: {player.transform.localScale}");
+            Debug.Log($"Player IsKinematic: {player.isKinematic}");
+            Debug.Log($"Player UseGravity: {player.useGravity}");
+        }
+    }
+
+    [ContextMenu("Debug All Zone Targets")]
+    private void DebugAllZoneTargets()
+    {
+        Debug.Log("=== All Zone Target Positions ===");
+        foreach (var zone in zones)
+        {
+            if (zone.zoneTarget != null)
+            {
+                Debug.Log($"{zone.zoneName}: Position = {zone.zoneTarget.transform.position}, Rotation = {zone.zoneTarget.transform.rotation}");
+            }
+            else
+            {
+                Debug.LogWarning($"{zone.zoneName}: Zone target is NULL!");
+            }
         }
     }
 

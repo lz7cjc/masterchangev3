@@ -23,12 +23,17 @@ public class VRCurvedMenuLayout : MonoBehaviour
     [SerializeField] private float iconSpacing = 1.2f; // Multiplier for natural spacing
     [SerializeField] private bool addDepthVariation = true;
     [SerializeField] private float depthVariation = 0.2f;
-    [SerializeField] private bool followCurveRotation = true; // NEW: Make icons follow curve direction
+    [SerializeField] private bool followCurveRotation = true; // Make icons follow curve direction
+
+    [Header("Level 3 Specific Settings")]
+    [SerializeField] private bool isLevel3Menu = false;
+    [SerializeField] private float level3Radius = 6f; // Smaller radius for Level3 menus
+    [SerializeField] private float level3ArcAngle = 120f; // Wider arc for more buttons
+    [SerializeField] private bool level3UseTextMeshPro = true; // Level3 uses TextMeshPro buttons
 
     [Header("Integration")]
     [SerializeField] private MonoBehaviour hudCoordinator; // Changed to MonoBehaviour to avoid compilation issues
     [SerializeField] private bool isLevel2Menu = false;
-    [SerializeField] private bool isLevel3Menu = false;
 
     private List<Transform> menuItems = new List<Transform>();
     private List<Vector3> originalPositions = new List<Vector3>();
@@ -55,8 +60,6 @@ public class VRCurvedMenuLayout : MonoBehaviour
 
         Debug.Log($"VR Curved Layout initialized with {menuItems.Count} items");
     }
-
-
 
     private void CollectMenuItems()
     {
@@ -99,13 +102,47 @@ public class VRCurvedMenuLayout : MonoBehaviour
             return false;
         }
 
-        // Include items with these components (your actual setup)
+        // Level3 specific inclusions
+        if (isLevel3Menu && level3UseTextMeshPro)
+        {
+            // Include TextMeshPro components (Level3 category buttons)
+            bool hasTextMeshPro = item.GetComponent<TMPro.TextMeshPro>() != null ||
+                                 item.GetComponent<TMPro.TextMeshProUGUI>() != null;
+
+            // Include objects with specific Level3 naming patterns
+            bool hasLevel3Name = name.Contains("level3") ||
+                                name.Contains("text") ||
+                                name.Contains("travel") ||
+                                name.Contains("sport") ||
+                                name.Contains("beaches") ||
+                                name.Contains("heights") ||
+                                name.Contains("alcohol") ||
+                                name.Contains("smoking") ||
+                                name.Contains("mindfulness") ||
+                                name.Contains("speedup") ||
+                                name.Contains("slowdown") ||
+                                name.Contains("startstop");
+
+            // Include movement controls
+            bool hasMovementControls = name.Contains("speed") ||
+                                      name.Contains("start") ||
+                                      name.Contains("stop") ||
+                                      name.Contains("walk");
+
+            if (hasTextMeshPro || hasLevel3Name || hasMovementControls)
+            {
+                Debug.Log($"Level3 menu item included: {item.name} (TextMeshPro={hasTextMeshPro}, Name={hasLevel3Name}, Movement={hasMovementControls})");
+                return true;
+            }
+        }
+
+        // Standard Level2 inclusions
         bool hasValidComponent = item.GetComponent<SpriteRenderer>() != null ||
                item.GetComponent<MeshRenderer>() != null ||
                item.GetComponent<TMPro.TextMeshPro>() != null ||
                item.GetComponent<showHideHUDcat>() != null ||
                item.GetComponent<ToggleActiveIcons>() != null ||
-               item.GetComponent<MoveCamera>() != null || // YOUR SCRIPT
+               item.GetComponent<MoveCamera>() != null ||
                item.GetComponent<Collider>() != null;
 
         // Include items with specific naming patterns
@@ -114,7 +151,7 @@ public class VRCurvedMenuLayout : MonoBehaviour
                name.Contains("quad") ||
                name.Contains("panel") ||
                name.Contains("mesh") ||
-               name.Contains("btn_") || // YOUR NAMING PATTERN
+               name.Contains("btn_") ||
                name.Contains("hud_");
 
         bool shouldInclude = hasValidComponent || hasValidName;
@@ -134,12 +171,16 @@ public class VRCurvedMenuLayout : MonoBehaviour
             return;
         }
 
-        // Calculate the angle between each item
-        float angleStep = menuItems.Count > 1 ? arcAngle / (menuItems.Count - 1) : 0f;
-        float startAngle = -arcAngle / 2f;
+        // Use Level3 specific settings if this is a Level3 menu
+        float effectiveRadius = isLevel3Menu ? level3Radius : radius;
+        float effectiveArcAngle = isLevel3Menu ? level3ArcAngle : arcAngle;
 
-        Debug.Log($"VRCurvedMenuLayout: Arranging {menuItems.Count} items over {arcAngle}° arc");
-        Debug.Log($"Angle step: {angleStep}°, Start angle: {startAngle}°, Radius: {radius}");
+        // Calculate the angle between each item
+        float angleStep = menuItems.Count > 1 ? effectiveArcAngle / (menuItems.Count - 1) : 0f;
+        float startAngle = -effectiveArcAngle / 2f;
+
+        Debug.Log($"VRCurvedMenuLayout: Arranging {menuItems.Count} items over {effectiveArcAngle}° arc (Level3={isLevel3Menu})");
+        Debug.Log($"Angle step: {angleStep}°, Start angle: {startAngle}°, Radius: {effectiveRadius}");
 
         for (int i = 0; i < menuItems.Count; i++)
         {
@@ -150,9 +191,9 @@ public class VRCurvedMenuLayout : MonoBehaviour
 
             // Calculate position on arc
             Vector3 position = new Vector3(
-                Mathf.Sin(angleRad) * radius,
+                Mathf.Sin(angleRad) * effectiveRadius,
                 heightOffset + (addDepthVariation ? Mathf.Sin(i * 0.5f) * depthVariation : 0f),
-                Mathf.Cos(angleRad) * radius
+                Mathf.Cos(angleRad) * effectiveRadius
             );
 
             targetPositions.Add(position);
@@ -195,8 +236,9 @@ public class VRCurvedMenuLayout : MonoBehaviour
                     if (followCurveRotation)
                     {
                         // Calculate the angle for this position in the curve
-                        float angleStep = menuItems.Count > 1 ? arcAngle / (menuItems.Count - 1) : 0f;
-                        float startAngle = -arcAngle / 2f;
+                        float effectiveArcAngle = isLevel3Menu ? level3ArcAngle : arcAngle;
+                        float angleStep = menuItems.Count > 1 ? effectiveArcAngle / (menuItems.Count - 1) : 0f;
+                        float startAngle = -effectiveArcAngle / 2f;
                         float currentAngle = startAngle + (angleStep * i);
 
                         // Set rotation to follow the curve (face outward from center)
@@ -227,8 +269,9 @@ public class VRCurvedMenuLayout : MonoBehaviour
                 // Set final rotation
                 if (followCurveRotation)
                 {
-                    float angleStep = menuItems.Count > 1 ? arcAngle / (menuItems.Count - 1) : 0f;
-                    float startAngle = -arcAngle / 2f;
+                    float effectiveArcAngle = isLevel3Menu ? level3ArcAngle : arcAngle;
+                    float angleStep = menuItems.Count > 1 ? effectiveArcAngle / (menuItems.Count - 1) : 0f;
+                    float startAngle = -effectiveArcAngle / 2f;
                     float currentAngle = startAngle + (angleStep * i);
                     menuItems[i].localRotation = Quaternion.Euler(0, currentAngle, 0);
                 }
@@ -324,9 +367,6 @@ public class VRCurvedMenuLayout : MonoBehaviour
 
     private void OnEnable()
     {
-        // Subscribe to HUD events if coordinator is available
-        // Coordinator integration temporarily disabled to avoid compilation issues
-
         if (animateOnEnable && menuItems.Count > 0)
         {
             StartCoroutine(AnimateToPositions());
@@ -335,7 +375,6 @@ public class VRCurvedMenuLayout : MonoBehaviour
 
     private void OnDisable()
     {
-        // Unsubscribe from events
         StopAllCoroutines();
         isAnimating = false;
     }
@@ -363,33 +402,27 @@ public class VRCurvedMenuLayout : MonoBehaviour
     {
         Debug.Log("=== EMERGENCY RESTORE STARTING ===");
 
-        // Find all children and reset them to reasonable positions
         int restoredCount = 0;
         for (int i = 0; i < transform.childCount; i++)
         {
             Transform child = transform.GetChild(i);
             if (child != null)
             {
-                // Reset to a simple horizontal line spreading outward from center
-                float spacing = 1.5f; // Adjust this spacing as needed
+                float spacing = 1.5f;
                 float startOffset = -(transform.childCount - 1) * spacing * 0.5f;
 
                 Vector3 newPosition = new Vector3(startOffset + (i * spacing), 0, 0);
                 child.localPosition = newPosition;
                 child.localScale = Vector3.one;
                 child.localRotation = Quaternion.identity;
-
-                // Make sure it's active
                 child.gameObject.SetActive(true);
 
-                Debug.Log($"Emergency restored: {child.name} to position {newPosition}, active: {child.gameObject.activeInHierarchy}");
+                Debug.Log($"Emergency restored: {child.name} to position {newPosition}");
                 restoredCount++;
             }
         }
         Debug.Log($"=== EMERGENCY RESTORE COMPLETED - Restored {restoredCount} items ===");
 
-        // Force refresh the menu items collection with detailed logging
-        Debug.Log("=== COLLECTING MENU ITEMS AFTER RESTORE ===");
         CollectMenuItems();
     }
 
@@ -405,7 +438,6 @@ public class VRCurvedMenuLayout : MonoBehaviour
             Debug.Log($"Position: {child.localPosition}");
             Debug.Log($"Scale: {child.localScale}");
 
-            // Check all components
             var components = child.GetComponents<Component>();
             Debug.Log($"Components found: {components.Length}");
             foreach (var comp in components)
@@ -413,34 +445,10 @@ public class VRCurvedMenuLayout : MonoBehaviour
                 Debug.Log($"  - {comp.GetType().Name}");
             }
 
-            // Test the inclusion logic
             bool shouldInclude = ShouldIncludeInLayout(child);
             Debug.Log($"Should include in layout: {shouldInclude}");
         }
         Debug.Log("=== COMPONENT ANALYSIS COMPLETE ===");
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-#if UNITY_EDITOR
-        // Only draw gizmos in editor when this GameObject is selected
-        if (UnityEditor.Selection.activeGameObject == gameObject && targetPositions.Count > 0)
-        {
-            Gizmos.color = Color.cyan;
-
-            // Draw arc line (simplified)
-            for (int i = 0; i < targetPositions.Count - 1; i++)
-            {
-                Vector3 worldPos1 = transform.TransformPoint(targetPositions[i]);
-                Vector3 worldPos2 = transform.TransformPoint(targetPositions[i + 1]);
-                Gizmos.DrawLine(worldPos1, worldPos2);
-            }
-
-            // Draw radius circle (less intrusive)
-            Gizmos.color = new Color(1, 0, 0, 0.3f); // Semi-transparent red
-            Gizmos.DrawWireSphere(transform.position, radius);
-        }
-#endif
     }
 
     #endregion

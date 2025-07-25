@@ -291,17 +291,41 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (target == null) return;
 
-        // Invoke our custom UnityEvent (this is safe from type conversion errors)
+        // IMPROVED: Better error handling for UnityEvent invocation
         try
         {
-            OnPointerEnter?.Invoke(target);
+            // Validate the event before invoking
+            if (OnPointerEnter != null && OnPointerEnter.GetPersistentEventCount() > 0)
+            {
+                // Check if all persistent events are valid
+                bool allEventsValid = true;
+                for (int i = 0; i < OnPointerEnter.GetPersistentEventCount(); i++)
+                {
+                    if (OnPointerEnter.GetPersistentTarget(i) == null)
+                    {
+                        Debug.LogWarning($"OnPointerEnter event {i} has null target. Skipping event invocation.");
+                        allEventsValid = false;
+                        break;
+                    }
+                }
+
+                if (allEventsValid)
+                {
+                    OnPointerEnter.Invoke(target);
+                }
+                else
+                {
+                    Debug.LogError($"OnPointerEnter has invalid event connections. Please check the Inspector and reassign missing scripts.");
+                }
+            }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Error invoking OnPointerEnter: {e.Message}");
+            Debug.LogError($"Error invoking OnPointerEnter for {target.name}: {e.Message}");
+            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
         }
 
-        // Handle EventTrigger components
+        // Handle EventTrigger components with better error handling
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
@@ -329,16 +353,35 @@ public class VRReticlePointer : MonoBehaviour
                         }
                     }
 
-                    // Invoke the callback if found
+                    // Invoke the callback if found and valid
                     if (enterEntry != null && enterEntry.callback != null)
                     {
-                        enterEntry.callback.Invoke(eventData);
+                        // Validate the callback before invoking
+                        if (enterEntry.callback.GetPersistentEventCount() > 0)
+                        {
+                            bool callbackValid = true;
+                            for (int i = 0; i < enterEntry.callback.GetPersistentEventCount(); i++)
+                            {
+                                if (enterEntry.callback.GetPersistentTarget(i) == null)
+                                {
+                                    Debug.LogWarning($"EventTrigger PointerEnter callback {i} has null target on {target.name}");
+                                    callbackValid = false;
+                                    break;
+                                }
+                            }
+
+                            if (callbackValid)
+                            {
+                                enterEntry.callback.Invoke(eventData);
+                            }
+                        }
                     }
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error triggering pointer enter for {target.name}: {e.Message}");
+                Debug.LogError($"Error triggering EventTrigger pointer enter for {target.name}: {e.Message}");
+                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
             }
         }
     }
@@ -347,17 +390,41 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (target == null) return;
 
-        // Invoke our custom UnityEvent (this is safe from type conversion errors)
+        // IMPROVED: Better error handling for UnityEvent invocation
         try
         {
-            OnPointerExit?.Invoke(target);
+            // Validate the event before invoking
+            if (OnPointerExit != null && OnPointerExit.GetPersistentEventCount() > 0)
+            {
+                // Check if all persistent events are valid
+                bool allEventsValid = true;
+                for (int i = 0; i < OnPointerExit.GetPersistentEventCount(); i++)
+                {
+                    if (OnPointerExit.GetPersistentTarget(i) == null)
+                    {
+                        Debug.LogWarning($"OnPointerExit event {i} has null target. Skipping event invocation.");
+                        allEventsValid = false;
+                        break;
+                    }
+                }
+
+                if (allEventsValid)
+                {
+                    OnPointerExit.Invoke(target);
+                }
+                else
+                {
+                    Debug.LogError($"OnPointerExit has invalid event connections. Please check the Inspector and reassign missing scripts.");
+                }
+            }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Error invoking OnPointerExit: {e.Message}");
+            Debug.LogError($"Error invoking OnPointerExit for {target.name}: {e.Message}");
+            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
         }
 
-        // Handle EventTrigger components
+        // Handle EventTrigger components with better error handling
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
@@ -385,16 +452,35 @@ public class VRReticlePointer : MonoBehaviour
                         }
                     }
 
-                    // Invoke the callback if found
+                    // Invoke the callback if found and valid
                     if (exitEntry != null && exitEntry.callback != null)
                     {
-                        exitEntry.callback.Invoke(eventData);
+                        // Validate the callback before invoking
+                        if (exitEntry.callback.GetPersistentEventCount() > 0)
+                        {
+                            bool callbackValid = true;
+                            for (int i = 0; i < exitEntry.callback.GetPersistentEventCount(); i++)
+                            {
+                                if (exitEntry.callback.GetPersistentTarget(i) == null)
+                                {
+                                    Debug.LogWarning($"EventTrigger PointerExit callback {i} has null target on {target.name}");
+                                    callbackValid = false;
+                                    break;
+                                }
+                            }
+
+                            if (callbackValid)
+                            {
+                                exitEntry.callback.Invoke(eventData);
+                            }
+                        }
                     }
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error triggering pointer exit for {target.name}: {e.Message}");
+                Debug.LogError($"Error triggering EventTrigger pointer exit for {target.name}: {e.Message}");
+                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
             }
         }
     }
@@ -411,6 +497,43 @@ public class VRReticlePointer : MonoBehaviour
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawRay(mainCamera.transform.position, mainCamera.transform.forward * maxInteractionDistance);
+        }
+    }
+
+    // DIAGNOSTIC METHODS - Add these to help identify issues
+    [ContextMenu("Diagnose Event Connections")]
+    private void DiagnoseEventConnections()
+    {
+        Debug.Log("=== VRReticlePointer Event Diagnostics ===");
+
+        if (OnPointerEnter != null)
+        {
+            Debug.Log($"OnPointerEnter has {OnPointerEnter.GetPersistentEventCount()} persistent events:");
+            for (int i = 0; i < OnPointerEnter.GetPersistentEventCount(); i++)
+            {
+                var target = OnPointerEnter.GetPersistentTarget(i);
+                var methodName = OnPointerEnter.GetPersistentMethodName(i);
+                Debug.Log($"  Event {i}: Target = {(target != null ? target.name : "NULL")}, Method = {methodName}");
+            }
+        }
+        else
+        {
+            Debug.Log("OnPointerEnter is null");
+        }
+
+        if (OnPointerExit != null)
+        {
+            Debug.Log($"OnPointerExit has {OnPointerExit.GetPersistentEventCount()} persistent events:");
+            for (int i = 0; i < OnPointerExit.GetPersistentEventCount(); i++)
+            {
+                var target = OnPointerExit.GetPersistentTarget(i);
+                var methodName = OnPointerExit.GetPersistentMethodName(i);
+                Debug.Log($"  Event {i}: Target = {(target != null ? target.name : "NULL")}, Method = {methodName}");
+            }
+        }
+        else
+        {
+            Debug.Log("OnPointerExit is null");
         }
     }
 }

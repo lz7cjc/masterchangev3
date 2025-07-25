@@ -17,12 +17,18 @@ public class togglingXR : MonoBehaviour
             Debug.LogWarning("XRGeneralSettings.Instance is null at Start. Ensure XR Plugin Management is configured.");
         }
 
-        if (switchVRon)
+        // Check PlayerPrefs instead of just using switchVRon boolean
+        int vrState = PlayerPrefs.GetInt("toggleToVR", 0);
+        Debug.Log($"PlayerPrefs toggleToVR at Start: {vrState}");
+
+        if (vrState == 1)
         {
+            Debug.Log("Starting XR from Start method based on PlayerPrefs");
             StartCoroutine(StartXR());
         }
         else
         {
+            Debug.Log("Stopping/Not starting XR from Start method based on PlayerPrefs");
             StopXR();
         }
     }
@@ -113,6 +119,9 @@ public class togglingXR : MonoBehaviour
         {
             Debug.Log("No active XR loader to stop");
         }
+
+        // Ensure 2D mode is properly initialized
+        Initialize2DScreen();
     }
 
     // Add methods to handle loading screen visibility
@@ -131,6 +140,8 @@ public class togglingXR : MonoBehaviour
     private void Initialize2DScreen()
     {
         Debug.Log("Initializing 2D screen...");
+        // Reset screen sleep timeout to system default
+        Screen.sleepTimeout = SleepTimeout.SystemSetting;
         // Implement logic to ensure the 2D screen is properly displayed
     }
 }

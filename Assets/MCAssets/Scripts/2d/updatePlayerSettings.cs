@@ -12,10 +12,11 @@ public class updatePlayerSettings : MonoBehaviour
     public Toggle IntroScreen;
     public Toggle SwitchtoVR;
     public Toggle Training;
+ 
     private int IntroScreenset;
     private int SwitchtoVRset;
     private int Trainingset;
-    private int signsmall;
+   // private int signsmall;
 
 
 
@@ -25,7 +26,7 @@ public class updatePlayerSettings : MonoBehaviour
         IntroScreenset = PlayerPrefs.GetInt("IntroScreen");
         SwitchtoVRset = PlayerPrefs.GetInt("SwitchtoVR");
         Trainingset = PlayerPrefs.GetInt("trainingDone");
-        signsmall = PlayerPrefs.GetInt("EyesGood");
+//        signsmall = PlayerPrefs.GetInt("EyesGood");
 
 
         //check if hiding first screen

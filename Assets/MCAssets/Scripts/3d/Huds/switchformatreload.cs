@@ -57,7 +57,7 @@ public class switchformatreload : MonoBehaviour
                 PlayerPrefs.SetInt("toggleToVR", newState);
                 PlayerPrefs.Save();
 
-                // Switch VR state
+                // Switch VR state using the proper method
                 if (togglingXR == null)
                 {
                     togglingXR = FindFirstObjectByType<togglingXR>();
@@ -65,31 +65,33 @@ public class switchformatreload : MonoBehaviour
 
                 if (togglingXR != null)
                 {
-                    Debug.Log($"Switching VR state. New state: {newState}");
-                    if (newState == 1)
-                    {
-                        // Switch to VR mode
-                        togglingXR.StartCoroutine(togglingXR.StartXR());
-                    }
-                    else
-                    {
-                        // Switch to 360 mode
-                        togglingXR.StopXR();
-                    }
+                    Debug.Log($"Calling SwitchingVR() with new state: {newState}");
+                    // Use the SwitchingVR method which properly reads PlayerPrefs
+                    togglingXR.SwitchingVR();
                 }
                 else
                 {
                     Debug.LogWarning("togglingXR instance not found!");
                 }
 
-                // Update icon based on new state
-                toggleActiveIconsVR.SetHeadsetIcon(newState == 1);
+                // Wait a frame to ensure the VR state change has processed
+                StartCoroutine(WaitAndUpdateIcon(newState));
+
+                // Wait a frame to ensure the VR state change has processed
+                StartCoroutine(WaitAndUpdateIcon(newState));
 
                 isHovering = false;
                 Counter = 0;
                 isProcessing = false;
             }
         }
+    }
+
+    private System.Collections.IEnumerator WaitAndUpdateIcon(int newState)
+    {
+        yield return new WaitForEndOfFrame();
+        // Update icon based on new state
+        toggleActiveIconsVR.SetHeadsetIcon(newState == 1);
     }
 
     public void MouseHoverChangeScene()

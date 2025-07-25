@@ -111,6 +111,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\InventoryItemData.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\CleanIconRestorer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\InteractScript.cs" />
@@ -152,6 +153,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SportsMarinaGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\EventSystemCoordinator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ShowHide.cs" />

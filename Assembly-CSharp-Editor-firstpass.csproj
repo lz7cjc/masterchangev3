@@ -61,15 +61,15 @@
     <Analyzer Include="D:\Program Files\6000.0.40f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectBuildEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Utils.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\AppStoreOnboardApi.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\EditorAnalytcisApi.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectBuildEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\WebRequestQueue.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\Common.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreModel.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectOpenEvent.cs" />
-    <Compile Include="Assets\Plugins\UDP\Editor\AppStoreOnboardApi.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreStyles.cs" />
-    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\EditorAnalytcisApi.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\SdkImportEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreSettingsEditor.cs" />
   </ItemGroup>
@@ -1114,6 +1114,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.Addressables.Android.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Services.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.InputSystem.ForUI">
       <HintPath>Library\ScriptAssemblies\Unity.InputSystem.ForUI.dll</HintPath>
       <Private>False</Private>
@@ -1134,6 +1138,10 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.Codeless.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.XR.CoreUtils">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.Purchasing">
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.dll</HintPath>
       <Private>False</Private>
@@ -1148,6 +1156,10 @@
     </Reference>
     <Reference Include="Unity.ResourceManager">
       <HintPath>Library\ScriptAssemblies\Unity.ResourceManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications.Unified">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.Unified.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Runtime.Shared">
@@ -1168,6 +1180,10 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications.Android">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.Android.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
@@ -1246,12 +1262,16 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Profiling.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
+    <Reference Include="Google.XR.Cardboard">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Collections.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Profiling.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
@@ -1264,6 +1284,10 @@
     </Reference>
     <Reference Include="Unity.Multiplayer.Center.Common">
       <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.Purchasing.SecurityCore">
@@ -1280,6 +1304,10 @@
     </Reference>
     <Reference Include="Unity.Services.Core.Analytics">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Analytics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Google.XR.Cardboard.Editor">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Mathematics">
@@ -1326,8 +1354,8 @@
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
+    <Reference Include="Unity.XR.CoreUtils.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Rendering.LightTransport.Runtime">
@@ -1342,23 +1370,19 @@
       <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Notifications.iOS">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.iOS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.2D.Runtime">
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.2D.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Unity.XR.Management.Samples.csproj">
-      <Project>{62CA3BF5-79A8-E32C-1300-3E1FA658F5F6}</Project>
-      <Name>Unity.XR.Management.Samples</Name>
-    </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.editor.csproj">
       <Project>{43202759-76E3-ABEC-CD1A-5FFDF8A93F98}</Project>
       <Name>sc.stylizedwater2.editor</Name>
-    </ProjectReference>
-    <ProjectReference Include="Unity.XR.Management.Samples.Editor.csproj">
-      <Project>{467AFA01-0844-F806-1719-5127B3EDE586}</Project>
-      <Name>Unity.XR.Management.Samples.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.runtime.csproj">
       <Project>{49B84AF5-C20F-5809-06AF-DAFAF891B7DD}</Project>

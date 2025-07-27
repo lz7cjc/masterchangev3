@@ -61,7 +61,6 @@
     <Analyzer Include="D:\Program Files\6000.0.40f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\MCAssets\Scripts\2d\ignoreFirstVisit.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDMove.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\MaterialGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\SetVrState.cs" />
@@ -72,154 +71,79 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\passwordreset.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\EnhancedVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRCurvedMenuLayout.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoIntegrationHelper.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
-    <Compile Include="Assets\MCAssets\InputManager\InteractiveObject.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\justGetRiros.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TipButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\SetSkipVRSwitchScene.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\Results.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ResetCameraPosition.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TogglePlayPauseIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInstantiator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\syncfromdb.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\Flapboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInitializer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRViewToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCameraNoToggleIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\tutorialPages.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ReticlePointerSynchronizer.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\TennisCourtGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideLocations.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsert.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\InventoryItemData.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\CleanIconRestorer.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\InteractScript.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\updateuserdb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SignageGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\AddressablePositioner.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\favourites.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRHUDMaterials.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showhide3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmove.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\InteractiveZone.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTrigger.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\justSetRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\DockGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GoIconTrigger.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\vr\OptimizedToggleVR.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\FlapboardControl.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SwimmingPoolGenerator.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VRGazeHelper.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\VRSceneManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\globalvariables.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\rotateCameraold4huds.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinks.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\Logon.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\rotateCamerav2.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\FlyCameraControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\loading.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\IntegratedTipsController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstVisitRiros.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\HUDSystemCoordinator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SportsMarinaGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\EventSystemCoordinator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ShowHide.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Habits.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\TestToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\MinimalLoadingIndicator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmZoneManager.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\FPSController.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmoveold4huds.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\slitog.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
-    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\EventTriggerFixer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
-    <Compile Include="Assets\EnhancedVRController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerHierarchyMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ScreenDisplayLearning.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\habits1.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\BCTUserJourneyLaunch.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\CurvedButtonLayout.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\smokinghabitsdone.cs" />
     <Compile Include="Assets\Island\Scripts\MouseLook.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\KeepHudInFront.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\rotateCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\switchformatreload.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\toMasterChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDLockRotation.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\justGetRirosForTips.cs" />
-    <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\DoorScript.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\userBehaviours.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\SpriteBasedFocusIndicator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\LoadingManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ThreeLevelHud.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\displayFormValues.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRirosDynamic.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\WaterSportsPlatformGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\CustomReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadStatus.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\setRegRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\fuckapple.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHudsold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LaunchVideo.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\showHideHUDcat.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\setCTdate.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITipsManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits1.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\Selectionmanager_s.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\Clock_Analogue.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />
     <Compile Include="Assets\Island\Scripts\FixedTiling.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GazeMovement.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\ToggleShowHideVideo.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\registerorlogon.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\rirofromprefs.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadItem.cs" />
@@ -228,72 +152,39 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ToggleActiveIcons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\PickBCT.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\TerminalVoice.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\DebugAddressableLoader.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\registerbtnoptions.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\sendemail.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\ToggleShowVote.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\pickVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Scenecontroller.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DetectPlayingAudio.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\showhideformat.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\CameraRay.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRVisualEnhancer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\ChangeSceneHealthCheckv2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingHudManager.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoControllerV2.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\vr\togglingXR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsertsandpit.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ShowfilmAdapter.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\StreetLightGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\TestInterfaceButtons.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\riroStopGo.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\BuyInventoryItem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicLoadVideo1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsHUD.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\showWhichFormat.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\AnimPlayer.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\getfavourites.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\BackgroundPreloader.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BikeTrailGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Movement\PlayerMovement1.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
     <Compile Include="Assets\Default Example URP Assets\Scripts\SimpleCameraController.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
+    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\FloatingTransform.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\SimpleCurvedCanvas.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\CameraFreeflight.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\feedback.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\BasicCurvedCanvas.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BeachTennisCourtGenerator.cs" />
-    <Compile Include="Assets\MCAssets\InputManager\UIInputController.cs" />
     <Compile Include="Assets\MCAssets\InputManager\CameraController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\OptionalFieldHandler.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DownloadManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\toggleVRscreens.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\favouriteinfo.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITips.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\StartUp.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\InvertedRingManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\iapmanager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ResetButtonColor.cs" />
-    <Compile Include="Assets\PlayerPrefsEditor\SimpleEncryption.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\PlayerPrefsUtility.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\closeAllHuds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCamera.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingGenerator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\hasRegistered2d.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Health.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Food.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\showHideHUD.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VRTipsPanel.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TipsConnector.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ChangesceneInc.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showPassword.cs" />
@@ -302,39 +193,149 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\deleteUserId.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\UpdatedFilmvotes2.cs" />
     <Compile Include="Assets\Default Example URP Assets\TutorialInfo\Scripts\Readme.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\Island\Scripts\CharacterMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\ignoreFirstVisit.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
+    <Compile Include="Assets\MCAssets\InputManager\InteractiveObject.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\justGetRiros.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\Results.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ResetCameraPosition.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement.cs" />
+    <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\Flapboard.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ReticlePointerSynchronizer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\TennisCourtGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideLocations.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\CleanIconRestorer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\updateuserdb.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SignageGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showhide3d.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\InteractiveZone.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\justSetRiros.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GoIconTrigger.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\vr\OptimizedToggleVR.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SwimmingPoolGenerator.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VRGazeHelper.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRiros.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinks.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\Logon.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\rotateCamerav2.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\IntegratedTipsController.cs" />
+    <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\EventSystemCoordinator.cs" />
+    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ShowHide.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Habits.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\TestToggle.cs" />
+    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\FPSController.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmoveold4huds.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\slitog.cs" />
+    <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\EventTriggerFixer.cs" />
+    <Compile Include="Assets\EnhancedVRController.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\habits1.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\BCTUserJourneyLaunch.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\smokinghabitsdone.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\rotateCamera.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\toMasterChange.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\justGetRirosForTips.cs" />
+    <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\DoorScript.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\LoadingManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ThreeLevelHud.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRirosDynamic.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\WaterSportsPlatformGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\CustomReticlePointer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHudsold4huds.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\showHideHUDcat.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITipsManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\setCTdate.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\Selectionmanager_s.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\sendemail.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ToggleShowVote.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\showhideformat.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRVisualEnhancer.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\vr\togglingXR.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\ShowfilmAdapter.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\StreetLightGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\riroStopGo.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\showWhichFormat.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BikeTrailGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
+    <Compile Include="Assets\MCAssets\InputManager\UIInputController.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BeachTennisCourtGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DownloadManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\toggleVRscreens.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\favouriteinfo.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\AI\AITips.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\StartUp.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\InvertedRingManager.cs" />
+    <Compile Include="Assets\PlayerPrefsEditor\SimpleEncryption.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\closeAllHuds.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingGenerator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\hasRegistered2d.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Health.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\habits\Food.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ZoneManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\3rdPartyAssets\TerrainSampleAssets\ThirdPartyNotices.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Lighting.hlsl" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Features.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Lighting.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Features.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile-2-Pass.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Reflections.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Reflections.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Displacement.hlsl" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\ForwardPass.hlsl" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Tesselation.hlsl" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Common.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Displacement.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\ForwardPass.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Tesselation.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Common.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\3rdPartyAssets\Toby Fredson\Rocky Hills Environment - Light Pack\Legacy Project\Legacy Project_Read Me!.txt" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Fog.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Fog.hlsl" />
     <None Include="Assets\MCAssets\InputManager\info.txt" />
     <None Include="Assets\MCAssets\Images\2023UI\fonts\LICENSE.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\WaterCutoutMask.shader" />
+    <None Include="Assets\StylizedWater2\Shaders\WaterCutoutMask.shader" />
     <None Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\readme.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
     <None Include="Assets\MCAssets\php_scripts\htaccess.txt" />
     <None Include="Assets\MCAssets\MC360Video\Shaders\Flip.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Caustics.hlsl" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Input.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Caustics.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Input.hlsl" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF.shader" />
@@ -342,24 +343,25 @@
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Vertex.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Vertex.hlsl" />
     <None Include="Assets\MCAssets\Materials\SpriteFadeOut.shader" />
+    <None Include="Assets\AddressableAssetsData\link.xml" />
     <None Include="Assets\PlayerPrefsEditor\README.txt" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\SubGraphs\Readme.txt" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\SubGraphs\Readme.txt" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\MCAssets\Materials\Material_Assignment_Guide.txt" />
     <None Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\install_RP_Versions.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\Waves.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\Waves.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />
     <None Include="Assets\3rdPartyAssets\TerrainSampleAssets\ShaderGraphs\CustomFunctions\CustomLighting.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Sprite.shader" />
     <None Include="Assets\3rdPartyAssets\Chair\Read Me.txt" />
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Shaders\Libraries\URP.hlsl" />
+    <None Include="Assets\StylizedWater2\Shaders\Libraries\URP.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -1346,6 +1348,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.Addressables.Android.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Services.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.InputSystem.ForUI">
       <HintPath>Library\ScriptAssemblies\Unity.InputSystem.ForUI.dll</HintPath>
       <Private>False</Private>
@@ -1366,6 +1372,10 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.Codeless.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.XR.CoreUtils">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.Purchasing">
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.dll</HintPath>
       <Private>False</Private>
@@ -1380,6 +1390,10 @@
     </Reference>
     <Reference Include="Unity.ResourceManager">
       <HintPath>Library\ScriptAssemblies\Unity.ResourceManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications.Unified">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.Unified.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Runtime.Shared">
@@ -1400,6 +1414,10 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications.Android">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.Android.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
@@ -1478,12 +1496,16 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Profiling.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
+    <Reference Include="Google.XR.Cardboard">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Collections.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Profiling.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
@@ -1496,6 +1518,10 @@
     </Reference>
     <Reference Include="Unity.Multiplayer.Center.Common">
       <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Notifications">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.Purchasing.SecurityCore">
@@ -1512,6 +1538,10 @@
     </Reference>
     <Reference Include="Unity.Services.Core.Analytics">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Analytics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Google.XR.Cardboard.Editor">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Mathematics">
@@ -1558,8 +1588,8 @@
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
+    <Reference Include="Unity.XR.CoreUtils.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Rendering.LightTransport.Runtime">
@@ -1574,23 +1604,19 @@
       <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Notifications.iOS">
+      <HintPath>Library\ScriptAssemblies\Unity.Notifications.iOS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.2D.Runtime">
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.2D.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Unity.XR.Management.Samples.csproj">
-      <Project>{62CA3BF5-79A8-E32C-1300-3E1FA658F5F6}</Project>
-      <Name>Unity.XR.Management.Samples</Name>
-    </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.editor.csproj">
       <Project>{43202759-76E3-ABEC-CD1A-5FFDF8A93F98}</Project>
       <Name>sc.stylizedwater2.editor</Name>
-    </ProjectReference>
-    <ProjectReference Include="Unity.XR.Management.Samples.Editor.csproj">
-      <Project>{467AFA01-0844-F806-1719-5127B3EDE586}</Project>
-      <Name>Unity.XR.Management.Samples.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.runtime.csproj">
       <Project>{49B84AF5-C20F-5809-06AF-DAFAF891B7DD}</Project>

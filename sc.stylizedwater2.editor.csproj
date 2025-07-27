@@ -61,24 +61,23 @@
     <Analyzer Include="D:\Program Files\6000.0.40f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\WaterShaderImporter.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\WaterObjectInspector.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\HelpWindow.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\RenderFeatureEditor.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\WaterGridInspector.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\PlanarReflectionRendererInspector.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\WaterShaderImporterEditor.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\WaterMeshImporter.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\MaterialUI.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\UI.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\StylizedWaterEditor.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\FloatingTransformInspector.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\AssetInfo.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\Inspectors\AlignToWavesInspector.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Editor\ShaderConfigurator.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\ShaderConfigurator.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\HelpWindow.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\StylizedWaterEditor.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterShaderImporterEditor.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterObjectInspector.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\AssetInfo.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\MaterialUI.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\RenderFeatureEditor.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\WaterMeshImporter.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\UI.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\WaterShaderImporter.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\PlanarReflectionRendererInspector.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterGridInspector.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\AlignToWavesInspector.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Editor\sc.stylizedwater2.editor.asmdef" />
+    <None Include="Assets\StylizedWater2\Editor\sc.stylizedwater2.editor.asmdef" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

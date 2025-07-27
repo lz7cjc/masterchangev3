@@ -116,8 +116,26 @@ public class StartUp : MonoBehaviour
     {
         Debug.Log("[StartUp] Marker: InitializeScene");
 
+        // Handle XR subsystem switching
         togglingXR = FindFirstObjectByType<togglingXR>();
         togglingXR.SwitchingVR();
+
+        // ADD THIS: Handle camera and reticle switching
+        if (setVrState == null)
+        {
+            setVrState = FindFirstObjectByType<SetVrState>();
+        }
+
+        if (setVrState != null)
+        {
+            int currentVRState = PlayerPrefs.GetInt("toggleToVR", 0);
+            Debug.Log($"[StartUp] Setting camera mode based on toggleToVR: {currentVRState}");
+            setVrState.SetVR(currentVRState);
+        }
+        else
+        {
+            Debug.LogWarning("[StartUp] SetVrState component not found!");
+        }
 
         if (closeAllHuds != null)
         {
@@ -133,7 +151,6 @@ public class StartUp : MonoBehaviour
         // Move the player to the correct zone when the scene starts
         MovePlayerToCurrentZone();
     }
-
     private void HandleZoneNavigation()
     {
         Debug.Log("[StartUp] Marker: HandleZoneNavigation");

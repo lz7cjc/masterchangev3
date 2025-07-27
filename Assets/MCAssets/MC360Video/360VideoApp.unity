@@ -491,7 +491,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94ac770131be07044afb162d9e4571d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchVRon: 0
+  switchVRon: 1
+  enableDetailedLogging: 1
 --- !u!1 &366310894
 GameObject:
   m_ObjectHideFlags: 0
@@ -742,11 +743,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1548011631}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &894922691 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 8411941818156890291, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
-  m_PrefabInstance: {fileID: 1168598789}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1026243652
 GameObject:
   m_ObjectHideFlags: 0
@@ -923,11 +919,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1071445014 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2719700808730972929, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
-  m_PrefabInstance: {fileID: 1168598789}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1168598789
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2118,6 +2109,7 @@ MonoBehaviour:
   spriterendererVR: {fileID: 602784730}
   mainCamera2D: {fileID: 1585976021}
   mainCameraVR: {fileID: 1222454143}
+  vrReticlePointer: {fileID: 0}
 --- !u!1 &1585976021
 GameObject:
   m_ObjectHideFlags: 0
@@ -2327,6 +2319,12 @@ MonoBehaviour:
   interactableLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  OnPointerEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPointerExit:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1585976030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2581,45 +2579,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 705a8d899f0538e418ed735944da1c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  videoPlayer: {fileID: 1727236118}
-  audioPlayer: {fileID: 1727236118}
-  mousehover: 0
-  counter: 0
-  delay: 3
-  Panel: {fileID: 0}
-  launchHuds: {fileID: 1071445014}
-  huds: {fileID: 616331905}
-  loadingAssets: {fileID: 62435707}
-  spriterendererPlay: {fileID: 670141063}
-  spriterendererPause: {fileID: 2068258974}
-  spriterendererStop: {fileID: 894922691}
-  spriterendererFF: {fileID: 2124867424}
-  spriterendererFFFF: {fileID: 602784730}
-  spriteDefaultPause: {fileID: 21300000, guid: f16645e3fcef1a1468c30fde070c9f5d, type: 3}
-  spriteHoverPause: {fileID: 21300000, guid: 8c280575a7b785e46a8e235e14f14c26, type: 3}
-  spriteDefaultStop: {fileID: 21300000, guid: 8c7beb05942453b46a23e1ffd3e5a75d, type: 3}
-  spriteHoverStop: {fileID: 21300000, guid: 514c9da106b81294aa6ed72689ea2b0f, type: 3}
-  spriteDefaultPlay: {fileID: 21300000, guid: 22db12fb4d0fc5d4fa997821b6b8daa3, type: 3}
-  spriteHoverPlay: {fileID: 21300000, guid: 09467f845b3c6304fb886502bdeb2db4, type: 3}
-  spriteDefaultFF: {fileID: 21300000, guid: 8feddea2a93f8be42a816dc77fd10347, type: 3}
-  spriteHoverFF: {fileID: 21300000, guid: 133cb25bdd8575148bd92d605ce1b0f2, type: 3}
-  spriteSelectedFF: {fileID: 21300000, guid: 2a009523d168c824c8dcc066dac02f4f, type: 3}
-  spriteDefaultFFFF: {fileID: 21300000, guid: 37cc985c9bbabf946913639740eb9967, type: 3}
-  spriteHoverFFFF: {fileID: 21300000, guid: 9ff6f56e56aa6b44f815e355c24eb482, type: 3}
-  spriteSelectedFFFF: {fileID: 21300000, guid: f247d880b568c7145be6da3943c1db5b, type: 3}
-  spriteDefaultRewind: {fileID: 21300000, guid: cca51897ae1e93647a15d14fcee67a9f, type: 3}
-  spriteHoverRewind: {fileID: 21300000, guid: 4b371cc41df2eb84c83b172dd27d01ae, type: 3}
-  spriteSelectedRewind: {fileID: 21300000, guid: ed0482ae98fad194188eeb99eca31631, type: 3}
-  spriteRewindTo0: {fileID: 21300000, guid: 86585224c23426042b0b06654deda72b, type: 3}
-  spriteHoverRewindTo0: {fileID: 21300000, guid: 86585224c23426042b0b06654deda72b, type: 3}
-  spriteRewind30s: {fileID: 21300000, guid: cca51897ae1e93647a15d14fcee67a9f, type: 3}
-  spriteHoverRewind30s: {fileID: 21300000, guid: 4b371cc41df2eb84c83b172dd27d01ae, type: 3}
-  playGameObject: {fileID: 670141062}
-  pauseGameObject: {fileID: 2068258968}
-  elapsedTimeText: {fileID: 0}
-  filmLengthText: {fileID: 0}
-  videoTime: {fileID: 1026243654}
-  showDebugInfo: 0
 --- !u!1 &1839370319
 GameObject:
   m_ObjectHideFlags: 0
@@ -2969,6 +2928,12 @@ MonoBehaviour:
   interactableLayers:
     serializedVersion: 2
     m_Bits: 4294967295
+  OnPointerEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPointerExit:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1944152288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3101,16 +3066,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2068258968 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 639706056600653329, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
-  m_PrefabInstance: {fileID: 1168598789}
-  m_PrefabAsset: {fileID: 0}
---- !u!212 &2068258974 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 7403344635935081976, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
-  m_PrefabInstance: {fileID: 1168598789}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2124867419
 GameObject:
   m_ObjectHideFlags: 0

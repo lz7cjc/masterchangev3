@@ -61,22 +61,21 @@
     <Analyzer Include="D:\Program Files\6000.0.40f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\StylizedWaterDataProvider.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\WaterGrid.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\WaterMesh.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\Buoyancy.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\Rendering\StylizedWaterRenderFeature.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\WaveParameters.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\AlignToWaves.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\Rendering\SetupConstants.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\Rendering\PlanarReflectionRenderer.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\WaterObject.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\Rendering\DisplacementPrePass.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\FloatingTransform.cs" />
-    <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\PipelineUtilities.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\Rendering\SetupConstants.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\PipelineUtilities.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\WaterGrid.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\WaveParameters.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\StylizedWaterDataProvider.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\WaterMesh.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\WaterObject.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\Rendering\PlanarReflectionRenderer.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\Buoyancy.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\Rendering\StylizedWaterRenderFeature.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\AlignToWaves.cs" />
+    <Compile Include="Assets\StylizedWater2\Runtime\Rendering\DisplacementPrePass.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\sc.stylizedwater2.runtime.asmdef" />
+    <None Include="Assets\StylizedWater2\Runtime\sc.stylizedwater2.runtime.asmdef" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

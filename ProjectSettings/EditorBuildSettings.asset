@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/MCAssets/Scenes/2D/dashboard.unity
     guid: bff6256e1b79b564fb5f9bea82f582c8
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/everything.unity
     guid: bf26f159466b5c345a24ff7a4b4d6533
   - enabled: 0
@@ -57,19 +57,19 @@ EditorBuildSettings:
     path: Assets/MCAssets/Scenes/3D/GyroTestScene.unity
     guid: 748bbbd6bd2edfa47b9aff673b8a9e09
   - enabled: 0
-    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/WavesExample.unity
+    path: Assets/StylizedWater2/_Demo/WavesExample.unity
     guid: fa17db9327e1c48428a5dd79735795a2
   - enabled: 0
-    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/RiverDemo.unity
+    path: Assets/StylizedWater2/_Demo/RiverDemo.unity
     guid: 79e4a25f666bb4b4db875688ece67899
   - enabled: 0
-    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/ParticleShowcase.unity
+    path: Assets/StylizedWater2/_Demo/ParticleShowcase.unity
     guid: 70d36081346f63e46b926a02b76297f6
   - enabled: 0
-    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/Diorama.unity
+    path: Assets/StylizedWater2/_Demo/Diorama.unity
     guid: 8fc702386a902044baccac39c7259277
   - enabled: 0
-    path: Assets/3rdPartyAssets/StylizedWater2/_Demo/StylizedWaterDemo.unity
+    path: Assets/StylizedWater2/_Demo/StylizedWaterDemo.unity
     guid: a5038591c0ad967448d7dd84f554169e
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: dc71dac186f3fba41ad1c02d949fdf64, type: 2}

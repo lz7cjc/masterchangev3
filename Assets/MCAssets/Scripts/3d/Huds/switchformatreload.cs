@@ -7,12 +7,19 @@ public class switchformatreload : MonoBehaviour
     [SerializeField] private hudCountdown hudCountdown;
     [SerializeField] private togglingXR togglingXR;
     [SerializeField] private ToggleActiveIconsVR toggleActiveIconsVR;
+    [SerializeField] private SetVrState setVrState; // ADD THIS LINE
 
     private bool isProcessing = false;
     private bool isHovering = false;
 
     public void Start()
     {
+        // AUTO-FIND SetVrState if not assigned
+        if (setVrState == null)
+        {
+            setVrState = FindFirstObjectByType<SetVrState>();
+        }
+
         if (PlayerPrefs.GetInt("toggleToVR") == 1)
         {
             toggleActiveIconsVR.SetHeadsetIcon(true);
@@ -57,7 +64,7 @@ public class switchformatreload : MonoBehaviour
                 PlayerPrefs.SetInt("toggleToVR", newState);
                 PlayerPrefs.Save();
 
-                // Switch VR state using the proper method
+                // Switch XR system using togglingXR
                 if (togglingXR == null)
                 {
                     togglingXR = FindFirstObjectByType<togglingXR>();
@@ -66,7 +73,6 @@ public class switchformatreload : MonoBehaviour
                 if (togglingXR != null)
                 {
                     Debug.Log($"Calling SwitchingVR() with new state: {newState}");
-                    // Use the SwitchingVR method which properly reads PlayerPrefs
                     togglingXR.SwitchingVR();
                 }
                 else
@@ -74,8 +80,16 @@ public class switchformatreload : MonoBehaviour
                     Debug.LogWarning("togglingXR instance not found!");
                 }
 
-                // Wait a frame to ensure the VR state change has processed
-                StartCoroutine(WaitAndUpdateIcon(newState));
+                // ADD THIS: Switch cameras and reticle mode using SetVrState
+                if (setVrState != null)
+                {
+                    Debug.Log($"Calling SetVR() with new state: {newState}");
+                    setVrState.SetVR(newState);
+                }
+                else
+                {
+                    Debug.LogWarning("SetVrState instance not found!");
+                }
 
                 // Wait a frame to ensure the VR state change has processed
                 StartCoroutine(WaitAndUpdateIcon(newState));

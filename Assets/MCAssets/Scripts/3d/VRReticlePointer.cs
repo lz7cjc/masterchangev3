@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -39,7 +39,6 @@ public class VRReticlePointer : MonoBehaviour
     private Camera mainCamera;
     private GameObject currentTarget;
 
-    // UPDATED: Changed to look for SpriteBasedFocusIndicator instead
     private SpriteBasedFocusIndicator focusIndicator;
 
     private bool isRotating = false;
@@ -52,12 +51,10 @@ public class VRReticlePointer : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         mainCamera = GetComponentInChildren<Camera>();
 
-        // UPDATED: Changed to get SpriteBasedFocusIndicator
         focusIndicator = GetComponent<SpriteBasedFocusIndicator>();
 
         if (focusIndicator == null)
         {
-            // Try adding the component if it doesn't exist
             focusIndicator = gameObject.AddComponent<SpriteBasedFocusIndicator>();
             Debug.Log("Added SpriteBasedFocusIndicator component");
         }
@@ -127,13 +124,16 @@ public class VRReticlePointer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (currentMode == ViewMode.ModeVR) return;
+        // CRITICAL FIX: Removed the line that was preventing VR interactions!
+        // The original code had: if (currentMode == ViewMode.ModeVR) return;
+        // This was blocking ALL interactions in VR mode!
 
         if (currentMode == ViewMode.Mode360 && isRotating)
         {
             HandleRotation();
         }
 
+        // IMPORTANT: Always check interactions, including in VR mode
         CheckInteractions();
     }
 
@@ -142,10 +142,8 @@ public class VRReticlePointer : MonoBehaviour
         Vector2 lookInput = lookAction.ReadValue<Vector2>();
         Vector2 lookDelta = lookInput - previousLookInput;
 
-        // Allow full 360 horizontal rotation
         targetRotation.y += lookDelta.x * horizontalSensitivity;
 
-        // Limit vertical rotation if enabled
         if (limitVerticalRotation)
         {
             targetRotation.x = Mathf.Clamp(targetRotation.x - lookDelta.y * verticalSensitivity, minVerticalAngle, maxVerticalAngle);
@@ -192,7 +190,6 @@ public class VRReticlePointer : MonoBehaviour
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
         RaycastHit hitInfo;
 
-        // Draw debug ray
         if (showDebugRay)
         {
             Debug.DrawRay(ray.origin, ray.direction * maxInteractionDistance, Color.yellow);
@@ -202,7 +199,6 @@ public class VRReticlePointer : MonoBehaviour
         {
             if (showDebugRay)
             {
-                // Draw a hit point marker
                 Debug.DrawLine(ray.origin, hitInfo.point, Color.green);
             }
             HandleTargetInteraction(hitInfo.collider.gameObject);
@@ -215,24 +211,20 @@ public class VRReticlePointer : MonoBehaviour
 
     private void HandleTargetInteraction(GameObject hitObject)
     {
-        // Check if this is an interactable object
         bool isInteractable = false;
 
-        // Consider object interactable if it has a BoxCollider on the correct layer
         BoxCollider boxCollider = hitObject.GetComponent<BoxCollider>();
         if (boxCollider != null && ((1 << hitObject.layer) & interactableLayers) != 0)
         {
             isInteractable = true;
         }
 
-        // Also consider objects with EventTrigger components as interactable
         EventTrigger eventTrigger = hitObject.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
             isInteractable = true;
         }
 
-        // Handle the target interaction based on interactability
         if (isInteractable)
         {
             if (currentTarget != hitObject)
@@ -241,7 +233,6 @@ public class VRReticlePointer : MonoBehaviour
                 currentTarget = hitObject;
                 TriggerPointerEnter(hitObject);
 
-                // Update focus indicator state
                 if (focusIndicator != null)
                 {
                     focusIndicator.SetInteractiveState(true);
@@ -279,7 +270,6 @@ public class VRReticlePointer : MonoBehaviour
             TriggerPointerExit(currentTarget);
             currentTarget = null;
 
-            // Reset focus indicator state
             if (focusIndicator != null)
             {
                 focusIndicator.SetInteractiveState(false);
@@ -291,13 +281,13 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (target == null) return;
 
-        // IMPROVED: Better error handling for UnityEvent invocation
+        Debug.Log($"VRReticlePointer: TriggerPointerEnter called for {target.name} in {currentMode} mode");
+
+        // Method 1: Try UnityEvent first (your existing setup should work)
         try
         {
-            // Validate the event before invoking
             if (OnPointerEnter != null && OnPointerEnter.GetPersistentEventCount() > 0)
             {
-                // Check if all persistent events are valid
                 bool allEventsValid = true;
                 for (int i = 0; i < OnPointerEnter.GetPersistentEventCount(); i++)
                 {
@@ -312,38 +302,33 @@ public class VRReticlePointer : MonoBehaviour
                 if (allEventsValid)
                 {
                     OnPointerEnter.Invoke(target);
+                    Debug.Log("✅ Successfully invoked OnPointerEnter UnityEvent");
                 }
                 else
                 {
-                    Debug.LogError($"OnPointerEnter has invalid event connections. Please check the Inspector and reassign missing scripts.");
+                    Debug.LogError("❌ OnPointerEnter has invalid event connections. Please check the Inspector and reassign missing scripts.");
                 }
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Error invoking OnPointerEnter for {target.name}: {e.Message}");
-            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
+            Debug.LogError($"❌ Error invoking OnPointerEnter for {target.name}: {e.Message}");
         }
 
-        // Handle EventTrigger components with better error handling
+        // Method 2: Handle EventTrigger components
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
             try
             {
-                // Create a properly initialized pointer event data
                 PointerEventData eventData = new PointerEventData(EventSystem.current);
-                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
+                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2);
 
-                // Manually trigger the pointer enter using ExecuteEvents
                 ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerEnterHandler);
 
-                // Check for EventTrigger component's entries
                 if (eventTrigger.triggers != null)
                 {
                     EventTrigger.Entry enterEntry = null;
-
-                    // Find the pointer enter entry
                     foreach (EventTrigger.Entry entry in eventTrigger.triggers)
                     {
                         if (entry.eventID == EventTriggerType.PointerEnter)
@@ -353,10 +338,8 @@ public class VRReticlePointer : MonoBehaviour
                         }
                     }
 
-                    // Invoke the callback if found and valid
                     if (enterEntry != null && enterEntry.callback != null)
                     {
-                        // Validate the callback before invoking
                         if (enterEntry.callback.GetPersistentEventCount() > 0)
                         {
                             bool callbackValid = true;
@@ -373,6 +356,7 @@ public class VRReticlePointer : MonoBehaviour
                             if (callbackValid)
                             {
                                 enterEntry.callback.Invoke(eventData);
+                                Debug.Log("✅ Successfully invoked EventTrigger PointerEnter");
                             }
                         }
                     }
@@ -380,23 +364,24 @@ public class VRReticlePointer : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error triggering EventTrigger pointer enter for {target.name}: {e.Message}");
-                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
+                Debug.LogError($"❌ Error triggering EventTrigger pointer enter for {target.name}: {e.Message}");
             }
         }
+
+
     }
 
     private void TriggerPointerExit(GameObject target)
     {
         if (target == null) return;
 
-        // IMPROVED: Better error handling for UnityEvent invocation
+        Debug.Log($"VRReticlePointer: TriggerPointerExit called for {target.name} in {currentMode} mode");
+
+        // Method 1: Try UnityEvent first
         try
         {
-            // Validate the event before invoking
             if (OnPointerExit != null && OnPointerExit.GetPersistentEventCount() > 0)
             {
-                // Check if all persistent events are valid
                 bool allEventsValid = true;
                 for (int i = 0; i < OnPointerExit.GetPersistentEventCount(); i++)
                 {
@@ -411,51 +396,35 @@ public class VRReticlePointer : MonoBehaviour
                 if (allEventsValid)
                 {
                     OnPointerExit.Invoke(target);
+                    Debug.Log("✅ Successfully invoked OnPointerExit UnityEvent");
                 }
                 else
                 {
-                    Debug.LogError($"OnPointerExit has invalid event connections. Please check the Inspector and reassign missing scripts.");
+                    Debug.LogError("❌ OnPointerExit has invalid event connections.");
                 }
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Error invoking OnPointerExit for {target.name}: {e.Message}");
-            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
+            Debug.LogError($"❌ Error invoking OnPointerExit for {target.name}: {e.Message}");
         }
 
-        // Handle EventTrigger components with better error handling
+        // Method 2: Handle EventTrigger components
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
             try
             {
-                // Create a properly initialized pointer event data
                 PointerEventData eventData = new PointerEventData(EventSystem.current);
-                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
+                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2);
 
-                // Manually trigger the pointer exit using ExecuteEvents
                 ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerExitHandler);
 
-                // Check for EventTrigger component's entries
                 if (eventTrigger.triggers != null)
                 {
-                    EventTrigger.Entry exitEntry = null;
-
-                    // Find the pointer exit entry
-                    foreach (EventTrigger.Entry entry in eventTrigger.triggers)
-                    {
-                        if (entry.eventID == EventTriggerType.PointerExit)
-                        {
-                            exitEntry = entry;
-                            break;
-                        }
-                    }
-
-                    // Invoke the callback if found and valid
+                    var exitEntry = eventTrigger.triggers.Find(entry => entry.eventID == EventTriggerType.PointerExit);
                     if (exitEntry != null && exitEntry.callback != null)
                     {
-                        // Validate the callback before invoking
                         if (exitEntry.callback.GetPersistentEventCount() > 0)
                         {
                             bool callbackValid = true;
@@ -472,6 +441,7 @@ public class VRReticlePointer : MonoBehaviour
                             if (callbackValid)
                             {
                                 exitEntry.callback.Invoke(eventData);
+                                Debug.Log("✅ Successfully invoked EventTrigger PointerExit");
                             }
                         }
                     }
@@ -479,10 +449,11 @@ public class VRReticlePointer : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error triggering EventTrigger pointer exit for {target.name}: {e.Message}");
-                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
+                Debug.LogError($"❌ Error triggering EventTrigger pointer exit for {target.name}: {e.Message}");
             }
         }
+
+
     }
 
     public void SetMode(ViewMode newMode)
@@ -500,11 +471,13 @@ public class VRReticlePointer : MonoBehaviour
         }
     }
 
-    // DIAGNOSTIC METHODS - Add these to help identify issues
     [ContextMenu("Diagnose Event Connections")]
     private void DiagnoseEventConnections()
     {
         Debug.Log("=== VRReticlePointer Event Diagnostics ===");
+        Debug.Log($"Current Mode: {currentMode}");
+        Debug.Log($"Platform: {(Application.isMobilePlatform ? "Mobile" : "Desktop")}");
+        Debug.Log($"EventSystem.current: {(EventSystem.current != null ? "Found" : "NULL")}");
 
         if (OnPointerEnter != null)
         {
@@ -534,6 +507,21 @@ public class VRReticlePointer : MonoBehaviour
         else
         {
             Debug.Log("OnPointerExit is null");
+        }
+
+        if (currentTarget != null)
+        {
+            Debug.Log($"Current target: {currentTarget.name}");
+
+            EventTrigger eventTrigger = currentTarget.GetComponent<EventTrigger>();
+            if (eventTrigger != null)
+            {
+                Debug.Log($"  - ✅ Has EventTrigger with {eventTrigger.triggers.Count} triggers");
+            }
+        }
+        else
+        {
+            Debug.Log("No current target");
         }
     }
 }

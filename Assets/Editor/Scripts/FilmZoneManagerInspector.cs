@@ -71,7 +71,7 @@ public class FilmZoneManagerInspector : Editor
         EditorGUILayout.LabelField($"Zone Prefabs: {zoneManager.zonePrefabMappings.Count}", EditorStyles.miniLabel);
         EditorGUILayout.EndHorizontal();
 
-        int totalVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>().Length;
+        int totalVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>().Length;
         EditorGUILayout.LabelField($"Videos in Scene: {totalVideos}", EditorStyles.miniLabel);
 
         EditorGUILayout.EndVertical();
@@ -163,7 +163,7 @@ public class FilmZoneManagerInspector : Editor
         EditorGUILayout.LabelField("Hierarchy Status", EditorStyles.boldLabel);
 
         // Check current hierarchy status
-        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>();
         int correctlyPlaced = 0;
         int incorrectlyPlaced = 0;
         int missingZone = 0;
@@ -315,7 +315,7 @@ public class FilmZoneManagerInspector : Editor
         }
 
         // Count videos in this zone
-        EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
+        EnhancedVideoPlayer[] videosInZone = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>()
             .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
@@ -550,7 +550,7 @@ public class FilmZoneManagerInspector : Editor
 
         foreach (var zone in zoneManager.zones)
         {
-            EnhancedVideoPlayer[] videosInZone = Object.FindObjectsOfType<EnhancedVideoPlayer>()
+            EnhancedVideoPlayer[] videosInZone = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>()
                 .Where(v => v.LastKnownZone.Equals(zone.zoneName, System.StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
@@ -657,7 +657,7 @@ public class FilmZoneManagerInspector : Editor
 
         if (GUILayout.Button("Select All Videos"))
         {
-            EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+            EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>();
             Selection.objects = allVideos.Select(v => v.gameObject).ToArray();
         }
 
@@ -712,7 +712,7 @@ public class FilmZoneManagerInspector : Editor
         }
 
         // Find all existing video objects
-        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>();
         int updatedCount = 0;
         int errorCount = 0;
 
@@ -776,7 +776,7 @@ public class FilmZoneManagerInspector : Editor
     private void TestTextUpdate()
     {
         // Find a video object to test with
-        EnhancedVideoPlayer testVideo = Object.FindObjectOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer testVideo = UnityEngine.Object.FindObjectOfType<EnhancedVideoPlayer>();
         if (testVideo == null)
         {
             Debug.LogWarning("No EnhancedVideoPlayer found in scene for testing");
@@ -863,7 +863,7 @@ public class FilmZoneManagerInspector : Editor
 
     private void AutoDetectPrefabMappings()
     {
-        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>();
 
         var uniquePrefabTypes = allVideos
             .Where(v => !string.IsNullOrEmpty(v.prefabType))
@@ -949,7 +949,7 @@ public class FilmZoneManagerInspector : Editor
         report.AppendLine($"🏠 Zone prefab mappings: {completeZoneMappings}/{zoneManager.zonePrefabMappings.Count} complete");
 
         // Check video prefabs in scene
-        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsOfType<EnhancedVideoPlayer>();
         report.AppendLine($"🎬 Enhanced Video Players in scene: {allVideos.Length}");
 
         // Check for orphaned videos (videos not in any zone)

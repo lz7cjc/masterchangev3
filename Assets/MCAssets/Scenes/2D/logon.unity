@@ -1058,7 +1058,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nameField: {fileID: 505725685}
   passwordField: {fileID: 1857555228}
-  acceptSubmissionButton: {fileID: 0}
+  acceptSubmissionButton: {fileID: 46281118}
   failedlogin: {fileID: 1010351462}
 --- !u!1 &597500846
 GameObject:

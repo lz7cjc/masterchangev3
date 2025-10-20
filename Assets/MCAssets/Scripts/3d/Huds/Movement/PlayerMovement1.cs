@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// PlayerMovement1 - Simple collision detection that works with any collider
+/// PlayerMovement1 - Simplified version that matches your existing Event Trigger pattern
 /// </summary>
 public class PlayerMovement1 : MonoBehaviour
 {
@@ -48,9 +48,13 @@ public class PlayerMovement1 : MonoBehaviour
     public GameObject[] walkStartIcons;
 
     [Header("Enhanced Level 3 Movement Controls")]
+    [Tooltip("Main start/walk image GameObject")]
     public GameObject startImage;
+    [Tooltip("Main stop image GameObject")]
     public GameObject stopImage;
+    [Tooltip("Speed up image GameObject")]
     public GameObject speedUpImage;
+    [Tooltip("Speed down image GameObject")]
     public GameObject speedDownImage;
 
     [Header("ToggleActiveIcons Controllers")]
@@ -60,6 +64,10 @@ public class PlayerMovement1 : MonoBehaviour
 
     [Header("HUD Integration")]
     public HUDSystemCoordinator hudCoordinator;
+
+    [Header("Debug Settings")]
+    [Tooltip("Don't auto-setup Event Triggers (use manual setup)")]
+    public bool useManualEventTriggers = true;
 
     // Private variables
     private float currentSpeed = 0f;
@@ -94,13 +102,10 @@ public class PlayerMovement1 : MonoBehaviour
         // Initialize movement state
         InitializeMovementState();
 
-        // Update UI
+        // Update UI - IMPORTANT: This sets the initial start/stop button visibility
         UpdateSpeedDisplay();
         UpdateIcons();
         UpdateLevel3Controls();
-
-        // Setup Level 3 event triggers
-        SetupLevel3EventTriggers();
 
         isInitialized = true;
         DebugLog($"=== PlayerMovement1 initialization complete - Speed: {currentSpeed}, Moving: {isMoving} ===");
@@ -112,6 +117,12 @@ public class PlayerMovement1 : MonoBehaviour
         {
             Debug.LogError("PlayerMovement1: Player Rigidbody is not assigned!");
         }
+
+        // Validate Level 3 references
+        if (startImage == null) Debug.LogWarning("PlayerMovement1: Start Image is not assigned!");
+        if (stopImage == null) Debug.LogWarning("PlayerMovement1: Stop Image is not assigned!");
+        if (speedUpImage == null) Debug.LogWarning("PlayerMovement1: Speed Up Image is not assigned!");
+        if (speedDownImage == null) Debug.LogWarning("PlayerMovement1: Speed Down Image is not assigned!");
 
         DebugLog($"Obstacle Check Distance: {obstacleCheckDistance}, Ground Check Distance: {groundCheckDistance}");
         DebugLog($"Ignore Collision Layers: {ignoreCollisionLayers}");
@@ -260,6 +271,12 @@ public class PlayerMovement1 : MonoBehaviour
         {
             hoverTimer += Time.deltaTime;
 
+            // DEBUG: Log timer progress like showHideHUD does
+            if (Mathf.FloorToInt(hoverTimer * 2) > Mathf.FloorToInt((hoverTimer - Time.deltaTime) * 2))
+            {
+                DebugLog($"Movement Timer: {hoverTimer:F1}s / {actionDelay}s");
+            }
+
             if (hudCountdown != null)
             {
                 hudCountdown.SetCountdown(actionDelay, hoverTimer);
@@ -267,6 +284,7 @@ public class PlayerMovement1 : MonoBehaviour
 
             if (hoverTimer >= actionDelay)
             {
+                DebugLog("Movement Timer completed! Executing pending action");
                 ExecutePendingAction();
                 ResetHover();
             }
@@ -337,6 +355,7 @@ public class PlayerMovement1 : MonoBehaviour
             {
                 StopWalking();
             }
+            DebugLog($"Speed changed to: {currentSpeed}");
         }
         else if (delta > 0f)
         {
@@ -371,20 +390,26 @@ public class PlayerMovement1 : MonoBehaviour
     {
         if (!IsMovementMenuActive()) return;
 
+        // FIXED: Properly toggle start/stop button visibility
         if (startImage != null && stopImage != null)
         {
             if (isMoving)
             {
+                // When moving: hide start, show stop
                 startImage.SetActive(false);
                 stopImage.SetActive(true);
+                DebugLog("Updated UI: Start hidden, Stop visible (moving)");
             }
             else
             {
+                // When stopped: show start, hide stop
                 startImage.SetActive(true);
                 stopImage.SetActive(false);
+                DebugLog("Updated UI: Start visible, Stop hidden (stopped)");
             }
         }
 
+        // Reset icon controllers when not hovering
         if (!isHovering)
         {
             startStopIconController?.DefaultIcon();
@@ -401,38 +426,9 @@ public class PlayerMovement1 : MonoBehaviour
         }
 
         return (startImage != null && startImage.activeInHierarchy) ||
-               (stopImage != null && stopImage.activeInHierarchy);
-    }
-
-    private void SetupLevel3EventTriggers()
-    {
-        SetupImageEventTrigger(startImage, OnLevel3StartHover, OnLevel3HoverExit);
-        SetupImageEventTrigger(stopImage, OnLevel3StopHover, OnLevel3HoverExit);
-        SetupImageEventTrigger(speedUpImage, OnLevel3SpeedUpHover, OnLevel3HoverExit);
-        SetupImageEventTrigger(speedDownImage, OnLevel3SpeedDownHover, OnLevel3HoverExit);
-    }
-
-    private void SetupImageEventTrigger(GameObject imageObject, System.Action onHover, System.Action onExit)
-    {
-        if (imageObject == null) return;
-
-        EventTrigger trigger = imageObject.GetComponent<EventTrigger>();
-        if (trigger == null)
-        {
-            trigger = imageObject.AddComponent<EventTrigger>();
-        }
-
-        trigger.triggers.Clear();
-
-        EventTrigger.Entry enterEntry = new EventTrigger.Entry();
-        enterEntry.eventID = EventTriggerType.PointerEnter;
-        enterEntry.callback.AddListener((data) => onHover());
-        trigger.triggers.Add(enterEntry);
-
-        EventTrigger.Entry exitEntry = new EventTrigger.Entry();
-        exitEntry.eventID = EventTriggerType.PointerExit;
-        exitEntry.callback.AddListener((data) => onExit());
-        trigger.triggers.Add(exitEntry);
+               (stopImage != null && stopImage.activeInHierarchy) ||
+               (speedUpImage != null && speedUpImage.activeInHierarchy) ||
+               (speedDownImage != null && speedDownImage.activeInHierarchy);
     }
 
     private void SetIconsActive(GameObject[] icons, bool active)
@@ -446,6 +442,7 @@ public class PlayerMovement1 : MonoBehaviour
 
     private void ResetHover()
     {
+        DebugLog("ResetHover called");
         isHovering = false;
         hoverTimer = 0f;
         pendingAction = ActionType.None;
@@ -472,21 +469,58 @@ public class PlayerMovement1 : MonoBehaviour
         }
     }
 
-    #region Public Interface Methods
+    #region Public Interface Methods - Called by Event Triggers
 
     public void OnMouseEnterStartWalk()
     {
+        DebugLog($"OnMouseEnterStartWalk called - Current isHovering: {isHovering}, Timer: {hoverTimer}");
+
         if (!isHovering && isInitialized)
         {
             isHovering = true;
             pendingAction = ActionType.StartWalk;
             hoverTimer = 0f;
             startStopIconController?.HoverIcon();
+            DebugLog("Starting movement hover timer for StartWalk");
+        }
+        else
+        {
+            DebugLog("Already hovering or not initialized - not resetting timer");
+        }
+
+        if (hudCoordinator != null)
+        {
+            hudCoordinator.OnMainHUDHoverEnded();
+        }
+    }
+
+    public void OnMouseEnterStop()
+    {
+        DebugLog($"OnMouseEnterStop called - Current isHovering: {isHovering}, Timer: {hoverTimer}");
+
+        if (!isHovering && isInitialized)
+        {
+            isHovering = true;
+            pendingAction = ActionType.Stop;
+            hoverTimer = 0f;
+            startStopIconController?.HoverIcon();
+            DebugLog("Starting movement hover timer for Stop");
+        }
+        else
+        {
+            DebugLog("Already hovering or not initialized - not resetting timer");
+        }
+
+        if (hudCoordinator != null)
+        {
+            hudCoordinator.OnMainHUDHoverEnded();
         }
     }
 
     public void OnMouseEnterSpeedUp()
     {
+        DebugLog($"OnMouseEnterSpeedUp called - Current isHovering: {isHovering}, Timer: {hoverTimer}");
+
         if (!isHovering && isInitialized)
         {
             isHovering = true;
@@ -494,11 +528,23 @@ public class PlayerMovement1 : MonoBehaviour
             speedDelta = speedIncrement;
             hoverTimer = 0f;
             speedUpIconController?.HoverIcon();
+            DebugLog("Starting movement hover timer for SpeedUp");
+        }
+        else
+        {
+            DebugLog("Already hovering or not initialized - not resetting timer");
+        }
+
+        if (hudCoordinator != null)
+        {
+            hudCoordinator.OnMainHUDHoverEnded();
         }
     }
 
     public void OnMouseEnterSlowDown()
     {
+        DebugLog($"OnMouseEnterSlowDown called - Current isHovering: {isHovering}, Timer: {hoverTimer}");
+
         if (!isHovering && isInitialized)
         {
             isHovering = true;
@@ -506,27 +552,24 @@ public class PlayerMovement1 : MonoBehaviour
             speedDelta = -speedIncrement;
             hoverTimer = 0f;
             speedDownIconController?.HoverIcon();
+            DebugLog("Starting movement hover timer for SlowDown");
         }
-    }
 
-    public void OnMouseEnterStop()
-    {
-        if (!isHovering && isInitialized)
+        if (hudCoordinator != null)
         {
-            isHovering = true;
-            pendingAction = ActionType.Stop;
-            hoverTimer = 0f;
-            startStopIconController?.HoverIcon();
+            hudCoordinator.OnMainHUDHoverEnded();
         }
     }
 
     public void OnMouseExit()
     {
+        DebugLog($"OnMouseExit called - Was hovering: {isHovering}, Timer was: {hoverTimer}");
         ResetHover();
     }
 
     public void OnMovementMenuOpened()
     {
+        DebugLog("Movement menu opened - updating controls");
         UpdateLevel3Controls();
     }
 
@@ -542,6 +585,7 @@ public class PlayerMovement1 : MonoBehaviour
         UpdateIcons();
         UpdateLevel3Controls();
         SaveSpeed();
+        DebugLog("Force stopped movement");
     }
 
     public void ForceStart(float speed = -1f)
@@ -560,43 +604,7 @@ public class PlayerMovement1 : MonoBehaviour
         UpdateIcons();
         UpdateLevel3Controls();
         SaveSpeed();
-    }
-
-    #endregion
-
-    #region Level 3 Event Handlers
-
-    private void OnLevel3StartHover()
-    {
-        hudCoordinator?.OnMainHUDHoverEnded();
-        startStopIconController?.HoverIcon();
-        OnMouseEnterStartWalk();
-    }
-
-    private void OnLevel3StopHover()
-    {
-        hudCoordinator?.OnMainHUDHoverEnded();
-        startStopIconController?.HoverIcon();
-        OnMouseEnterStop();
-    }
-
-    private void OnLevel3SpeedUpHover()
-    {
-        hudCoordinator?.OnMainHUDHoverEnded();
-        speedUpIconController?.HoverIcon();
-        OnMouseEnterSpeedUp();
-    }
-
-    private void OnLevel3SpeedDownHover()
-    {
-        hudCoordinator?.OnMainHUDHoverEnded();
-        speedDownIconController?.HoverIcon();
-        OnMouseEnterSlowDown();
-    }
-
-    private void OnLevel3HoverExit()
-    {
-        OnMouseExit();
+        DebugLog($"Force started movement at speed: {currentSpeed}");
     }
 
     #endregion
@@ -609,6 +617,65 @@ public class PlayerMovement1 : MonoBehaviour
     public bool CanIncreaseSpeed => currentSpeed < maxSpeed;
     public bool CanDecreaseSpeed => currentSpeed > minSpeed || isMoving;
     public bool IsInitialized => isInitialized;
+
+    public float HoverProgress
+    {
+        get { return isHovering ? Mathf.Clamp01(hoverTimer / actionDelay) : 0f; }
+    }
+
+    #endregion
+
+    #region Context Menu Debug Methods
+
+    [ContextMenu("Force Start Walk")]
+    private void ForceStartWalk()
+    {
+        if (Application.isPlaying)
+        {
+            DebugLog("Manual start walk triggered");
+            OnMouseEnterStartWalk();
+        }
+    }
+
+    [ContextMenu("Force Stop")]
+    private void ForceStopWalk()
+    {
+        if (Application.isPlaying)
+        {
+            DebugLog("Manual stop triggered");
+            OnMouseEnterStop();
+        }
+    }
+
+    [ContextMenu("Force Speed Up")]
+    private void ForceSpeedUp()
+    {
+        if (Application.isPlaying)
+        {
+            DebugLog("Manual speed up triggered");
+            OnMouseEnterSpeedUp();
+        }
+    }
+
+    [ContextMenu("Force Speed Down")]
+    private void ForceSpeedDown()
+    {
+        if (Application.isPlaying)
+        {
+            DebugLog("Manual speed down triggered");
+            OnMouseEnterSlowDown();
+        }
+    }
+
+    [ContextMenu("Test Event Trigger")]
+    private void TestEventTrigger()
+    {
+        if (Application.isPlaying)
+        {
+            DebugLog("Testing event trigger...");
+            OnMouseEnterStartWalk();
+        }
+    }
 
     #endregion
 }

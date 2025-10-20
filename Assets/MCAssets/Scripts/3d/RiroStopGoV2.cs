@@ -13,7 +13,7 @@ public class RiroStopGoV2 : MonoBehaviour
     [SerializeField] private GameObject registerBtn;
     [SerializeField] private GameObject habitsBtn;
     [SerializeField] private GameObject activitiesBtn;
-    
+
     public TextMeshPro removeHeadsetlbl;
     private string behaviour;
     private int dbUserId;
@@ -29,12 +29,12 @@ public class RiroStopGoV2 : MonoBehaviour
     {
         toggleToVR = PlayerPrefs.GetInt("toggleToVR");
         if (toggleToVR == 1)
-            {
+        {
             removeHeadsetlbl.text = "You will be taken to 2d screens, so take off your headset";
-            }
-       
+        }
+
         riroAmount = PlayerPrefs.GetInt("rirosbalance");
-       // behaviour = PlayerPrefs.GetString("behaviour");
+        // behaviour = PlayerPrefs.GetString("behaviour");
         habitsDone = PlayerPrefs.GetInt("habitsdone");
         // debug.log("vvv riro balance" + riroAmount);
         //smoking value 1
@@ -43,13 +43,13 @@ public class RiroStopGoV2 : MonoBehaviour
             smokingMessages();
             PlayerPrefs.SetInt("stage", 0);
         }
-     //alcohol value 2
+        //alcohol value 2
         if (whichType == 2)
         {
             alcoholMessages();
         }
 
-       if (whichType == 3)
+        if (whichType == 3)
         {
             videoFailed();
         }
@@ -60,7 +60,7 @@ public class RiroStopGoV2 : MonoBehaviour
 
         {
             genericMessages();
-            
+
         }
         // debug.log("redirect to do not pass");
 
@@ -127,10 +127,10 @@ public class RiroStopGoV2 : MonoBehaviour
     }
     private void registeredNoHabits()
     {
-                // debug.log("vvv no habits done  registered");
-                //  PlayerPrefs.SetString("nextscene", "register");
-                errorMessageTxt.text = "To start the quit smoking experience, we need to know about your smoking habits. Please fill in the short questionnaire to continue";
-        
+        // debug.log("vvv no habits done  registered");
+        //  PlayerPrefs.SetString("nextscene", "register");
+        errorMessageTxt.text = "To start the quit smoking experience, we need to know about your smoking habits. Please fill in the short questionnaire to continue";
+
         // registertext.text = "Earn Riros";
         getRirosBtn.SetActive(false);
         registerBtn.SetActive(false);
@@ -138,11 +138,11 @@ public class RiroStopGoV2 : MonoBehaviour
         activitiesBtn.SetActive(false);
         //hintTxt.enabled = false;
     }
-           
+
     private void needMoreRiros()
-            {
-                // debug.log("vvv no riros  registered");
-                errorMessageTxt.text = "R$: " + riroAmount + " ... You have insufficient funds to launch that experience. You can earn or buy riros to continue";
+    {
+        // debug.log("vvv no riros  registered");
+        errorMessageTxt.text = "R$: " + riroAmount + " ... You have insufficient funds to launch that experience. You can earn or buy riros to continue";
         // registertext.text = "Earn Riros";
         getRirosBtn.SetActive(true);
         registerBtn.SetActive(false);
@@ -151,11 +151,11 @@ public class RiroStopGoV2 : MonoBehaviour
         //  hintTxt.enabled = false;
     }
 
-   private void registerAndHabits()
-            {
-                // debug.log("vvv no habits done");
-                //  PlayerPrefs.SetString("nextscene", "register");
-                errorMessageTxt.text = "To start the quit smoking experience, we need to know about your smoking habits. Please register and then fill in the short questionnaire to continue";
+    private void registerAndHabits()
+    {
+        // debug.log("vvv no habits done");
+        //  PlayerPrefs.SetString("nextscene", "register");
+        errorMessageTxt.text = "To start the quit smoking experience, we need to know about your smoking habits. Please register and then fill in the short questionnaire to continue";
         // registertext.text = "Earn Riros";
         getRirosBtn.SetActive(false);
         registerBtn.SetActive(true);
@@ -174,12 +174,12 @@ public class RiroStopGoV2 : MonoBehaviour
         ///
 
 
-       // hintTxt.enabled = true;
-            }
+        // hintTxt.enabled = true;
+    }
     private void needtoregister()
-            {
-                // debug.log("no riros no register");
-                errorMessageTxt.text = "R$: " + riroAmount + " ... You have insufficient funds to launch that experience. Please register to buy or earn more Riros";
+    {
+        // debug.log("no riros no register");
+        errorMessageTxt.text = "R$: " + riroAmount + " ... You have insufficient funds to launch that experience. Please register to buy or earn more Riros";
         // registertext.text = "Earn Riros";
         getRirosBtn.SetActive(false);
         registerBtn.SetActive(true);
@@ -195,5 +195,3 @@ public class RiroStopGoV2 : MonoBehaviour
 
 
 }
-  
-

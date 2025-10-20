@@ -25,17 +25,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3932696863548978291}
-  m_LocalRotation: {x: -0, y: -0.12952657, z: -0, w: -0.99157596}
-  m_LocalPosition: {x: 0, y: 0, z: -0.019}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.10457645}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1281160791975061953}
-  m_LocalEulerAnglesHint: {x: 0, y: 374.884, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.272, y: 0.116}
-  m_SizeDelta: {x: 0.6318, y: 0.2634}
+  m_AnchoredPosition: {x: -0.19294116, y: -0.09657137}
+  m_SizeDelta: {x: 3.0949, y: 0.397}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &8935468187680704934
 MeshRenderer:
@@ -111,8 +111,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4284462905
+  m_fontColor: {r: 0.2509804, g: 0.45490196, b: 0.33333334, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -202,7 +202,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7164875062524358524}
   m_LocalRotation: {x: -0, y: -0.12952657, z: -0, w: -0.99157596}
-  m_LocalPosition: {x: 0, y: 0, z: 0.035}
+  m_LocalPosition: {x: 0, y: 0, z: 0.02511374}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -210,8 +210,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 374.884, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.088, y: 0.694}
-  m_SizeDelta: {x: 0.3966, y: 0.1573}
+  m_AnchoredPosition: {x: -0.050804064, y: 0.6454123}
+  m_SizeDelta: {x: 3.7834, y: 0.2545}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &2947799060600217486
 MeshRenderer:
@@ -236,7 +236,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 3162939641282696770, guid: 847b233e656db9f40aa0849a2037d75c, type: 2}
+  - {fileID: -3615487980247190390, guid: 28fa0f1ee1d46b14abc682d897e84e5d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -280,15 +280,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 847b233e656db9f40aa0849a2037d75c, type: 2}
-  m_sharedMaterial: {fileID: 3162939641282696770, guid: 847b233e656db9f40aa0849a2037d75c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 28fa0f1ee1d46b14abc682d897e84e5d, type: 2}
+  m_sharedMaterial: {fileID: -3615487980247190390, guid: 28fa0f1ee1d46b14abc682d897e84e5d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.2509804, g: 0.45490196, b: 0.33333334, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -557,7 +557,7 @@ MonoBehaviour:
   title: 
   description: 
   prefabType: 
-  LastKnownZone: Home
+  LastKnownZone: Sports
   hoverTimeRequired: 3
   mouseHover: 0
   returntoscene: mainVR
@@ -567,9 +567,8 @@ MonoBehaviour:
   TMP_description: {fileID: 6241088540347750214}
   hasText: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hoverColor: {r: 0, g: 1, b: 0, a: 1}
+  hoverColor: {r: 0.5686275, g: 0.5921569, b: 0.98039216, a: 1}
   useProgressIndicator: 1
-  riroStopGoV2: {fileID: 0}
   rotateOnHover: 1
   debugMode: 1
   category: 

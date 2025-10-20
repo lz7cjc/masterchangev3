@@ -12,9 +12,11 @@ public class updatePlayerSettings : MonoBehaviour
     public Toggle IntroScreen;
     public Toggle SwitchtoVR;
     public Toggle Training;
- 
+    public Toggle toggleToVR;
+
     private int IntroScreenset;
     private int SwitchtoVRset;
+    private int toggleToVRset;
     private int Trainingset;
    // private int signsmall;
 
@@ -22,15 +24,15 @@ public class updatePlayerSettings : MonoBehaviour
 
     public void Start()
     {
+
        
-        IntroScreenset = PlayerPrefs.GetInt("IntroScreen");
-        SwitchtoVRset = PlayerPrefs.GetInt("SwitchtoVR");
-        Trainingset = PlayerPrefs.GetInt("trainingDone");
+
 //        signsmall = PlayerPrefs.GetInt("EyesGood");
 
 
         //check if hiding first screen
         if (PlayerPrefs.HasKey("IntroScreen"))
+            IntroScreenset = PlayerPrefs.GetInt("IntroScreen");
 
         {
             if (IntroScreenset == 1)
@@ -42,9 +44,23 @@ public class updatePlayerSettings : MonoBehaviour
                 IntroScreen.isOn = false;
             }
         }
+        if (PlayerPrefs.HasKey("toggleToVR"))
+            toggleToVRset = PlayerPrefs.GetInt("toggleToVR");
+        Debug.Log("toggleToVRset: " + toggleToVRset);
+        {
+            if (toggleToVRset == 1)
+            {
+                toggleToVR.isOn = true;
+            }
+            else if (toggleToVRset == 0)
+            {
+                toggleToVR.isOn = false;
+            }
+        }
 
         //check if hiding VR switch screen
         if (PlayerPrefs.HasKey("SwitchtoVR"))
+            SwitchtoVRset = PlayerPrefs.GetInt("SwitchtoVR");
 
         {
             if (SwitchtoVRset == 0)
@@ -60,7 +76,7 @@ public class updatePlayerSettings : MonoBehaviour
 
         //check if hiding training level
         if (PlayerPrefs.HasKey("trainingDone"))
-
+            Trainingset = PlayerPrefs.GetInt("trainingDone");
         {
 
             if (Trainingset == 1)
@@ -110,7 +126,20 @@ public class updatePlayerSettings : MonoBehaviour
         PlayerPrefs.SetInt("trainingDone", Trainingset);
 
     }
-  
 
 
+    public void OnChangetoggleToVR()
+    {
+        Debug.Log("OnChangetoggleToVR: " + toggleToVR.isOn);
+        toggleToVRset = System.Convert.ToInt32(toggleToVR.isOn);
+        Debug.Log("toggleToVR: " + toggleToVR);
+        if (toggleToVR.isOn)
+        {
+            PlayerPrefs.SetInt("toggleToVR", 1);
+        }
+        else if (!SwitchtoVR.isOn)
+        {
+            PlayerPrefs.SetInt("toggleToVR", 0);
+        }
+    }
 }

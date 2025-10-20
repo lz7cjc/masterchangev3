@@ -115,21 +115,21 @@ public class togglingXR : MonoBehaviour
             }
             else
             {
-                Debug.LogError("[togglingXR] ❌ XRGeneralSettings.Instance is null");
+                //Debug.LogError("[togglingXR] ❌ XRGeneralSettings.Instance is null");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[togglingXR] Exception checking XR status: {e.Message}");
+            //Debug.LogError($"[togglingXR] Exception checking XR status: {e.Message}");
         }
 
         if (!xrAvailable)
         {
-            Debug.LogError("[togglingXR] 🔧 XR SETUP ISSUES - Check these settings:");
-            Debug.LogError("[togglingXR] 1. Project Settings → XR Plug-in Management → Android → Google Cardboard ✅");
-            Debug.LogError("[togglingXR] 2. Project Settings → XR Plug-in Management → Initialize XR on Startup ✅");
-            Debug.LogError("[togglingXR] 3. Project Settings → Player → Android → Texture Compression: ETC2 (not ETC)");
-            Debug.LogError("[togglingXR] 4. Restart Unity Editor after changing settings");
+            //Debug.LogError("[togglingXR] 🔧 XR SETUP ISSUES - Check these settings:");
+            //Debug.LogError("[togglingXR] 1. Project Settings → XR Plug-in Management → Android → Google Cardboard ✅");
+            //Debug.LogError("[togglingXR] 2. Project Settings → XR Plug-in Management → Initialize XR on Startup ✅");
+            //Debug.LogError("[togglingXR] 3. Project Settings → Player → Android → Texture Compression: ETC2 (not ETC)");
+            //Debug.LogError("[togglingXR] 4. Restart Unity Editor after changing settings");
         }
     }
 
@@ -144,20 +144,20 @@ public class togglingXR : MonoBehaviour
         while (XRGeneralSettings.Instance == null && retryCount < maxRetries)
         {
             retryCount++;
-            Debug.LogWarning($"[togglingXR] XR not ready, retry {retryCount}/{maxRetries}...");
+            //Debug.LogWarning($"[togglingXR] XR not ready, retry {retryCount}/{maxRetries}...");
             yield return new WaitForSeconds(0.5f);
         }
 
         if (XRGeneralSettings.Instance == null)
         {
-            Debug.LogError("[togglingXR] ❌ CRITICAL: XRGeneralSettings.Instance is still null after retries!");
-            Debug.LogError("[togglingXR] 🔧 SOLUTION: Check XR Plugin Management settings and restart Unity");
+            //Debug.LogError("[togglingXR] ❌ CRITICAL: XRGeneralSettings.Instance is still null after retries!");
+            //Debug.LogError("[togglingXR] 🔧 SOLUTION: Check XR Plugin Management settings and restart Unity");
             yield break;
         }
 
         if (XRGeneralSettings.Instance.Manager == null)
         {
-            Debug.LogError("[togglingXR] ❌ CRITICAL: XRGeneralSettings.Instance.Manager is null!");
+            //Debug.LogError("[togglingXR] ❌ CRITICAL: XRGeneralSettings.Instance.Manager is null!");
             yield break;
         }
 

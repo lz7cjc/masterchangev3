@@ -6,8 +6,162 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine.UI;
+using System;
 
-// Editor window for managing film zones and importing JSON data
+// ===== DATA STRUCTURES FOR EDITOR =====
+// These are data-only classes for JSON parsing, not MonoBehaviour duplicates
+
+[System.Serializable]
+public class FilmDataEntry
+{
+    public string FileName;          // IGNORED
+    public string PublicUrl;         // MANDATORY - video URL (used as unique key)
+    public string BucketPath;        // IGNORED
+    public string Title;             // MANDATORY - video title
+    public string Description;       // OPTIONAL - video description
+    public string Prefab;           // OPTIONAL - specific prefab name
+    public string Zone;             // IGNORED - legacy field
+    public string[] Zones;          // MANDATORY - array of zones to place this video in
+
+    public string GetVideoUrl() => PublicUrl;
+    public bool HasCustomPrefab() => !string.IsNullOrEmpty(Prefab);
+
+    public string[] GetPlacementZones()
+    {
+        if (Zones != null && Zones.Length > 0)
+        {
+            var validZones = new List<string>();
+            foreach (var zone in Zones)
+            {
+                if (!string.IsNullOrEmpty(zone.Trim()))
+                {
+                    validZones.Add(zone.Trim());
+                }
+            }
+            return validZones.ToArray();
+        }
+
+        if (!string.IsNullOrEmpty(Zone))
+        {
+            return new string[] { Zone.Trim() };
+        }
+
+        return new string[0];
+    }
+}
+
+[System.Serializable]
+public class FilmDataCollection
+{
+    public FilmDataEntry[] Entries;
+}
+
+[System.Serializable]
+public class FilmZone
+{
+    public string zoneName;
+    public List<Vector3> polygonPoints = new List<Vector3>();
+    public Color gizmoColor = Color.blue;
+    public bool showGizmos = true;
+
+    public bool IsPointInZone(Vector3 point)
+    {
+        if (polygonPoints.Count < 3) return false;
+
+        Vector2 testPoint = new Vector2(point.x, point.z);
+        Vector2[] polygon = new Vector2[polygonPoints.Count];
+
+        for (int i = 0; i < polygonPoints.Count; i++)
+        {
+            polygon[i] = new Vector2(polygonPoints[i].x, polygonPoints[i].z);
+        }
+
+        return IsPointInPolygon(testPoint, polygon);
+    }
+
+    private bool IsPointInPolygon(Vector2 point, Vector2[] polygon)
+    {
+        int count = 0;
+        for (int i = 0; i < polygon.Length; i++)
+        {
+            Vector2 p1 = polygon[i];
+            Vector2 p2 = polygon[(i + 1) % polygon.Length];
+
+            if (((p1.y > point.y) != (p2.y > point.y)) &&
+                (point.x < (p2.x - p1.x) * (point.y - p1.y) / (p2.y - p1.y) + p1.x))
+            {
+                count++;
+            }
+        }
+        return (count % 2) == 1;
+    }
+
+    public float GetZoneHeight()
+    {
+        if (polygonPoints.Count == 0) return 0f;
+        float totalHeight = 0f;
+        foreach (var point in polygonPoints) totalHeight += point.y;
+        return totalHeight / polygonPoints.Count;
+    }
+
+    public Vector3 GetRandomPointInZoneAtZoneHeight()
+    {
+        if (polygonPoints.Count < 3) return Vector3.zero;
+
+        float minX = float.MaxValue, maxX = float.MinValue;
+        float minZ = float.MaxValue, maxZ = float.MinValue;
+
+        foreach (var point in polygonPoints)
+        {
+            minX = Mathf.Min(minX, point.x);
+            maxX = Mathf.Max(maxX, point.x);
+            minZ = Mathf.Min(minZ, point.z);
+            maxZ = Mathf.Max(maxZ, point.z);
+        }
+
+        float zoneHeight = GetZoneHeight();
+
+        for (int attempts = 0; attempts < 100; attempts++)
+        {
+            float x = UnityEngine.Random.Range(minX, maxX);
+            float z = UnityEngine.Random.Range(minZ, maxZ);
+            Vector2 testPoint2D = new Vector2(x, z);
+
+            if (IsPointInZone2D(testPoint2D))
+            {
+                return new Vector3(x, zoneHeight, z);
+            }
+        }
+
+        return new Vector3((minX + maxX) / 2, zoneHeight, (minZ + maxZ) / 2);
+    }
+
+    public bool IsPointInZone2D(Vector2 point)
+    {
+        if (polygonPoints.Count < 3) return false;
+
+        Vector2[] polygon = new Vector2[polygonPoints.Count];
+        for (int i = 0; i < polygonPoints.Count; i++)
+        {
+            polygon[i] = new Vector2(polygonPoints[i].x, polygonPoints[i].z);
+        }
+
+        return IsPointInPolygon(point, polygon);
+    }
+
+    public void ClearAllPoints()
+    {
+        polygonPoints.Clear();
+        Debug.Log($"Cleared all polygon points for zone: {zoneName}");
+    }
+}
+
+// ===== EDITOR WINDOW =====
+
+/// <summary>
+/// Editor window for managing film zones and importing JSON data
+/// Now uses the actual runtime classes instead of stub duplicates
+/// </summary>
 public class FilmZoneEditorWindow : EditorWindow
 {
     private FilmZoneManager zoneManager;
@@ -49,7 +203,7 @@ public class FilmZoneEditorWindow : EditorWindow
     {
         if (zoneManager == null)
         {
-            zoneManager = FindObjectOfType<FilmZoneManager>();
+            zoneManager = UnityEngine.Object.FindObjectsByType<FilmZoneManager>(FindObjectsSortMode.None).FirstOrDefault();
         }
     }
 
@@ -437,7 +591,7 @@ public class FilmZoneEditorWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Select All Videos"))
         {
-            EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+            EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsByType<EnhancedVideoPlayer>(FindObjectsSortMode.None);
             Selection.objects = allVideos.Select(v => v.gameObject).ToArray();
         }
 
@@ -514,6 +668,7 @@ public class FilmZoneEditorWindow : EditorWindow
         Debug.Log($"Created zones for: {string.Join(", ", uniqueZones)}");
     }
 
+    // Continue with rest of methods...
     private Color GetRandomColor()
     {
         return new Color(
@@ -882,6 +1037,7 @@ public class FilmZoneEditorWindow : EditorWindow
 
     private void ClearAllPlacedPrefabs()
     {
+        // Clear from dictionary tracking
         foreach (var kvp in zonePrefabs)
         {
             foreach (GameObject prefab in kvp.Value)
@@ -893,6 +1049,17 @@ public class FilmZoneEditorWindow : EditorWindow
             }
         }
         zonePrefabs.Clear();
+
+        // Also clear any EnhancedVideoPlayer objects in scene
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsByType<EnhancedVideoPlayer>(FindObjectsSortMode.None);
+        foreach (var video in allVideos)
+        {
+            if (video != null && video.gameObject != null)
+            {
+                DestroyImmediate(video.gameObject);
+            }
+        }
+
         Debug.Log("✅ Cleared all placed prefabs from all zones");
     }
 
@@ -905,7 +1072,7 @@ public class FilmZoneEditorWindow : EditorWindow
 
         ZoneLayoutData layoutData = new ZoneLayoutData();
 
-        EnhancedVideoPlayer[] allEnhancedPlayers = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allEnhancedPlayers = UnityEngine.Object.FindObjectsByType<EnhancedVideoPlayer>(FindObjectsSortMode.None);
 
         foreach (var enhancedPlayer in allEnhancedPlayers)
         {
@@ -1034,7 +1201,7 @@ public class FilmZoneEditorWindow : EditorWindow
             report.AppendLine("❌ No valid zones (need at least 3 points each)");
         }
 
-        EnhancedVideoPlayer[] allVideos = Object.FindObjectsOfType<EnhancedVideoPlayer>();
+        EnhancedVideoPlayer[] allVideos = UnityEngine.Object.FindObjectsByType<EnhancedVideoPlayer>(FindObjectsSortMode.None);
         report.AppendLine($"🎬 Enhanced Video Players in scene: {allVideos.Length}");
 
         int orphanedVideos = 0;

@@ -32,7 +32,7 @@ public class Logon : MonoBehaviour
         registered = PlayerPrefs.HasKey("dbuserid");
         if (registered)
         {
-            SceneManager.LoadScene("earn riros");
+            SceneManager.LoadScene("dashboard");
         }
     }
 

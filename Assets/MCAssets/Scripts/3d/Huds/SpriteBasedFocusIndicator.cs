@@ -9,8 +9,8 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
     [SerializeField] private FocusIndicatorShape defaultShape = FocusIndicatorShape.Circle;
 
     [Header("Size Settings")]
-    [SerializeField] private float dotSize = 1.5f;
-    [SerializeField] private float circleSize = 1.2f;
+    [SerializeField] private float squareSize = 1.5f;  // Size when Default Shape = Square
+    [SerializeField] private float circleSize = 1.2f;  // Size when Default Shape = Circle (also base for ring)
     [SerializeField] private float ringThickness = 0.4f;
 
     [Header("Color Settings")]
@@ -68,6 +68,42 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
         }
     }
 
+    // ADD THIS METHOD - This is called whenever Inspector values change
+    void OnValidate()
+    {
+        // Only update if we're in play mode and indicators exist
+        if (Application.isPlaying && squareIndicator != null && circleIndicator != null && ringIndicator != null)
+        {
+            UpdateIndicatorSizes();
+            UpdateIndicatorVisibility();
+        }
+    }
+
+    // ADD THIS METHOD - Updates all indicator sizes
+    void UpdateIndicatorSizes()
+    {
+        if (squareIndicator != null)
+        {
+            squareIndicator.transform.localScale = new Vector3(squareSize, squareSize, 1f);
+        }
+
+        if (circleIndicator != null)
+        {
+            circleIndicator.transform.localScale = new Vector3(circleSize, circleSize, 1f);
+        }
+
+        if (ringIndicator != null)
+        {
+            float ringSize = circleSize * (1f + ringThickness);
+            ringIndicator.transform.localScale = new Vector3(ringSize, ringSize, 1f);
+        }
+
+        if (debugMode)
+        {
+            Debug.Log($"Updated indicator sizes - Square: {squareSize}, Circle: {circleSize}, Ring thickness: {ringThickness}");
+        }
+    }
+
     void CreateSquareIndicator()
     {
         squareIndicator = new GameObject("SquareIndicator");
@@ -79,7 +115,7 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
         renderer.color = defaultColor;
 
         // Set size
-        squareIndicator.transform.localScale = new Vector3(dotSize, dotSize, 1f);
+        squareIndicator.transform.localScale = new Vector3(squareSize, squareSize, 1f);
     }
 
     void CreateCircleIndicator()
@@ -319,40 +355,22 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
         }
     }
 
-    // Method to directly set circle size
+    // UPDATED: Method to directly set circle size
     public void SetCircleSize(float size)
     {
         if (size <= 0) return;
 
         circleSize = size;
-
-        // Update circle indicator size
-        if (circleIndicator != null)
-        {
-            circleIndicator.transform.localScale = new Vector3(size, size, 1f);
-        }
-
-        // Update ring indicator size
-        if (ringIndicator != null)
-        {
-            float ringSize = size * (1f + ringThickness);
-            ringIndicator.transform.localScale = new Vector3(ringSize, ringSize, 1f);
-        }
+        UpdateIndicatorSizes(); // Use the centralized method
     }
 
-    // Method to set ring thickness
+    // UPDATED: Method to set ring thickness
     public void SetRingThickness(float thickness)
     {
         if (thickness <= 0 || thickness >= 1) return;
 
         ringThickness = thickness;
-
-        // Update ring indicator size
-        if (ringIndicator != null)
-        {
-            float ringSize = circleSize * (1f + ringThickness);
-            ringIndicator.transform.localScale = new Vector3(ringSize, ringSize, 1f);
-        }
+        UpdateIndicatorSizes(); // Use the centralized method
 
         // Recreate the ring sprite with new thickness
         ringSprite = CreateRingSprite(32, thickness);
@@ -364,5 +382,14 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
                 renderer.sprite = ringSprite;
             }
         }
+    }
+
+    // ADD THIS METHOD: Method to set square size
+    public void SetSquareSize(float size)
+    {
+        if (size <= 0) return;
+
+        squareSize = size;
+        UpdateIndicatorSizes(); // Use the centralized method
     }
 }

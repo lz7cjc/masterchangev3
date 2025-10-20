@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 5755131696607407519}
   - component: {fileID: 6363344657166108394}
   - component: {fileID: 7820888907750258141}
-  - component: {fileID: 8643382395647675708}
   m_Layer: 0
   m_Name: trackingtargetleft
   m_TagString: Untagged
@@ -190,22 +189,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.23, y: 2.37, z: 0.001}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8643382395647675708
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 493869336530768106}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  floatSpeed: 0.9735279
-  floatAmount: 0.04873195
-  rotateSpeed: 10
-  enableRotation: 0
 --- !u!1 &596902425036087831
 GameObject:
   m_ObjectHideFlags: 0
@@ -927,7 +910,8 @@ MonoBehaviour:
   hud1PlusOff: {fileID: 1171707476900946324}
   hud1PlusOn: {fileID: 6714769344975128607}
   hud1Level2: {fileID: 3045823441313418366}
-  hud1Level3: {fileID: 8890049567223394809}
+  hud1Level3a: {fileID: 0}
+  hud1Level3b: {fileID: 0}
 --- !u!114 &3929681348562118594
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1069,6 +1053,7 @@ MonoBehaviour:
   speedUpIconController: {fileID: 7074600293127220990}
   speedDownIconController: {fileID: 6634648988969616781}
   hudCoordinator: {fileID: 6405237667504203978}
+  useManualEventTriggers: 1
 --- !u!1 &1171707476900946324
 GameObject:
   m_ObjectHideFlags: 0
@@ -1580,7 +1565,6 @@ GameObject:
   - component: {fileID: 6961421319179350946}
   - component: {fileID: 3048529684302894129}
   - component: {fileID: 2864849443847721754}
-  - component: {fileID: 2700088018978865469}
   m_Layer: 0
   m_Name: headsetdefault
   m_TagString: Untagged
@@ -1675,6 +1659,7 @@ MonoBehaviour:
   hudCountdown: {fileID: 3929681348562118594}
   togglingXR: {fileID: 0}
   toggleActiveIconsVR: {fileID: 6961421319179350946}
+  setVrState: {fileID: 0}
 --- !u!114 &6961421319179350946
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1758,22 +1743,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.25, y: 2.2500067, z: 0.014954557}
   m_Center: {x: 0.0000022021975, y: -0.00014341265, z: -0.0023731387}
---- !u!114 &2700088018978865469
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2048161709421351018}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  floatSpeed: 0.92143965
-  floatAmount: 0.02901847
-  rotateSpeed: 10
-  enableRotation: 0
 --- !u!1 &2438432725815350687
 GameObject:
   m_ObjectHideFlags: 0
@@ -2525,9 +2494,12 @@ MonoBehaviour:
   addDepthVariation: 1
   depthVariation: 0.5
   followCurveRotation: 1
+  isLevel3Menu: 0
+  level3Radius: 6
+  level3ArcAngle: 120
+  level3UseTextMeshPro: 1
   hudCoordinator: {fileID: 6405237667504203978}
   isLevel2Menu: 1
-  isLevel3Menu: 0
 --- !u!114 &6109855519752161643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4891,7 +4863,6 @@ GameObject:
   - component: {fileID: 7295080792387728410}
   - component: {fileID: 4251262824501924924}
   - component: {fileID: 5357786251276216320}
-  - component: {fileID: 4024859789450014036}
   m_Layer: 0
   m_Name: trackingtargetright
   m_TagString: Untagged
@@ -5067,22 +5038,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.2255275, y: 2.8422163, z: 0.0009616021}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4024859789450014036
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6834746795224613727}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  floatSpeed: 1.0794291
-  floatAmount: 0.034653973
-  rotateSpeed: 10
-  enableRotation: 0
 --- !u!1 &7251258779172366178
 GameObject:
   m_ObjectHideFlags: 0
@@ -6045,7 +6000,6 @@ GameObject:
   - component: {fileID: 5083516040635743771}
   - component: {fileID: 3016635011185439577}
   - component: {fileID: 8550431984851477374}
-  - component: {fileID: 5603751251042736328}
   m_Layer: 0
   m_Name: btn_HUD_location
   m_TagString: Untagged
@@ -6230,22 +6184,6 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
---- !u!114 &5603751251042736328
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8512344576676290292}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  floatSpeed: 0.8463572
-  floatAmount: 0.039403636
-  rotateSpeed: 10
-  enableRotation: 0
 --- !u!1 &8890049567223394809
 GameObject:
   m_ObjectHideFlags: 0

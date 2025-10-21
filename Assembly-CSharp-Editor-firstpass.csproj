@@ -1246,12 +1246,12 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Profiling.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Collections.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Profiling.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
@@ -1348,17 +1348,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Unity.XR.Management.Samples.csproj">
-      <Project>{62CA3BF5-79A8-E32C-1300-3E1FA658F5F6}</Project>
-      <Name>Unity.XR.Management.Samples</Name>
-    </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.editor.csproj">
       <Project>{43202759-76E3-ABEC-CD1A-5FFDF8A93F98}</Project>
       <Name>sc.stylizedwater2.editor</Name>
-    </ProjectReference>
-    <ProjectReference Include="Unity.XR.Management.Samples.Editor.csproj">
-      <Project>{467AFA01-0844-F806-1719-5127B3EDE586}</Project>
-      <Name>Unity.XR.Management.Samples.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="sc.stylizedwater2.runtime.csproj">
       <Project>{49B84AF5-C20F-5809-06AF-DAFAF891B7DD}</Project>

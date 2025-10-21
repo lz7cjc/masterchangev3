@@ -48,7 +48,7 @@ public class EnhancedVideoPlayer : MonoBehaviour
     private const int MIN_RIRO_REQUIRED = 50; // Fixed requirement, not configurable
 
     // Object rotation
-    public bool rotateOnHover = false;
+  //  public bool rotateOnHover = false;
     private Quaternion originalRotation;
     private bool isRotating = false;
 
@@ -318,10 +318,10 @@ public class EnhancedVideoPlayer : MonoBehaviour
             }
 
             // Handle rotation animation
-            if (rotateOnHover && isRotating)
-            {
-                transform.Rotate(Vector3.up, 30f * Time.deltaTime);
-            }
+            //if (rotateOnHover && isRotating)
+            //{
+            //    transform.Rotate(Vector3.up, 30f * Time.deltaTime);
+            //}
 
             if (hoverTimer >= hoverTimeRequired)
             {
@@ -549,10 +549,10 @@ public class EnhancedVideoPlayer : MonoBehaviour
         ShowProgressBar();
 
         // Start rotation animation
-        if (rotateOnHover)
-        {
-            isRotating = true;
-        }
+        //if (rotateOnHover)
+        //{
+        //    isRotating = true;
+        //}
 
         if (debugMode)
         {
@@ -575,11 +575,11 @@ public class EnhancedVideoPlayer : MonoBehaviour
         HideProgressBar();
 
         // Stop rotation and reset
-        if (rotateOnHover)
-        {
-            isRotating = false;
-            transform.rotation = originalRotation;
-        }
+        //if (rotateOnHover)
+        //{
+        //    isRotating = false;
+        //    transform.rotation = originalRotation;
+        //}
 
         if (debugMode)
         {

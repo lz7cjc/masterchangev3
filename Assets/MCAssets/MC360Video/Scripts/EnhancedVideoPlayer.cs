@@ -48,7 +48,7 @@ public class EnhancedVideoPlayer : MonoBehaviour
     private const int MIN_RIRO_REQUIRED = 50; // Fixed requirement, not configurable
 
     // Object rotation
-    public bool rotateOnHover = true;
+    public bool rotateOnHover = false;
     private Quaternion originalRotation;
     private bool isRotating = false;
 

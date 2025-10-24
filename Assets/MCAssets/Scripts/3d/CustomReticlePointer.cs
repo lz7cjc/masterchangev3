@@ -6,7 +6,10 @@ public class CustomReticlePointer : MonoBehaviour
 {
     public enum ViewMode { Mode2D, Mode360, ModeVR }
 
+    [Header("Debug Settings")]
     public bool DebugMode = false;
+
+    [Header("Reticle Settings")]
     [Range(-32767, 32767)]
     public int ReticleSortingOrder = 32767;
     public LayerMask ReticleInteractionLayerMask = 1 << _RETICLE_INTERACTION_DEFAULT_LAYER;
@@ -18,6 +21,11 @@ public class CustomReticlePointer : MonoBehaviour
     public float _RETICLE_MAX_DISTANCE = 20.0f;
     private const int _RETICLE_SEGMENTS = 20;
     private const float _RETICLE_GROWTH_SPEED = 8.0f;
+
+    [Header("Input Settings")]
+    [Tooltip("Name of the trigger action in PlayerInput (leave empty to disable)")]
+    public string triggerActionName = "Click"; // Changed from "Trigger" to "Click"
+
     private GameObject _gazedAtObject = null;
     private Material _reticleMaterial;
     private float _reticleInnerAngle;
@@ -28,51 +36,96 @@ public class CustomReticlePointer : MonoBehaviour
 
     private PlayerInput playerInput;
     private InputAction triggerAction;
-
     private ViewMode currentMode = ViewMode.Mode360;
-
-    // ...existing code...
 
     private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
         if (playerInput == null)
         {
-            Debug.LogError("PlayerInput component not found!");
+            Debug.LogWarning("[CustomReticlePointer] PlayerInput component not found - interaction via input actions will be disabled");
             return;
         }
 
-        triggerAction = playerInput.actions["Trigger"];
-        if (triggerAction == null)
+        // Try to find the trigger action - make it optional
+        if (!string.IsNullOrEmpty(triggerActionName))
         {
-            Debug.LogError("Trigger action not found in PlayerInput actions!");
-            return;
+            try
+            {
+                triggerAction = playerInput.actions[triggerActionName];
+                if (triggerAction != null)
+                {
+                    Debug.Log($"[CustomReticlePointer] Found trigger action: {triggerActionName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[CustomReticlePointer] Trigger action '{triggerActionName}' not found in PlayerInput actions - click interaction disabled");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[CustomReticlePointer] Could not find trigger action '{triggerActionName}': {e.Message}");
+            }
+        }
+        else
+        {
+            Debug.Log("[CustomReticlePointer] No trigger action name specified - click interaction disabled");
         }
     }
 
     private void Start()
     {
         Renderer rendererComponent = GetComponent<Renderer>();
-        rendererComponent.sortingOrder = ReticleSortingOrder;
-        _reticleMaterial = rendererComponent.material;
+        if (rendererComponent != null)
+        {
+            rendererComponent.sortingOrder = ReticleSortingOrder;
+            _reticleMaterial = rendererComponent.material;
+        }
+        else
+        {
+            Debug.LogError("[CustomReticlePointer] Renderer component not found!");
+        }
+
         CreateMesh();
     }
 
     private void Update()
     {
+        // Only do raycasting in VR mode
+        if (currentMode != ViewMode.ModeVR)
+        {
+            return;
+        }
+
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, _RETICLE_MAX_DISTANCE))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, _RETICLE_MAX_DISTANCE, ReticleInteractionLayerMask))
         {
             if (DebugMode)
-                Debug.DrawLine(transform.position, hit.point, Color.white);
+                Debug.DrawLine(transform.position, hit.point, Color.green);
 
-            if (hit.collider.GetComponent<BoxCollider>() != null && ((1 << hit.collider.gameObject.layer) & ReticleInteractionLayerMask) != 0)
+            if (hit.collider.GetComponent<BoxCollider>() != null)
             {
                 if (_gazedAtObject != hit.collider.gameObject)
                 {
-                    _gazedAtObject?.GetComponent<EventTrigger>()?.OnPointerExit(new PointerEventData(EventSystem.current));
+                    // Exit previous object
+                    if (_gazedAtObject != null)
+                    {
+                        EventTrigger exitTrigger = _gazedAtObject.GetComponent<EventTrigger>();
+                        if (exitTrigger != null)
+                        {
+                            PointerEventData exitData = new PointerEventData(EventSystem.current);
+                            ExecuteEvents.Execute(_gazedAtObject, exitData, ExecuteEvents.pointerExitHandler);
+                        }
+                    }
+
+                    // Enter new object
                     _gazedAtObject = hit.collider.gameObject;
-                    _gazedAtObject.GetComponent<EventTrigger>()?.OnPointerEnter(new PointerEventData(EventSystem.current));
+                    EventTrigger enterTrigger = _gazedAtObject.GetComponent<EventTrigger>();
+                    if (enterTrigger != null)
+                    {
+                        PointerEventData enterData = new PointerEventData(EventSystem.current);
+                        ExecuteEvents.Execute(_gazedAtObject, enterData, ExecuteEvents.pointerEnterHandler);
+                    }
                 }
 
                 bool isInteractive = (1 << _gazedAtObject.layer & ReticleInteractionLayerMask) != 0;
@@ -82,19 +135,29 @@ public class CustomReticlePointer : MonoBehaviour
         else
         {
             if (DebugMode)
-                Debug.DrawRay(transform.position, transform.forward * _RETICLE_MAX_DISTANCE, Color.white);
+                Debug.DrawRay(transform.position, transform.forward * _RETICLE_MAX_DISTANCE, Color.red);
 
             if (_gazedAtObject != null)
             {
-                _gazedAtObject?.GetComponent<EventTrigger>()?.OnPointerExit(new PointerEventData(EventSystem.current));
+                EventTrigger exitTrigger = _gazedAtObject.GetComponent<EventTrigger>();
+                if (exitTrigger != null)
+                {
+                    PointerEventData exitData = new PointerEventData(EventSystem.current);
+                    ExecuteEvents.Execute(_gazedAtObject, exitData, ExecuteEvents.pointerExitHandler);
+                }
                 _gazedAtObject = null;
                 ResetParams();
             }
         }
 
-        if (triggerAction != null && triggerAction.triggered)
+        // Handle click/trigger action if available
+        if (triggerAction != null && triggerAction.triggered && _gazedAtObject != null)
         {
-            _gazedAtObject?.GetComponent<EventTrigger>()?.SendMessage("OnPointerClick", new PointerEventData(EventSystem.current));
+            PointerEventData clickData = new PointerEventData(EventSystem.current);
+            ExecuteEvents.Execute(_gazedAtObject, clickData, ExecuteEvents.pointerClickHandler);
+
+            if (DebugMode)
+                Debug.Log($"[CustomReticlePointer] Clicked on: {_gazedAtObject.name}");
         }
 
         UpdateDiameters();
@@ -102,6 +165,8 @@ public class CustomReticlePointer : MonoBehaviour
 
     private void UpdateDiameters()
     {
+        if (_reticleMaterial == null) return;
+
         _reticleDistanceInMeters = Mathf.Clamp(_reticleDistanceInMeters, _RETICLE_MIN_DISTANCE, _RETICLE_MAX_DISTANCE);
 
         if (_reticleInnerAngle < _RETICLE_MIN_INNER_ANGLE)
@@ -200,6 +265,33 @@ public class CustomReticlePointer : MonoBehaviour
     public void SetMode(ViewMode newMode)
     {
         currentMode = newMode;
-        // Add any additional logic needed to handle mode changes
+
+        if (DebugMode)
+            Debug.Log($"[CustomReticlePointer] Mode changed to: {newMode}");
+
+        // Hide reticle in non-VR modes
+        Renderer rend = GetComponent<Renderer>();
+        if (rend != null)
+        {
+            rend.enabled = (newMode == ViewMode.ModeVR);
+        }
+
+        // Clear any gazed object when leaving VR mode
+        if (newMode != ViewMode.ModeVR && _gazedAtObject != null)
+        {
+            EventTrigger exitTrigger = _gazedAtObject.GetComponent<EventTrigger>();
+            if (exitTrigger != null)
+            {
+                PointerEventData exitData = new PointerEventData(EventSystem.current);
+                ExecuteEvents.Execute(_gazedAtObject, exitData, ExecuteEvents.pointerExitHandler);
+            }
+            _gazedAtObject = null;
+            ResetParams();
+        }
+    }
+
+    public ViewMode GetCurrentMode()
+    {
+        return currentMode;
     }
 }

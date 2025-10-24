@@ -63,17 +63,17 @@
   <ItemGroup>
     <Compile Include="Assets\StylizedWater2\Editor\ShaderConfigurator.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\HelpWindow.cs" />
-    <Compile Include="Assets\StylizedWater2\Editor\MaterialUI.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\StylizedWaterEditor.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterShaderImporterEditor.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterObjectInspector.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\AssetInfo.cs" />
+    <Compile Include="Assets\StylizedWater2\Editor\MaterialUI.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\Inspectors\RenderFeatureEditor.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\WaterMeshImporter.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\UI.cs" />
-    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterShaderImporterEditor.cs" />
-    <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterObjectInspector.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\WaterShaderImporter.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\Inspectors\PlanarReflectionRendererInspector.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\Inspectors\WaterGridInspector.cs" />
-    <Compile Include="Assets\StylizedWater2\Editor\AssetInfo.cs" />
     <Compile Include="Assets\StylizedWater2\Editor\Inspectors\AlignToWavesInspector.cs" />
   </ItemGroup>
   <ItemGroup>

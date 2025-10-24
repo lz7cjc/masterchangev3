@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Enhanced closeAllHuds - Cleaned up version with reduced redundancy
+/// Enhanced closeAllHuds - Fixed version with no duplicate validation
 /// </summary>
 public class closeAllHuds : MonoBehaviour
 {
-    // Exact same public fields as original
+    [Header("HUD References")]
     public GameObject hud1PlusOff;
     public GameObject hud1PlusOn;
     public GameObject hud1Level2;
@@ -15,10 +15,11 @@ public class closeAllHuds : MonoBehaviour
     private showHideHUD hudController;
     private showHideHUDcat hudCatController;
     private HUDSystemCoordinator hudCoordinator;
+    private bool hasValidated = false;
 
     public void Start()
     {
-        Debug.Log("Marker: Enhanced closeAllHuds Start method called");
+        Debug.Log("[closeAllHuds] Start method called");
 
         // Try to find enhanced coordinator first
         hudCoordinator = FindFirstObjectByType<HUDSystemCoordinator>();
@@ -30,37 +31,41 @@ public class closeAllHuds : MonoBehaviour
             hudCatController = FindFirstObjectByType<showHideHUDcat>();
         }
 
-        // Validate assignments with enhanced error reporting
-        ValidateAssignments();
+        // Validate assignments ONCE
+        if (!hasValidated)
+        {
+            ValidateAssignments();
+            hasValidated = true;
+        }
 
         CloseTheHuds();
     }
 
-    // Exact same public method as original
+    /// <summary>
+    /// Close all HUDs
+    /// </summary>
     public void CloseTheHuds()
     {
-        Debug.Log("Marker: Enhanced CloseTheHuds called");
+        Debug.Log("[closeAllHuds] CloseTheHuds called");
 
+        // If we have a coordinator, use it
         if (hudCoordinator != null)
         {
-            Debug.Log("Marker: Using HUDSystemCoordinator to close all HUDs");
+            Debug.Log("[closeAllHuds] Using HUDSystemCoordinator to close all HUDs");
             hudCoordinator.CloseAllHUDs();
             return;
         }
 
-        // Enhanced validation with better error reporting
-        ValidateAssignments();
-
-        // Enhanced closing logic with better coordination
+        // Otherwise use individual controllers
         if (hudController != null)
         {
-            Debug.Log("Marker: Resetting HUD state for enhanced showHideHUD");
+            Debug.Log("[closeAllHuds] Using showHideHUD to reset HUD state");
             hudController.ResetHUDState();
         }
         else
         {
-            // Enhanced fallback logic
-            Debug.Log("Marker: Enhanced fallback - Deactivating HUD elements");
+            // Fallback - directly manage HUD GameObjects
+            Debug.Log("[closeAllHuds] Fallback - Directly deactivating HUD elements");
             SafeSetActive(hud1Level2, false);
             SafeSetActive(hud1Level3a, false);
             SafeSetActive(hud1Level3b, false);
@@ -70,38 +75,103 @@ public class closeAllHuds : MonoBehaviour
 
         if (hudCatController != null)
         {
-            Debug.Log("Marker: Resetting HUD state for enhanced showHideHUDcat");
+            Debug.Log("[closeAllHuds] Using showHideHUDcat to reset HUD state");
             hudCatController.ResetHUDState();
         }
-
-        // Let coordinator handle static state management
-        // Removed duplicate static state reset to avoid conflicts
     }
 
-    #region Enhanced Internal Implementation
+    /// <summary>
+    /// Close HUDs with specific reason (for debugging)
+    /// </summary>
+    public void CloseTheHuds(string reason)
+    {
+        Debug.Log($"[closeAllHuds] Closing HUDs - Reason: {reason}");
+        CloseTheHuds();
+    }
+
+    /// <summary>
+    /// Force immediate close without validation
+    /// </summary>
+    public void ForceCloseAllHUDs()
+    {
+        if (hudCoordinator != null)
+        {
+            hudCoordinator.CloseAllHUDs();
+        }
+        else
+        {
+            // Force close by name search
+            GameObject[] allObjects = FindObjectsOfType<GameObject>();
+
+            foreach (var obj in allObjects)
+            {
+                if (obj.name.Contains("Level2") || obj.name.Contains("mainIcons"))
+                {
+                    obj.SetActive(false);
+                }
+                else if (obj.name.Contains("Level3"))
+                {
+                    obj.SetActive(false);
+                }
+            }
+        }
+
+        Debug.Log("[closeAllHuds] Force closed all HUDs");
+    }
+
+    /// <summary>
+    /// Get status of HUD assignments
+    /// </summary>
+    public string GetAssignmentStatus()
+    {
+        return $"HUD Assignment Status:\n" +
+               $"- Level2: {(hud1Level2 != null ? "✓" : "✗")}\n" +
+               $"- Level3a: {(hud1Level3a != null ? "✓" : "✗")}\n" +
+               $"- Level3b: {(hud1Level3b != null ? "✓" : "✗")}\n" +
+               $"- Plus Off: {(hud1PlusOff != null ? "✗" : "✗")}\n" +
+               $"- Plus On: {(hud1PlusOn != null ? "✓" : "✗")}\n" +
+               $"- Coordinator: {(hudCoordinator != null ? "✓" : "✗")}";
+    }
+
+    #region Private Methods
 
     private void ValidateAssignments()
     {
-        // Enhanced validation with suggestions
+        bool allAssigned = true;
+
         if (hud1Level2 == null)
         {
-            Debug.LogError("Marker: hud1Level2 is not assigned! Try assigning 'Level2' GameObject.");
+            Debug.LogWarning("[closeAllHuds] hud1Level2 is not assigned! Try assigning 'Level2' GameObject.");
+            allAssigned = false;
         }
         if (hud1Level3a == null)
         {
-            Debug.LogError("Marker: hud1Level3 is not assigned! Try assigning main Level3 container.");
+            Debug.LogWarning("[closeAllHuds] hud1Level3a is not assigned! Try assigning 'Level3a' GameObject.");
+            allAssigned = false;
         }
         if (hud1Level3b == null)
         {
-            Debug.LogError("Marker: hud1Level3 is not assigned! Try assigning main Level3 container.");
+            Debug.LogWarning("[closeAllHuds] hud1Level3b is not assigned! Try assigning 'Level3b' GameObject.");
+            allAssigned = false;
         }
         if (hud1PlusOff == null)
         {
-            Debug.LogError("Marker: hud1PlusOff is not assigned! Try assigning 'closeHud' GameObject.");
+            Debug.LogWarning("[closeAllHuds] hud1PlusOff is not assigned! Try assigning 'closeHud' GameObject.");
+            allAssigned = false;
         }
         if (hud1PlusOn == null)
         {
-            Debug.LogError("Marker: hud1PlusOn is not assigned! Try assigning 'opendefault' GameObject.");
+            Debug.LogWarning("[closeAllHuds] hud1PlusOn is not assigned! Try assigning 'opendefault' GameObject.");
+            allAssigned = false;
+        }
+
+        if (allAssigned)
+        {
+            Debug.Log("[closeAllHuds] All HUD references are assigned correctly ✓");
+        }
+        else
+        {
+            Debug.Log("[closeAllHuds] Some HUD references are missing - fallback behavior will be used");
         }
     }
 
@@ -115,69 +185,7 @@ public class closeAllHuds : MonoBehaviour
 
     #endregion
 
-    #region Enhanced Public Methods (New functionality)
-
-    /// <summary>
-    /// Close HUDs with specific reason (new functionality)
-    /// </summary>
-    public void CloseTheHuds(string reason)
-    {
-        Debug.Log($"Marker: Closing HUDs - Reason: {reason}");
-        CloseTheHuds();
-    }
-
-    /// <summary>
-    /// Force immediate close without validation (new functionality)
-    /// </summary>
-    public void ForceCloseAllHUDs()
-    {
-        if (hudCoordinator != null)
-        {
-            hudCoordinator.CloseAllHUDs();
-        }
-        else
-        {
-            // Force close everything we can find
-            var allLevel2 = FindObjectsOfType<GameObject>();
-            var allLevel3 = FindObjectsOfType<GameObject>();
-
-            foreach (var obj in allLevel2)
-            {
-                if (obj.name.Contains("Level2") || obj.name.Contains("mainIcons"))
-                {
-                    obj.SetActive(false);
-                }
-            }
-
-            foreach (var obj in allLevel3)
-            {
-                if (obj.name.Contains("Level3"))
-                {
-                    obj.SetActive(false);
-                }
-            }
-        }
-
-        Debug.Log("Marker: Force closed all HUDs");
-    }
-
-    /// <summary>
-    /// Get status of HUD assignments (new functionality)
-    /// </summary>
-    public string GetAssignmentStatus()
-    {
-        return $"HUD Assignment Status:\n" +
-               $"- Level2: {(hud1Level2 != null ? "✓" : "✗")}\n" +
-               $"- Level3: {(hud1Level3a != null ? "✓" : "✗")}\n" +
-              $"- Level3: {(hud1Level3b != null ? "✓" : "✗")}\n" +
-               $"- Plus Off: {(hud1PlusOff != null ? "✓" : "✗")}\n" +
-               $"- Plus On: {(hud1PlusOn != null ? "✓" : "✗")}\n" +
-               $"- Coordinator: {(hudCoordinator != null ? "✓" : "✗")}";
-    }
-
-    #endregion
-
-    #region Inspector Helpers
+    #region Inspector Context Menu Helpers
 
     [ContextMenu("Auto-Find HUD References")]
     private void AutoFindHUDReferences()
@@ -186,9 +194,10 @@ public class closeAllHuds : MonoBehaviour
             hud1Level2 = GameObject.Find("Level2");
 
         if (hud1Level3a == null)
-            hud1Level3a = GameObject.Find("Level3a"); // or whatever your main Level3 is called
+            hud1Level3a = GameObject.Find("Level3a");
+
         if (hud1Level3b == null)
-            hud1Level3b = GameObject.Find("Level3a"); // or whatever your main Level3 is called
+            hud1Level3b = GameObject.Find("Level3b");
 
         if (hud1PlusOff == null)
             hud1PlusOff = GameObject.Find("closeHud");
@@ -196,7 +205,7 @@ public class closeAllHuds : MonoBehaviour
         if (hud1PlusOn == null)
             hud1PlusOn = GameObject.Find("opendefault");
 
-        Debug.Log($"Auto-found references: {GetAssignmentStatus()}");
+        Debug.Log($"[closeAllHuds] Auto-found references:\n{GetAssignmentStatus()}");
     }
 
     [ContextMenu("Test Close HUDs")]
@@ -204,8 +213,18 @@ public class closeAllHuds : MonoBehaviour
     {
         if (Application.isPlaying)
         {
-            CloseTheHuds("Manual Test");
+            CloseTheHuds("Manual Test from Context Menu");
         }
+        else
+        {
+            Debug.LogWarning("[closeAllHuds] Test Close HUDs can only be used in Play Mode");
+        }
+    }
+
+    [ContextMenu("Show Assignment Status")]
+    private void ShowAssignmentStatus()
+    {
+        Debug.Log($"[closeAllHuds]\n{GetAssignmentStatus()}");
     }
 
     #endregion

@@ -61,15 +61,15 @@
     <Analyzer Include="D:\Program Files\6000.0.40f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectBuildEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Utils.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\AppStoreOnboardApi.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\EditorAnalytcisApi.cs" />
+    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectBuildEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\WebRequestQueue.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\Common.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreModel.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\ProjectOpenEvent.cs" />
-    <Compile Include="Assets\Plugins\UDP\Editor\AppStoreOnboardApi.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreStyles.cs" />
-    <Compile Include="Assets\Plugins\UDP\Editor\Analytics\EditorAnalytcisApi.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\Analytics\SdkImportEvent.cs" />
     <Compile Include="Assets\Plugins\UDP\Editor\AppStoreSettingsEditor.cs" />
   </ItemGroup>
@@ -1134,6 +1134,10 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.Codeless.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.XR.CoreUtils">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.Purchasing">
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.dll</HintPath>
       <Private>False</Private>
@@ -1246,6 +1250,10 @@
       <HintPath>Library\ScriptAssemblies\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Google.XR.Cardboard">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Collections.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1280,6 +1288,10 @@
     </Reference>
     <Reference Include="Unity.Services.Core.Analytics">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Analytics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Google.XR.Cardboard.Editor">
+      <HintPath>Library\ScriptAssemblies\Google.XR.Cardboard.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Mathematics">
@@ -1328,6 +1340,10 @@
     </Reference>
     <Reference Include="Unity.Services.Core">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.XR.CoreUtils.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Rendering.LightTransport.Runtime">

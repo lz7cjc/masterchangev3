@@ -55,8 +55,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1.7041072, y: 4.1067195, z: 1}
+  m_Center: {x: 0.014483631, y: 1.5533597, z: 0}
 --- !u!114 &5607541305740197387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -134,7 +134,7 @@ MonoBehaviour:
   title: 
   description: 
   prefabType: 
-  LastKnownZone: Home
+  LastKnownZone: Travel
   hoverTimeRequired: 3
   mouseHover: 0
   returntoscene: mainVR
@@ -146,7 +146,6 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 0, g: 1, b: 0, a: 1}
   useProgressIndicator: 1
-  rotateOnHover: 1
   debugMode: 1
   category: 
   zoneName: 
@@ -283,7 +282,7 @@ MonoBehaviour:
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 1.21
+  m_fontSizeMin: 0.56
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
@@ -297,7 +296,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 4
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -354,7 +353,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2892250415584688137}
   m_LocalRotation: {x: -0.000000022166857, y: -0.9988206, z: 0.048554007, w: -0.000000005638518}
-  m_LocalPosition: {x: 0, y: 0, z: 0.18414322}
+  m_LocalPosition: {x: 0, y: 0, z: 0.1774}
   m_LocalScale: {x: 0.038450006, y: 0.04866503, z: 0.098443985}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -362,8 +361,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 5.566, y: -180, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.0006725544, y: 0.07032906}
-  m_SizeDelta: {x: 8.248, y: 5.515}
+  m_AnchoredPosition: {x: -0.0006725544, y: 0.0829}
+  m_SizeDelta: {x: 8.248, y: 4.8829}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &1768443113804103756
 MeshRenderer:
@@ -461,7 +460,7 @@ MonoBehaviour:
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 0.6
+  m_fontSizeMin: 0.13
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
@@ -475,7 +474,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 4
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -532,7 +531,6 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 0, g: 1, b: 0, a: 1}
   useProgressIndicator: 1
-  rotateOnHover: 1
   debugMode: 1
   category: 
   zoneName: 

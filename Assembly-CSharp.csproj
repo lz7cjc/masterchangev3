@@ -112,6 +112,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstVisitRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\HUDSystemCoordinator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ManualGyroscopeTracking.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SportsMarinaGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\MinimalLoadingIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\VRLoadingManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
@@ -351,7 +353,6 @@
     <None Include="Assets\StylizedWater2\Shaders\SubGraphs\Readme.txt" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
-    <None Include="Assets\AddressableAssetsData\link.xml" />
     <None Include="Assets\MCAssets\Materials\Material_Assignment_Guide.txt" />
     <None Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\install_RP_Versions.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
@@ -1573,10 +1574,6 @@
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.XR.CoreUtils.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.XR.CoreUtils.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1591,6 +1588,10 @@
     </Reference>
     <Reference Include="Unity.InputSystem">
       <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.2D.Runtime">

@@ -45,18 +45,34 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject smokingDone;
     [SerializeField] private int stopFilm;
     [SerializeField] private GameObject hud;
+    public togglingXR togglingXRScript;
+    public GameObject loadingPanel; // Drag "Panel" here
 
-    private void Start()
+    void Start()
     {
-        //if (!PlayerPrefs.HasKey("lastknownzone"))
-        //{
-        //    // If no last known zone, set default to Home
-        //    PlayerPrefs.SetString("lastknownzone", "Home");
-        //}
-        StartCoroutine(WaitForAddressablesAndSetupScene());
+        bool startInVR = PlayerPrefs.GetInt("VRMode", 0) == 1;
+
+        if (startInVR)
+        {
+            loadingPanel.SetActive(true);
+            StartCoroutine(InitializeVR());
+        }
+        else
+        {
+            loadingPanel.SetActive(false);
+            togglingXRScript.SetVRMode(false);
+        }
     }
 
-    private IEnumerator WaitForAddressablesAndSetupScene()
+    IEnumerator InitializeVR()
+    {
+        yield return togglingXRScript.StartXR();
+        yield return new WaitForSeconds(1.5f);
+        loadingPanel.SetActive(false);
+    }
+
+
+private IEnumerator WaitForAddressablesAndSetupScene()
     {
         // Check if the BackgroundPreloader exists and wait for it to complete
         BackgroundPreloader preloader = BackgroundPreloader.Instance;
@@ -65,7 +81,6 @@ public class StartUp : MonoBehaviour
         {
             Debug.Log("[StartUp] Waiting for addressables to finish loading...");
 
-            // Wait until preloading is complete or a timeout occurs
             float timeoutSeconds = 10f;
             float elapsedTime = 0f;
 
@@ -90,7 +105,7 @@ public class StartUp : MonoBehaviour
         // Retrieve values from PlayerPrefs
         stage = PlayerPrefs.GetInt("stage", 0);
 
-        // Check if lastknownzone exists - DON'T set it yet
+        // Check if lastknownzone exists
         bool hasLastKnownZone = PlayerPrefs.HasKey("lastknownzone");
         lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home");
         currentZone = lastKnownZone;
@@ -99,10 +114,9 @@ public class StartUp : MonoBehaviour
         Debug.Log($"[StartUp] lastKnownZone value: '{lastKnownZone}'");
         Debug.Log($"[StartUp] currentZone: '{currentZone}'");
 
-        // Store this for use in other methods
         bool isNewPlayer = !hasLastKnownZone;
 
-        InitializeScene(); // Keep your existing method signature
+        InitializeScene();
         HandleZoneNavigation();
 
         // ONLY set the PlayerPref after we've handled the startup
@@ -112,12 +126,35 @@ public class StartUp : MonoBehaviour
             Debug.Log("[StartUp] Set default lastknownzone to 'Home' for new player");
         }
     }
+
     private void InitializeScene()
     {
         Debug.Log("[StartUp] Marker: InitializeScene");
 
+        // Find togglingXR component
         togglingXR = FindFirstObjectByType<togglingXR>();
-        togglingXR.SwitchingVR();
+
+        if (togglingXR != null)
+        {
+            // CRITICAL FIX: Set the mode based on PlayerPrefs, don't toggle!
+            int vrMode = PlayerPrefs.GetInt("toggleToVR", 0);
+            Debug.Log($"[StartUp] toggleToVR PlayerPref = {vrMode}");
+
+            if (vrMode == 1)
+            {
+                Debug.Log("[StartUp] Setting VR mode ON (from PlayerPrefs)");
+                togglingXR.SetVRMode(true);
+            }
+            else
+            {
+                Debug.Log("[StartUp] Setting VR mode OFF (360 mode from PlayerPrefs)");
+                togglingXR.SetVRMode(false);
+            }
+        }
+        else
+        {
+            Debug.LogError("[StartUp] togglingXR component not found!");
+        }
 
         if (closeAllHuds != null)
         {
@@ -163,21 +200,16 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: SetPlayerToTarget");
         if (target != null && player != null)
         {
-            // Stop all physics first
             player.isKinematic = true;
             player.linearVelocity = Vector3.zero;
             player.angularVelocity = Vector3.zero;
 
-            // Clear any existing parent
             player.transform.SetParent(null);
-
-            // Reset to world origin first
             player.transform.position = Vector3.zero;
             player.transform.rotation = Quaternion.identity;
 
-            // Now set the parent and local position
             player.transform.SetParent(target.transform);
-            player.transform.localPosition = Vector3.zero;        // Reset to (0,0,0) relative to target
+            player.transform.localPosition = Vector3.zero;
             player.transform.localRotation = Quaternion.identity;
             player.transform.localScale = Vector3.one;
         }
@@ -187,7 +219,6 @@ public class StartUp : MonoBehaviour
         }
     }
 
-    // Helper method to get the target GameObject for a given zone name
     private GameObject GetTargetForZone(string zoneName)
     {
         return zoneName switch
@@ -206,10 +237,7 @@ public class StartUp : MonoBehaviour
     private void MovePlayerToCurrentZone()
     {
         Debug.Log($"[StartUp] Marker: MovePlayerToCurrentZone -> currentZone: {currentZone}");
-        Debug.Log($"[StartUp] Player position BEFORE move: {player?.transform.position}");
-        Debug.Log($"[StartUp] Player localPosition BEFORE move: {player?.transform.localPosition}");
 
-        // Try to use ZoneManager with direct GameObject reference for consistency
         ZoneManager zoneManager = FindFirstObjectByType<ZoneManager>();
         if (zoneManager != null)
         {
@@ -217,12 +245,7 @@ public class StartUp : MonoBehaviour
             if (targetObject != null)
             {
                 Debug.Log($"[StartUp] Using ZoneManager with target: {targetObject.name}");
-                Debug.Log($"[StartUp] Target position: {targetObject.transform.position}");
                 zoneManager.MoveToZoneByGameObject(targetObject);
-
-                // Check position after ZoneManager move
-                Debug.Log($"[StartUp] Player position AFTER ZoneManager: {player?.transform.position}");
-                Debug.Log($"[StartUp] Player localPosition AFTER ZoneManager: {player?.transform.localPosition}");
             }
             else
             {
@@ -232,13 +255,8 @@ public class StartUp : MonoBehaviour
         else
         {
             Debug.Log("[StartUp] ZoneManager not found, using fallback");
-            // Fallback to direct method
             GameObject targetObject = GetTargetForZone(currentZone);
             SetPlayerToTarget(targetObject);
-
-            // Check position after fallback
-            Debug.Log($"[StartUp] Player position AFTER fallback: {player?.transform.position}");
-            Debug.Log($"[StartUp] Player localPosition AFTER fallback: {player?.transform.localPosition}");
         }
     }
 
@@ -270,8 +288,6 @@ public class StartUp : MonoBehaviour
     private void NavigateToRegularZone()
     {
         Debug.Log("[StartUp] Marker: NavigateToRegularZone");
-        Debug.Log($"[StartUp] Marker: Navigating to regular zone: {currentZone}");
-
         GameObject targetObject = GetTargetForZone(currentZone);
         SetPlayerToTarget(targetObject);
     }
@@ -291,11 +307,9 @@ public class StartUp : MonoBehaviour
     private void HandleSmokingTreatment()
     {
         Debug.Log("[StartUp] Marker: HandleSmokingTreatment");
-        Debug.Log("[StartUp] Marker: Handling smoking treatment zone");
         SetPlayerToTarget(targetSmoking);
         stage = PlayerPrefs.GetInt("stageSmoking");
 
-        // Reset all smoking treatment objects
         welcomeSmoking.SetActive(false);
         InitialConsultation.SetActive(false);
         CTScanDelay.SetActive(false);
@@ -307,16 +321,12 @@ public class StartUp : MonoBehaviour
             case 1:
                 welcomeSmoking.SetActive(true);
                 break;
-
             case 2:
                 InitialConsultation.SetActive(true);
-                //    setCTdate = FindFirstObjectByType<setCTdate>();
-                //CTScanDelay.setReferenceDate();
                 break;
             case 3:
                 PlayerPrefs.DeleteKey("CTstartpoint");
                 PlayerPrefs.DeleteKey("delaynotification");
-                //    CTScanDelay.SetActive(true);
                 break;
             case 4:
                 CTresults.SetActive(true);
@@ -324,7 +334,6 @@ public class StartUp : MonoBehaviour
             case 5:
                 InitialConsultation.SetActive(true);
                 break;
-
             default:
                 SetPlayerToTarget(targetHome);
                 break;

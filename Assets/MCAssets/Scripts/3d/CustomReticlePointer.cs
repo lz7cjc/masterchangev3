@@ -273,7 +273,7 @@ public class CustomReticlePointer : MonoBehaviour
         Renderer rend = GetComponent<Renderer>();
         if (rend != null)
         {
-            rend.enabled = (newMode == ViewMode.ModeVR);
+            rend.enabled = true;  // NEW: Always visible
         }
 
         // Clear any gazed object when leaving VR mode

@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 
 public class SetVrState : MonoBehaviour
 {
@@ -13,10 +12,7 @@ public class SetVrState : MonoBehaviour
     [SerializeField] private GameObject mainCameraVR;
 
     [Header("VR Components")]
-    [SerializeField] private GameObject vrReticle; // Your VR reticle GameObject - assign in Inspector
-
-    [Header("UI Canvas (Optional)")]
-    [SerializeField] private Canvas mainCanvas; // Will auto-find if not assigned
+    [SerializeField] private GameObject vrReticle; // VR reticle pointer
 
     private showHideHUD hudController;
     private togglingXR xrToggler;
@@ -26,23 +22,13 @@ public class SetVrState : MonoBehaviour
         hudController = FindFirstObjectByType<showHideHUD>();
         xrToggler = FindFirstObjectByType<togglingXR>();
 
-        // Auto-find canvas if not assigned
-        if (mainCanvas == null)
-        {
-            mainCanvas = FindFirstObjectByType<Canvas>();
-            if (mainCanvas != null)
-            {
-                Debug.Log($"[SetVrState] Auto-found Canvas: {mainCanvas.gameObject.name}");
-            }
-        }
-
         int headsetOr2D = PlayerPrefs.GetInt("toggleToVR", 0);
         Debug.Log($"[SetVrState] Starting with VR mode: {headsetOr2D}");
 
         UpdateVRSprites(headsetOr2D == 1);
 
-        // Initial camera setup
-        SetupCamerasImmediate(headsetOr2D == 1);
+        // Initial camera setup (but let togglingXR handle XR initialization)
+        SetupCameras(headsetOr2D == 1);
     }
 
     public void SetVR(int headsetOr2D)
@@ -56,7 +42,10 @@ public class SetVrState : MonoBehaviour
         // Update sprites
         UpdateVRSprites(headsetOr2D == 1);
 
-        // Trigger XR toggling first
+        // Setup cameras with a small delay
+        Invoke(nameof(DelayedCameraSetup), 0.1f);
+
+        // Trigger XR toggling
         if (xrToggler != null)
         {
             xrToggler.SwitchingVR();
@@ -65,82 +54,37 @@ public class SetVrState : MonoBehaviour
         {
             Debug.LogWarning("[SetVrState] togglingXR component not found!");
         }
-
-        // Setup cameras with a delay to let XR initialize
-        StartCoroutine(DelayedCameraSetup(headsetOr2D == 1, 0.2f));
     }
 
-    private void SetupCamerasImmediate(bool isVRMode)
+    private void DelayedCameraSetup()
     {
-        Debug.Log($"[SetVrState] Setting up cameras immediately. VR Mode: {isVRMode}");
-
-        // Disable both cameras first
-        if (mainCamera2D != null) mainCamera2D.SetActive(false);
-        if (mainCameraVR != null) mainCameraVR.SetActive(false);
-
-        // Enable the correct camera
-        if (isVRMode)
-        {
-            if (mainCameraVR != null)
-            {
-                mainCameraVR.SetActive(true);
-                Debug.Log("[SetVrState] VR camera activated");
-
-                // Update Canvas event camera to VR camera
-                UpdateCanvasEventCamera(mainCameraVR);
-            }
-            else
-            {
-                Debug.LogError("[SetVrState] VR camera GameObject is not assigned in Inspector!");
-            }
-
-            // Enable VR reticle
-            if (vrReticle != null)
-            {
-                vrReticle.SetActive(true);
-                Debug.Log("[SetVrState] VR reticle enabled");
-            }
-            else
-            {
-                Debug.LogWarning("[SetVrState] VR reticle not assigned in Inspector!");
-            }
-        }
-        else
-        {
-            if (mainCamera2D != null)
-            {
-                mainCamera2D.SetActive(true);
-                Debug.Log("[SetVrState] 2D camera activated");
-
-                // Update Canvas event camera to 2D camera
-                UpdateCanvasEventCamera(mainCamera2D);
-            }
-            else
-            {
-                Debug.LogError("[SetVrState] 2D camera GameObject is not assigned in Inspector!");
-            }
-
-            // Disable VR reticle in non-VR modes
-            if (vrReticle != null)
-            {
-                vrReticle.SetActive(false);
-            }
-        }
+        int headsetOr2D = PlayerPrefs.GetInt("toggleToVR", 0);
+        SetupCameras(headsetOr2D == 1);
     }
 
-    private IEnumerator DelayedCameraSetup(bool isVRMode, float delay)
+    private void SetupCameras(bool isVRMode)
     {
-        Debug.Log($"[SetVrState] Waiting {delay}s before camera setup...");
-        yield return new WaitForSeconds(delay);
+        Debug.Log($"[SetVrState] Setting up cameras. VR Mode: {isVRMode}");
 
-        // Disable both cameras
-        if (mainCamera2D != null) mainCamera2D.SetActive(false);
-        if (mainCameraVR != null) mainCameraVR.SetActive(false);
+        // First disable both cameras
+        if (mainCamera2D != null)
+        {
+            mainCamera2D.SetActive(false);
+        }
 
-        // Wait one more frame
-        yield return null;
+        if (mainCameraVR != null)
+        {
+            mainCameraVR.SetActive(false);
+        }
 
-        // Enable the correct camera
+        // Wait one frame for deactivation
+        StartCoroutine(ActivateCameraAfterFrame(isVRMode));
+    }
+
+    private System.Collections.IEnumerator ActivateCameraAfterFrame(bool isVRMode)
+    {
+        yield return null; // Wait one frame
+
         if (isVRMode)
         {
             Debug.Log("[SetVrState] Activating VR camera");
@@ -148,27 +92,26 @@ public class SetVrState : MonoBehaviour
             if (mainCameraVR != null)
             {
                 mainCameraVR.SetActive(true);
-                UpdateCanvasEventCamera(mainCameraVR);
+
+                // Enable VR reticle
+                if (vrReticle != null)
+                {
+                    vrReticle.SetActive(true);
+                    Debug.Log("[SetVrState] VR reticle enabled");
+                }
+                else
+                {
+                    Debug.LogWarning("[SetVrState] VR reticle not assigned! Please assign it in the Inspector.");
+                }
             }
             else
             {
-                Debug.LogError("[SetVrState] VR camera GameObject is not assigned in Inspector!");
+                Debug.LogError("[SetVrState] VR camera GameObject is not assigned!");
             }
 
             if (mainCamera2D != null)
             {
                 mainCamera2D.SetActive(false);
-            }
-
-            // Enable VR reticle
-            if (vrReticle != null)
-            {
-                vrReticle.SetActive(true);
-                Debug.Log("[SetVrState] VR reticle enabled");
-            }
-            else
-            {
-                Debug.LogWarning("[SetVrState] VR reticle not assigned! Assign it in the Inspector for VR interaction.");
             }
         }
         else
@@ -178,11 +121,10 @@ public class SetVrState : MonoBehaviour
             if (mainCamera2D != null)
             {
                 mainCamera2D.SetActive(true);
-                UpdateCanvasEventCamera(mainCamera2D);
             }
             else
             {
-                Debug.LogError("[SetVrState] 2D camera GameObject is not assigned in Inspector!");
+                Debug.LogError("[SetVrState] 2D camera GameObject is not assigned!");
             }
 
             if (mainCameraVR != null)
@@ -198,36 +140,6 @@ public class SetVrState : MonoBehaviour
         }
     }
 
-    private void UpdateCanvasEventCamera(GameObject cameraObject)
-    {
-        if (cameraObject == null) return;
-
-        Camera cam = cameraObject.GetComponent<Camera>();
-        if (cam == null)
-        {
-            Debug.LogWarning($"[SetVrState] No Camera component found on {cameraObject.name}");
-            return;
-        }
-
-        // Update main canvas if assigned
-        if (mainCanvas != null)
-        {
-            mainCanvas.worldCamera = cam;
-            Debug.Log($"[SetVrState] Canvas event camera updated to: {cameraObject.name}");
-        }
-
-        // Also update any other World Space canvases in the scene
-        Canvas[] allCanvases = FindObjectsOfType<Canvas>();
-        foreach (Canvas canvas in allCanvases)
-        {
-            if (canvas.renderMode == RenderMode.WorldSpace)
-            {
-                canvas.worldCamera = cam;
-                Debug.Log($"[SetVrState] Updated world space canvas '{canvas.gameObject.name}' event camera to: {cameraObject.name}");
-            }
-        }
-    }
-
     private void UpdateVRSprites(bool isVRMode)
     {
         if (spriterendererVR != null)
@@ -239,7 +151,7 @@ public class SetVrState : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[SetVrState] Sprite renderer not assigned in Inspector!");
+            Debug.LogWarning("[SetVrState] Sprite renderer not assigned!");
         }
     }
 

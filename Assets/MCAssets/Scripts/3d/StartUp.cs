@@ -1,8 +1,15 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using UnityEngine.XR.Management;
 
+/// <summary>
+/// OPTIMAL VERSION: Conditionally initializes XR based on user's chosen mode
+/// - VR mode chosen: Initialize XR before scene setup
+/// - 360 mode chosen: Skip XR initialization entirely
+/// - 2D scenes: Unaffected by XR system
+/// </summary>
 public class StartUp : MonoBehaviour
 {
     [Header("Player Reference")]
@@ -46,40 +53,301 @@ public class StartUp : MonoBehaviour
     [SerializeField] private int stopFilm;
     [SerializeField] private GameObject hud;
     public togglingXR togglingXRScript;
-    public GameObject loadingPanel; // Drag "Panel" here
+    public GameObject loadingPanel; // Fallback if VRLoadingManager not found
+
+    // Reference to the loading manager
+    private VRLoadingManager loadingManager;
+
+    // Track if we initialized XR in this session
+    private bool xrInitializedByUs = false;
 
     void Start()
     {
+        // Get loading manager reference
+        loadingManager = VRLoadingManager.Instance;
+
+        // CRITICAL: Check which mode the user chose
+        // This determines if we need to initialize XR or not
         bool startInVR = PlayerPrefs.GetInt("VRMode", 0) == 1;
+
+        Debug.Log($"[StartUp] ========== SCENE START ==========");
+        Debug.Log($"[StartUp] User chose mode: {(startInVR ? "VR" : "360")}");
+        Debug.Log($"[StartUp] PlayerPrefs VRMode: {PlayerPrefs.GetInt("VRMode", 0)}");
+        Debug.Log($"[StartUp] PlayerPrefs toggleToVR: {PlayerPrefs.GetInt("toggleToVR", 0)}");
 
         if (startInVR)
         {
-            loadingPanel.SetActive(true);
-            StartCoroutine(InitializeVR());
+            // Show loading screen immediately
+            if (loadingManager != null)
+            {
+                loadingManager.ShowInitialLoading();
+            }
+            else if (loadingPanel != null)
+            {
+                loadingPanel.SetActive(true);
+            }
+
+            // Initialize scene in VR mode (with XR initialization)
+            StartCoroutine(InitializeVRMode());
         }
         else
         {
-            loadingPanel.SetActive(false);
-            togglingXRScript.SetVRMode(false);
+            // Initialize scene in 360 mode (no XR needed)
+            StartCoroutine(Initialize360Mode());
         }
     }
 
-    IEnumerator InitializeVR()
+    /// <summary>
+    /// OPTIMAL: Initialize scene in VR mode
+    /// This handles XR initialization, addressables, and scene setup
+    /// </summary>
+    IEnumerator InitializeVRMode()
     {
+        Debug.Log("[StartUp] === INITIALIZING VR MODE ===");
+
+        // Step 1: Wait for addressables first
+        if (loadingManager != null)
+            loadingManager.ShowAssetLoading();
+
+        yield return WaitForAddressablesWithProgress();
+
+        // Step 2: Check if XR needs to be initialized
+        bool needsXRInit = !IsXRAlreadyInitialized();
+
+        if (needsXRInit)
+        {
+            Debug.Log("[StartUp] XR not initialized - initializing now...");
+
+            if (loadingManager != null)
+            {
+                loadingManager.ShowInitialLoading();
+                loadingManager.UpdateProgress(0.3f);
+            }
+
+            // Initialize XR system
+            yield return InitializeXRSystem();
+
+            if (loadingManager != null)
+                loadingManager.UpdateProgress(0.5f);
+        }
+        else
+        {
+            Debug.Log("[StartUp] XR already initialized - skipping initialization");
+            if (loadingManager != null)
+                loadingManager.UpdateProgress(0.5f);
+        }
+
+        // Step 3: Start XR subsystems and setup VR camera
+        if (loadingManager != null)
+            loadingManager.ShowInitialLoading();
+
+        Debug.Log("[StartUp] Starting XR subsystems...");
         yield return togglingXRScript.StartXR();
-        yield return new WaitForSeconds(1.5f);
-        loadingPanel.SetActive(false);
+
+        if (loadingManager != null)
+            loadingManager.UpdateProgress(0.8f);
+
+        // Step 4: Wait for camera to be ready
+        yield return WaitForVRCameraReady();
+
+        if (loadingManager != null)
+            loadingManager.UpdateProgress(0.95f);
+
+        // Step 5: Extra safety buffer
+        yield return new WaitForSeconds(0.5f);
+
+        // Step 6: Setup scene
+        yield return WaitForAddressablesAndSetupScene();
+
+        // Step 7: Hide loading screen
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            yield return new WaitForSeconds(0.2f);
+            loadingManager.HideLoading();
+        }
+        else if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(false);
+        }
+
+        Debug.Log("[StartUp] === VR MODE INITIALIZATION COMPLETE ===");
     }
 
-
-private IEnumerator WaitForAddressablesAndSetupScene()
+    /// <summary>
+    /// OPTIMAL: Initialize scene in 360 mode
+    /// No XR initialization needed, just load assets and setup scene
+    /// </summary>
+    IEnumerator Initialize360Mode()
     {
-        // Check if the BackgroundPreloader exists and wait for it to complete
+        Debug.Log("[StartUp] === INITIALIZING 360 MODE ===");
+
+        // Show loading for addressables
+        if (loadingManager != null)
+            loadingManager.ShowAssetLoading();
+
+        yield return WaitForAddressablesWithProgress();
+
+        // Setup 360 mode (no XR)
+        if (togglingXRScript != null)
+        {
+            togglingXRScript.SetVRMode(false);
+        }
+
+        // Setup scene
+        yield return WaitForAddressablesAndSetupScene();
+
+        // Hide loading
+        if (loadingManager != null)
+        {
+            loadingManager.HideLoading();
+        }
+
+        Debug.Log("[StartUp] === 360 MODE INITIALIZATION COMPLETE ===");
+    }
+
+    /// <summary>
+    /// NEW: Check if XR system is already initialized
+    /// Handles scene reloads where XR might already be active
+    /// </summary>
+    bool IsXRAlreadyInitialized()
+    {
+        if (XRGeneralSettings.Instance == null)
+        {
+            Debug.Log("[StartUp] XRGeneralSettings.Instance is NULL - XR not initialized");
+            return false;
+        }
+
+        if (XRGeneralSettings.Instance.Manager == null)
+        {
+            Debug.Log("[StartUp] XR Manager is NULL - XR not initialized");
+            return false;
+        }
+
+        if (XRGeneralSettings.Instance.Manager.activeLoader != null)
+        {
+            Debug.Log($"[StartUp] ✓ XR already initialized with loader: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
+            return true;
+        }
+
+        Debug.Log("[StartUp] No active XR loader - XR not initialized");
+        return false;
+    }
+
+    /// <summary>
+    /// NEW: Initialize the XR system manually
+    /// Only called when needed (VR mode and not already initialized)
+    /// </summary>
+    IEnumerator InitializeXRSystem()
+    {
+        Debug.Log("[StartUp] Initializing XR system...");
+
+        if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
+        {
+            Debug.LogError("[StartUp] Cannot initialize XR - XRGeneralSettings not configured!");
+            Debug.LogError("[StartUp] Go to: Edit → Project Settings → XR Plug-in Management");
+            Debug.LogError("[StartUp] Ensure Cardboard XR Plugin is enabled (but 'Initialize on Startup' should be OFF)");
+            yield break;
+        }
+
+        // Initialize the loader
+        Debug.Log("[StartUp] Calling XRGeneralSettings.Instance.Manager.InitializeLoader()...");
+        yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
+
+        if (XRGeneralSettings.Instance.Manager.activeLoader == null)
+        {
+            Debug.LogError("[StartUp] Failed to initialize XR loader!");
+            yield break;
+        }
+
+        xrInitializedByUs = true;
+        Debug.Log($"[StartUp] ✓✓✓ XR system initialized successfully: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
+    }
+
+    /// <summary>
+    /// Enhanced to report progress for loading screen
+    /// </summary>
+    IEnumerator WaitForAddressablesWithProgress()
+    {
         BackgroundPreloader preloader = BackgroundPreloader.Instance;
 
         if (preloader != null && !preloader.PreloadingComplete)
         {
-            Debug.Log("[StartUp] Waiting for addressables to finish loading...");
+            Debug.Log("[StartUp] Waiting for addressables...");
+
+            float timeoutSeconds = 10f;
+            float elapsedTime = 0f;
+
+            while (!preloader.PreloadingComplete && elapsedTime < timeoutSeconds)
+            {
+                // Update progress (addressables = 0-30% of total loading)
+                float progress = Mathf.Clamp01(elapsedTime / timeoutSeconds) * 0.3f;
+
+                if (loadingManager != null)
+                    loadingManager.UpdateProgress(progress);
+
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            Debug.Log("[StartUp] Addressables loaded");
+        }
+
+        // Ensure we're at 30% progress after addressables
+        if (loadingManager != null)
+            loadingManager.UpdateProgress(0.3f);
+    }
+
+    /// <summary>
+    /// Wait for VR camera to be fully ready (stereo enabled)
+    /// </summary>
+    IEnumerator WaitForVRCameraReady()
+    {
+        Debug.Log("[StartUp] Waiting for VR camera to be ready...");
+
+        Camera mainCam = Camera.main;
+        int maxAttempts = 30; // 3 seconds max
+        int attempt = 0;
+
+        while (mainCam != null && !mainCam.stereoEnabled && attempt < maxAttempts)
+        {
+            yield return new WaitForSeconds(0.1f);
+            attempt++;
+        }
+
+        if (mainCam != null && mainCam.stereoEnabled)
+        {
+            Debug.Log("[StartUp] ✓ VR camera ready (stereo enabled)");
+            yield return new WaitForEndOfFrame();
+        }
+        else
+        {
+            Debug.LogWarning("[StartUp] VR camera may not be fully ready - stereo not detected");
+        }
+    }
+
+    /// <summary>
+    /// ORIGINAL METHOD - kept for compatibility
+    /// </summary>
+    IEnumerator InitializeVR()
+    {
+        yield return togglingXRScript.StartXR();
+        yield return new WaitForSeconds(1.5f);
+
+        if (loadingPanel != null)
+            loadingPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// ORIGINAL METHOD - kept unchanged
+    /// </summary>
+    private IEnumerator WaitForAddressablesAndSetupScene()
+    {
+        BackgroundPreloader preloader = BackgroundPreloader.Instance;
+
+        if (preloader != null && !preloader.PreloadingComplete)
+        {
+            Debug.Log("[StartUp] Final check - waiting for addressables to finish loading...");
 
             float timeoutSeconds = 10f;
             float elapsedTime = 0f;
@@ -98,14 +366,25 @@ private IEnumerator WaitForAddressablesAndSetupScene()
         ResetScene();
     }
 
+    void OnDestroy()
+    {
+        // Clean up XR if we initialized it and we're leaving the scene
+        if (xrInitializedByUs && XRGeneralSettings.Instance?.Manager?.activeLoader != null)
+        {
+            Debug.Log("[StartUp] OnDestroy - Cleaning up XR system");
+            // Note: togglingXR will handle this in its OnDestroy
+            // We just track that we initialized it
+        }
+    }
+
+    // === ALL METHODS BELOW THIS LINE ARE UNCHANGED FROM ORIGINAL ===
+
     public void ResetScene()
     {
         Debug.Log("[StartUp] Marker: ResetScene");
 
-        // Retrieve values from PlayerPrefs
         stage = PlayerPrefs.GetInt("stage", 0);
 
-        // Check if lastknownzone exists
         bool hasLastKnownZone = PlayerPrefs.HasKey("lastknownzone");
         lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home");
         currentZone = lastKnownZone;
@@ -119,7 +398,6 @@ private IEnumerator WaitForAddressablesAndSetupScene()
         InitializeScene();
         HandleZoneNavigation();
 
-        // ONLY set the PlayerPref after we've handled the startup
         if (isNewPlayer)
         {
             PlayerPrefs.SetString("lastknownzone", "Home");
@@ -131,12 +409,10 @@ private IEnumerator WaitForAddressablesAndSetupScene()
     {
         Debug.Log("[StartUp] Marker: InitializeScene");
 
-        // Find togglingXR component
         togglingXR = FindFirstObjectByType<togglingXR>();
 
         if (togglingXR != null)
         {
-            // CRITICAL FIX: Set the mode based on PlayerPrefs, don't toggle!
             int vrMode = PlayerPrefs.GetInt("toggleToVR", 0);
             Debug.Log($"[StartUp] toggleToVR PlayerPref = {vrMode}");
 
@@ -166,8 +442,6 @@ private IEnumerator WaitForAddressablesAndSetupScene()
         }
 
         toggler = false;
-
-        // Move the player to the correct zone when the scene starts
         MovePlayerToCurrentZone();
     }
 

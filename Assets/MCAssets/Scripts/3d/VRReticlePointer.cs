@@ -39,7 +39,6 @@ public class VRReticlePointer : MonoBehaviour
     private Camera mainCamera;
     private GameObject currentTarget;
 
-    // UPDATED: Changed to look for SpriteBasedFocusIndicator instead
     private SpriteBasedFocusIndicator focusIndicator;
 
     private bool isRotating = false;
@@ -52,7 +51,6 @@ public class VRReticlePointer : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         mainCamera = GetComponentInChildren<Camera>();
 
-        // UPDATED: Changed to get SpriteBasedFocusIndicator
         focusIndicator = GetComponent<SpriteBasedFocusIndicator>();
 
         if (focusIndicator == null)
@@ -198,7 +196,8 @@ public class VRReticlePointer : MonoBehaviour
             Debug.DrawRay(ray.origin, ray.direction * maxInteractionDistance, Color.yellow);
         }
 
-        if (Physics.Raycast(ray, out hitInfo, maxInteractionDistance, interactableLayers))
+        // Cast ray without layer filtering - we'll check for BoxCollider with isTrigger in HandleTargetInteraction
+        if (Physics.Raycast(ray, out hitInfo, maxInteractionDistance))
         {
             if (showDebugRay)
             {
@@ -216,20 +215,18 @@ public class VRReticlePointer : MonoBehaviour
     private void HandleTargetInteraction(GameObject hitObject)
     {
         // Check if this is an interactable object
+        // Interactive objects must have a BoxCollider with isTrigger = true
         bool isInteractable = false;
 
-        // Consider object interactable if it has a BoxCollider on the correct layer
         BoxCollider boxCollider = hitObject.GetComponent<BoxCollider>();
-        if (boxCollider != null && ((1 << hitObject.layer) & interactableLayers) != 0)
+        if (boxCollider != null && boxCollider.isTrigger)
         {
             isInteractable = true;
-        }
 
-        // Also consider objects with EventTrigger components as interactable
-        EventTrigger eventTrigger = hitObject.GetComponent<EventTrigger>();
-        if (eventTrigger != null)
-        {
-            isInteractable = true;
+            if (showDebugRay)
+            {
+                Debug.Log($"Found interactive object: {hitObject.name} (BoxCollider isTrigger)");
+            }
         }
 
         // Handle the target interaction based on interactability

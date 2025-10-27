@@ -222,7 +222,7 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
         return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (mainCamera == null || squareIndicator == null || circleIndicator == null || ringIndicator == null) return;
 
@@ -230,7 +230,7 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
         Vector3 position = mainCamera.transform.position +
                           mainCamera.transform.forward * indicatorDistance;
 
-        // Only update the indicators, not the parent transform
+        // Update all indicator positions to follow the camera
         squareIndicator.transform.position = position;
         squareIndicator.transform.rotation = mainCamera.transform.rotation;
 
@@ -239,38 +239,6 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
 
         ringIndicator.transform.position = position;
         ringIndicator.transform.rotation = mainCamera.transform.rotation;
-
-        // Raycast check for interactable objects
-        if (Physics.Raycast(mainCamera.transform.position, mainCamera.transform.forward, out RaycastHit hit, 100f))
-        {
-            if (debugMode)
-            {
-                Debug.DrawLine(mainCamera.transform.position, hit.point, Color.red, 0.1f);
-                Debug.Log("Hit object: " + hit.collider.gameObject.name +
-                          " | isTrigger: " + hit.collider.isTrigger +
-                          " | Has BoxCollider: " + (hit.collider.GetComponent<BoxCollider>() != null));
-            }
-
-            // Check if this is a trigger BoxCollider, which is what we want for interactive objects
-            Collider hitCollider = hit.collider;
-            bool isInteractive = false;
-
-            if (hitCollider != null && hitCollider.GetType() == typeof(BoxCollider) && hitCollider.isTrigger)
-            {
-                isInteractive = true;
-
-                if (debugMode)
-                {
-                    Debug.Log("Found interactive object: " + hit.collider.gameObject.name);
-                }
-            }
-
-            SetInteractiveState(isInteractive);
-        }
-        else
-        {
-            SetInteractiveState(false);
-        }
     }
 
     public void SetInteractiveState(bool interactive)
@@ -279,7 +247,7 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
 
         isOverInteractive = interactive;
 
-        // Update indicator visibility and color
+        // Update indicator visibility
         UpdateIndicatorVisibility();
 
         if (debugMode)
@@ -363,6 +331,15 @@ public class SpriteBasedFocusIndicator : MonoBehaviour
             {
                 renderer.sprite = ringSprite;
             }
+        }
+    }
+
+    // Public method to change the indicator distance
+    public void SetIndicatorDistance(float distance)
+    {
+        if (distance > 0)
+        {
+            indicatorDistance = distance;
         }
     }
 }

@@ -68,7 +68,7 @@ public class StartUp : MonoBehaviour
 
         // CRITICAL: Check which mode the user chose
         // This determines if we need to initialize XR or not
-        bool startInVR = PlayerPrefs.GetInt("VRMode", 0) == 1;
+        bool startInVR = PlayerPrefs.GetInt("toggleToVR", 0) == 1;
 
         Debug.Log($"[StartUp] ========== SCENE START ==========");
         Debug.Log($"[StartUp] User chose mode: {(startInVR ? "VR" : "360")}");

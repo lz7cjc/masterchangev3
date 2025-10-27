@@ -11,6 +11,7 @@ using UnityEngine.EventSystems;
 /// - Cleaner debug logging
 /// - Better coordination with loading screens
 /// - Faster initialization
+/// UPDATED: Now uses VRReticlePointer instead of CustomReticlePointer
 /// </summary>
 public class togglingXR : MonoBehaviour
 {
@@ -26,8 +27,9 @@ public class togglingXR : MonoBehaviour
     [Header("Debug")]
     public bool enableDebugLogging = true;
 
-    private CustomReticlePointer reticlePointer;
-    private CameraController cameraController;
+    private VRReticlePointer reticlePointer360;
+    private VRReticlePointer reticlePointerVR;
+    private CameraController cameraController; // Legacy support if still used
     private PlayerInput playerInput360;
     private PlayerInput playerInputVR;
     private EventSystem eventSystem;
@@ -45,13 +47,24 @@ public class togglingXR : MonoBehaviour
             Debug.LogWarning("[VRLOAD] EventSystem not found!");
         }
 
-        // Get camera references
+        // Get camera references and their VRReticlePointer components
         if (mainCamera360 != null)
         {
             playerInput360 = mainCamera360.GetComponent<PlayerInput>();
+            reticlePointer360 = mainCamera360.GetComponent<VRReticlePointer>();
+
             if (playerInput360 != null)
             {
                 Debug.Log("[VRLOAD] ✓ PlayerInput found on 360 camera");
+            }
+            if (reticlePointer360 != null)
+            {
+                Debug.Log("[VRLOAD] ✓ VRReticlePointer found on 360 camera");
+            }
+            else
+            {
+                Debug.LogWarning("[VRLOAD] VRReticlePointer not found on 360 camera - trying to add it");
+                reticlePointer360 = mainCamera360.AddComponent<VRReticlePointer>();
             }
         }
         else
@@ -62,26 +75,33 @@ public class togglingXR : MonoBehaviour
         if (mainCameraVR != null)
         {
             playerInputVR = mainCameraVR.GetComponent<PlayerInput>();
+            reticlePointerVR = mainCameraVR.GetComponent<VRReticlePointer>();
+
+            if (reticlePointerVR != null)
+            {
+                Debug.Log("[VRLOAD] ✓ VRReticlePointer found on VR camera");
+            }
+            else
+            {
+                Debug.LogWarning("[VRLOAD] VRReticlePointer not found on VR camera - trying to add it");
+                reticlePointerVR = mainCameraVR.AddComponent<VRReticlePointer>();
+            }
         }
         else
         {
             Debug.LogError("[VRLOAD] Main CameraVR not assigned!");
         }
 
-        // Get VR reticle components
+        // Legacy support: Get VR reticle components from vrReticleObject if assigned
         if (vrReticleObject != null)
         {
-            reticlePointer = vrReticleObject.GetComponent<CustomReticlePointer>();
             cameraController = vrReticleObject.GetComponent<CameraController>();
 
-            if (reticlePointer == null)
+            // Also try to get VRReticlePointer from vrReticleObject as fallback
+            if (reticlePointer360 == null)
             {
-                Debug.LogError("[VRLOAD] CustomReticlePointer not found on VR Reticle!");
+                reticlePointer360 = vrReticleObject.GetComponent<VRReticlePointer>();
             }
-        }
-        else
-        {
-            Debug.LogError("[VRLOAD] VR Reticle Object not assigned!");
         }
 
         LogSystemInfo();
@@ -193,10 +213,14 @@ public class togglingXR : MonoBehaviour
         // Brief delay for subsystems to start
         yield return new WaitForSeconds(0.2f);
 
+        // Switch cameras
+        if (mainCamera360 != null) mainCamera360.SetActive(false);
+        if (mainCameraVR != null) mainCameraVR.SetActive(true);
+
         // Setup VR mode
         EnableGyroscope();
         DisableTouchControls();
-        SetVRMode();
+        SetVRModeOnReticle();
 
         isXRActive = true;
 
@@ -232,6 +256,10 @@ public class togglingXR : MonoBehaviour
             Debug.Log("[VRLOAD] ✓ XR stopped");
         }
 
+        // Switch cameras
+        if (mainCameraVR != null) mainCameraVR.SetActive(false);
+        if (mainCamera360 != null) mainCamera360.SetActive(true);
+
         EnableTouchControls();
         Set360Mode();
 
@@ -239,31 +267,67 @@ public class togglingXR : MonoBehaviour
         Debug.Log("[VRLOAD] ========== XR STOP COMPLETE ✓ ==========");
     }
 
-    private void SetVRMode()
+    private void SetVRModeOnReticle()
     {
-        if (reticlePointer != null)
+        // Set VR mode on VR camera's reticle pointer
+        if (reticlePointerVR != null)
         {
-            reticlePointer.SetMode(CustomReticlePointer.ViewMode.ModeVR);
-            Debug.Log("[VRLOAD] ✓ Reticle: ModeVR");
+            reticlePointerVR.SetMode(VRReticlePointer.ViewMode.ModeVR);
+            Debug.Log("[VRLOAD] ✓ VR Camera Reticle: ModeVR");
         }
-        else if (cameraController != null)
+        else if (reticlePointer360 != null)
         {
-            cameraController.SetMode(CustomReticlePointer.ViewMode.ModeVR);
-            Debug.Log("[VRLOAD] ✓ CameraController: ModeVR");
+            // Fallback to 360 camera's pointer if VR pointer not available
+            reticlePointer360.SetMode(VRReticlePointer.ViewMode.ModeVR);
+            Debug.Log("[VRLOAD] ✓ 360 Camera Reticle (fallback): ModeVR");
+        }
+
+        // Legacy support
+        if (cameraController != null)
+        {
+            try
+            {
+                // Try to call SetMode with reflection in case CameraController has it
+                var method = cameraController.GetType().GetMethod("SetMode");
+                if (method != null)
+                {
+                    // Assuming CameraController has same ViewMode enum
+                    method.Invoke(cameraController, new object[] { 2 }); // ModeVR = 2
+                    Debug.Log("[VRLOAD] ✓ CameraController: ModeVR (legacy)");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[VRLOAD] Could not set mode on CameraController: {e.Message}");
+            }
         }
     }
 
     private void Set360Mode()
     {
-        if (reticlePointer != null)
+        // Set 360 mode on 360 camera's reticle pointer
+        if (reticlePointer360 != null)
         {
-            reticlePointer.SetMode(CustomReticlePointer.ViewMode.Mode360);
-            Debug.Log("[VRLOAD] ✓ Reticle: Mode360");
+            reticlePointer360.SetMode(VRReticlePointer.ViewMode.Mode360);
+            Debug.Log("[VRLOAD] ✓ 360 Camera Reticle: Mode360");
         }
-        else if (cameraController != null)
+
+        // Legacy support
+        if (cameraController != null)
         {
-            cameraController.SetMode(CustomReticlePointer.ViewMode.Mode360);
-            Debug.Log("[VRLOAD] ✓ CameraController: Mode360");
+            try
+            {
+                var method = cameraController.GetType().GetMethod("SetMode");
+                if (method != null)
+                {
+                    method.Invoke(cameraController, new object[] { 1 }); // Mode360 = 1
+                    Debug.Log("[VRLOAD] ✓ CameraController: Mode360 (legacy)");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[VRLOAD] Could not set mode on CameraController: {e.Message}");
+            }
         }
     }
 
@@ -362,7 +426,7 @@ public class togglingXR : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[VRLOAD] ✗ XRGeneralSettings NULL - Enable XR Plugin Management!");
+            Debug.LogWarning("[VRLOAD] ⚠ XRGeneralSettings NULL - This is OK for 360 mode only");
         }
     }
 
@@ -395,6 +459,14 @@ public class togglingXR : MonoBehaviour
         {
             Debug.Log($"[VRLOAD] Gyroscope enabled: {Input.gyro.enabled}");
         }
+    }
+
+    /// <summary>
+    /// Check if currently in VR mode
+    /// </summary>
+    public bool IsVRActive()
+    {
+        return isXRActive;
     }
 
     void OnDestroy()

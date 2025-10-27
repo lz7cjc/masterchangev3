@@ -169,10 +169,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ff3224dd77cdce4e878573fa7096f6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _progressBar: {fileID: 370905863}
+  progressBar: {fileID: 0}
   statusText: {fileID: 672410387}
   percentageText: {fileID: 1321219795}
   minimumLoadTime: 2
+  targetScene: mainVR
 --- !u!114 &370905863
 MonoBehaviour:
   m_ObjectHideFlags: 0

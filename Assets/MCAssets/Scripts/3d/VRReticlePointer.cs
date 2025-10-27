@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -46,6 +47,9 @@ public class VRReticlePointer : MonoBehaviour
     private Vector3 currentRotation;
     private Vector3 targetRotation;
 
+    // Flag to track if we're using Input System or fallback
+    private bool useInputSystemFallback = false;
+
     private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -60,15 +64,30 @@ public class VRReticlePointer : MonoBehaviour
             Debug.Log("Added SpriteBasedFocusIndicator component");
         }
 
-        if (playerInput == null)
+        // Try to get Input Actions, but don't fail if they're not configured
+        if (playerInput != null)
         {
-            Debug.LogError("PlayerInput component not found!");
-            return;
-        }
+            try
+            {
+                lookAction = playerInput.actions["Look"];
+                touchPressAction = playerInput.actions["TouchPress"];
+                clickAction = playerInput.actions["Click"];
 
-        lookAction = playerInput.actions["Look"];
-        touchPressAction = playerInput.actions["TouchPress"];
-        clickAction = playerInput.actions["Click"];
+                Debug.Log("[VRReticlePointer] Using Input System actions");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[VRReticlePointer] Input Actions not configured: {e.Message}");
+                Debug.LogWarning("[VRReticlePointer] Falling back to direct mouse input for editor testing");
+                useInputSystemFallback = true;
+                playerInput = null;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[VRReticlePointer] No PlayerInput component - using mouse input fallback");
+            useInputSystemFallback = true;
+        }
 
         currentRotation = transform.eulerAngles;
         targetRotation = currentRotation;
@@ -78,6 +97,10 @@ public class VRReticlePointer : MonoBehaviour
 
     private void ConfigureControls()
     {
+        // Only configure if we have valid Input System setup
+        if (playerInput == null || useInputSystemFallback)
+            return;
+
         if (touchPressAction != null)
         {
             touchPressAction.performed -= StartRotation;
@@ -127,17 +150,61 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (currentMode == ViewMode.ModeVR) return;
 
-        if (currentMode == ViewMode.Mode360 && isRotating)
+        // Handle rotation in 360 mode
+        if (currentMode == ViewMode.Mode360)
         {
-            HandleRotation();
+            // If using fallback input, handle mouse directly
+            if (useInputSystemFallback || playerInput == null)
+            {
+                HandleMouseInput();
+            }
+
+            if (isRotating)
+            {
+                HandleRotation();
+            }
         }
 
         CheckInteractions();
     }
 
+    private void HandleMouseInput()
+    {
+        // Direct mouse input for editor testing when Input System is not configured
+        // Use right mouse button for rotation
+        if (Input.GetMouseButtonDown(1)) // Right click
+        {
+            isRotating = true;
+            previousLookInput = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            currentRotation = new Vector3(
+                Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
+                transform.eulerAngles.y,
+                0
+            );
+            targetRotation = currentRotation;
+        }
+
+        if (Input.GetMouseButtonUp(1))
+        {
+            isRotating = false;
+        }
+    }
+
     private void HandleRotation()
     {
-        Vector2 lookInput = lookAction.ReadValue<Vector2>();
+        Vector2 lookInput;
+
+        // Use Input System if configured, otherwise use direct mouse input
+        if (!useInputSystemFallback && playerInput != null && lookAction != null)
+        {
+            lookInput = lookAction.ReadValue<Vector2>();
+        }
+        else
+        {
+            // Fallback to direct mouse position for editor testing
+            lookInput = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+        }
+
         Vector2 lookDelta = lookInput - previousLookInput;
 
         // Allow full 360 horizontal rotation
@@ -171,7 +238,12 @@ public class VRReticlePointer : MonoBehaviour
         if (currentMode == ViewMode.Mode2D || currentMode == ViewMode.ModeVR) return;
 
         isRotating = true;
-        previousLookInput = lookAction.ReadValue<Vector2>();
+
+        if (lookAction != null)
+        {
+            previousLookInput = lookAction.ReadValue<Vector2>();
+        }
+
         currentRotation = new Vector3(
             Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
             transform.eulerAngles.y,

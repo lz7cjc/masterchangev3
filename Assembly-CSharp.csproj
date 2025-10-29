@@ -97,6 +97,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\AddressablePositioner.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\Uireticlepointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\favourites.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRHUDMaterials.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Assets\MCAssets\Scripts\vr\VRSceneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\globalvariables.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\rotateCameraold4huds.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\VRReticlePointer.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\FlyCameraControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\loading.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AI\ContentManager.cs" />
@@ -276,7 +278,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\sendemail.cs" />

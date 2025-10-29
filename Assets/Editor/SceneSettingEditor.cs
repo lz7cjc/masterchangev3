@@ -11,7 +11,7 @@ public static class SceneSettingsEditor
     static SceneSettingsEditor()
     {
         // Apply settings when the hierarchy changes (scene is loaded or updated)
-        EditorApplication.hierarchyChanged += ApplyCanvasSettings;
+     //   EditorApplication.hierarchyChanged += ApplyCanvasSettings;
     }
 
     private static void ApplyCanvasSettings()

@@ -131,6 +131,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetDeliveryConfig.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\Editor\PlayerPrefsEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\DeviceTierTargetingTools.cs" />
+    <Compile Include="Assets\Editor\Scripts\EventTriggerBatchFixer.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AppBundleRunner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Utils\EmptyDictionary.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildAndRunner.cs" />

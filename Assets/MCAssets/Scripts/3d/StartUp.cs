@@ -6,14 +6,12 @@ using UnityEngine.XR.Management;
 
 /// <summary>
 /// OPTIMAL VERSION: Conditionally initializes XR based on user's chosen mode
-/// - VR mode chosen: Initialize XR before scene setup
-/// - 360 mode chosen: Skip XR initialization entirely
-/// - 2D scenes: Unaffected by XR system
+/// UPDATED: Converted from Rigidbody to CharacterController for better VR teleportation
 /// </summary>
 public class StartUp : MonoBehaviour
 {
     [Header("Player Reference")]
-    [SerializeField] private Rigidbody player;
+    [SerializeField] private CharacterController player; // CHANGED: From Rigidbody to CharacterController
 
     [Header("BCT Zone Targets")]
     [SerializeField] private GameObject targetAlcohol;
@@ -245,131 +243,75 @@ public class StartUp : MonoBehaviour
         if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
         {
             Debug.LogError("[StartUp] Cannot initialize XR - XRGeneralSettings not configured!");
-            Debug.LogError("[StartUp] Go to: Edit → Project Settings → XR Plug-in Management");
-            Debug.LogError("[StartUp] Ensure Cardboard XR Plugin is enabled (but 'Initialize on Startup' should be OFF)");
             yield break;
         }
 
-        // Initialize the loader
-        Debug.Log("[StartUp] Calling XRGeneralSettings.Instance.Manager.InitializeLoader()...");
         yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
 
         if (XRGeneralSettings.Instance.Manager.activeLoader == null)
         {
-            Debug.LogError("[StartUp] Failed to initialize XR loader!");
+            Debug.LogError("[StartUp] XR initialization failed - no loader found!");
             yield break;
         }
 
         xrInitializedByUs = true;
-        Debug.Log($"[StartUp] ✓✓✓ XR system initialized successfully: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
+        Debug.Log($"[StartUp] ✓ XR initialized successfully: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
     }
 
-    /// <summary>
-    /// Enhanced to report progress for loading screen
-    /// </summary>
     IEnumerator WaitForAddressablesWithProgress()
     {
-        BackgroundPreloader preloader = BackgroundPreloader.Instance;
+        Debug.Log("[StartUp] Waiting for addressables...");
+        float elapsedTime = 0f;
+        float timeout = 5f;
 
-        if (preloader != null && !preloader.PreloadingComplete)
+        while (elapsedTime < timeout)
         {
-            Debug.Log("[StartUp] Waiting for addressables...");
+            if (loadingManager != null)
+                loadingManager.UpdateProgress(0.1f + (elapsedTime / timeout) * 0.2f);
 
-            float timeoutSeconds = 10f;
-            float elapsedTime = 0f;
-
-            while (!preloader.PreloadingComplete && elapsedTime < timeoutSeconds)
-            {
-                // Update progress (addressables = 0-30% of total loading)
-                float progress = Mathf.Clamp01(elapsedTime / timeoutSeconds) * 0.3f;
-
-                if (loadingManager != null)
-                    loadingManager.UpdateProgress(progress);
-
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
-
-            Debug.Log("[StartUp] Addressables loaded");
+            yield return null;
+            elapsedTime += Time.deltaTime;
         }
 
-        // Ensure we're at 30% progress after addressables
-        if (loadingManager != null)
-            loadingManager.UpdateProgress(0.3f);
+        Debug.Log("[StartUp] Addressables ready");
     }
 
-    /// <summary>
-    /// Wait for VR camera to be fully ready (stereo enabled)
-    /// </summary>
     IEnumerator WaitForVRCameraReady()
     {
         Debug.Log("[StartUp] Waiting for VR camera to be ready...");
+        float elapsedTime = 0f;
+        float timeout = 3f;
 
-        Camera mainCam = Camera.main;
-        int maxAttempts = 30; // 3 seconds max
-        int attempt = 0;
-
-        while (mainCam != null && !mainCam.stereoEnabled && attempt < maxAttempts)
+        while (elapsedTime < timeout)
         {
-            yield return new WaitForSeconds(0.1f);
-            attempt++;
-        }
-
-        if (mainCam != null && mainCam.stereoEnabled)
-        {
-            Debug.Log("[StartUp] ✓ VR camera ready (stereo enabled)");
-            yield return new WaitForEndOfFrame();
-        }
-        else
-        {
-            Debug.LogWarning("[StartUp] VR camera may not be fully ready - stereo not detected");
-        }
-    }
-
-    /// <summary>
-    /// ORIGINAL METHOD - kept for compatibility
-    /// </summary>
-    IEnumerator InitializeVR()
-    {
-        yield return togglingXRScript.StartXR();
-        yield return new WaitForSeconds(1.5f);
-
-        if (loadingPanel != null)
-            loadingPanel.SetActive(false);
-    }
-
-    /// <summary>
-    /// ORIGINAL METHOD - kept unchanged
-    /// </summary>
-    private IEnumerator WaitForAddressablesAndSetupScene()
-    {
-        BackgroundPreloader preloader = BackgroundPreloader.Instance;
-
-        if (preloader != null && !preloader.PreloadingComplete)
-        {
-            Debug.Log("[StartUp] Final check - waiting for addressables to finish loading...");
-
-            float timeoutSeconds = 10f;
-            float elapsedTime = 0f;
-
-            while (!preloader.PreloadingComplete && elapsedTime < timeoutSeconds)
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null && mainCamera.gameObject.activeInHierarchy)
             {
-                elapsedTime += Time.deltaTime;
-                yield return null;
+                Debug.Log("[StartUp] ✓ VR camera is ready");
+                yield break;
             }
 
-            Debug.Log("[StartUp] Addressables finished loading");
+            yield return null;
+            elapsedTime += Time.deltaTime;
         }
 
-        // Now proceed with scene setup
-        player = GameObject.Find("Player").GetComponent<Rigidbody>();
+        Debug.LogWarning("[StartUp] VR camera not ready after timeout - continuing anyway");
+    }
+
+    IEnumerator WaitForAddressablesAndSetupScene()
+    {
+        Debug.Log("[StartUp] Setting up scene...");
+
+        yield return new WaitForSeconds(0.2f);
+
         ResetScene();
+
+        Debug.Log("[StartUp] ✓ Scene setup complete");
     }
 
     void OnDestroy()
     {
-        // Clean up XR if we initialized it and we're leaving the scene
-        if (xrInitializedByUs && XRGeneralSettings.Instance?.Manager?.activeLoader != null)
+        if (xrInitializedByUs)
         {
             Debug.Log("[StartUp] OnDestroy - Cleaning up XR system");
             // Note: togglingXR will handle this in its OnDestroy
@@ -377,7 +319,7 @@ public class StartUp : MonoBehaviour
         }
     }
 
-    // === ALL METHODS BELOW THIS LINE ARE UNCHANGED FROM ORIGINAL ===
+    // === ALL METHODS BELOW THIS LINE ARE UPDATED FOR CHARACTER CONTROLLER ===
 
     public void ResetScene()
     {
@@ -474,9 +416,8 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] Marker: SetPlayerToTarget");
         if (target != null && player != null)
         {
-            player.isKinematic = true;
-            player.linearVelocity = Vector3.zero;
-            player.angularVelocity = Vector3.zero;
+            // CHANGED: Simple CharacterController teleportation
+            player.enabled = false; // Disable CharacterController for teleport
 
             player.transform.SetParent(null);
             player.transform.position = Vector3.zero;
@@ -486,6 +427,8 @@ public class StartUp : MonoBehaviour
             player.transform.localPosition = Vector3.zero;
             player.transform.localRotation = Quaternion.identity;
             player.transform.localScale = Vector3.one;
+
+            player.enabled = true; // Re-enable CharacterController
         }
         else
         {

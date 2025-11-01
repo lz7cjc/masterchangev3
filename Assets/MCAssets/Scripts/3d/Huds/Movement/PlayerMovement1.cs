@@ -3,7 +3,8 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// PlayerMovement1 - Simple collision detection that works with any collider
+/// PlayerMovement1 - Simple collision detection with CharacterController
+/// UPDATED: Converted from Rigidbody to CharacterController for better VR teleportation
 /// </summary>
 public class PlayerMovement1 : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class PlayerMovement1 : MonoBehaviour
     public float stopDelay = 0.5f;
 
     [Header("References")]
-    public Rigidbody playerRigidbody;
+    public CharacterController playerController; // CHANGED: From Rigidbody to CharacterController
 
     [Header("Simple Collision Detection")]
     [Tooltip("How far ahead to check for any obstacles")]
@@ -33,6 +34,11 @@ public class PlayerMovement1 : MonoBehaviour
     public float maxSlopeAngle = 45f;
     [Tooltip("Use simple ground detection (works with any mesh)")]
     public bool useSimpleGroundDetection = true;
+
+    [Header("Gravity Settings")]
+    [Tooltip("Gravity applied to character controller")]
+    public float gravity = -9.81f;
+    private float verticalVelocity = 0f;
 
     [Header("Safety Settings")]
     [Tooltip("Prevent movement on start")]
@@ -108,13 +114,35 @@ public class PlayerMovement1 : MonoBehaviour
 
     private void ValidateSetup()
     {
-        if (playerRigidbody == null)
+        if (playerController == null)
         {
-            Debug.LogError("PlayerMovement1: Player Rigidbody is not assigned!");
+            Debug.LogError("PlayerMovement1: Player CharacterController is not assigned!");
         }
 
         DebugLog($"Obstacle Check Distance: {obstacleCheckDistance}, Ground Check Distance: {groundCheckDistance}");
         DebugLog($"Ignore Collision Layers: {ignoreCollisionLayers}");
+    }
+
+    private void InitializeMovementState()
+    {
+        if (safeStart)
+        {
+            currentSpeed = 0f;
+            isMoving = false;
+            DebugLog("Safe start enabled - player starts stationary");
+        }
+        else if (!resetSavedSpeedOnStart && PlayerPrefs.HasKey("walkspeed"))
+        {
+            currentSpeed = PlayerPrefs.GetFloat("walkspeed");
+            isMoving = currentSpeed > 0f;
+            DebugLog($"Loaded saved speed: {currentSpeed}");
+        }
+        else
+        {
+            currentSpeed = 0f;
+            isMoving = false;
+            DebugLog("Starting with default state (stationary)");
+        }
     }
 
     void FixedUpdate()
@@ -123,17 +151,37 @@ public class PlayerMovement1 : MonoBehaviour
 
         HandleHoverTimer();
         HandleMovement();
+        ApplyGravity(); // NEW: Apply gravity for CharacterController
+    }
+
+    private void ApplyGravity()
+    {
+        // CharacterController needs manual gravity
+        if (playerController == null) return;
+
+        if (playerController.isGrounded)
+        {
+            verticalVelocity = -2f; // Small downward force to keep grounded
+        }
+        else
+        {
+            verticalVelocity += gravity * Time.deltaTime;
+        }
+
+        // Apply vertical movement
+        Vector3 verticalMovement = new Vector3(0, verticalVelocity, 0) * Time.deltaTime;
+        playerController.Move(verticalMovement);
     }
 
     private void HandleMovement()
     {
-        if (!isMoving || currentSpeed <= 0f || playerRigidbody == null) return;
+        if (!isMoving || currentSpeed <= 0f || playerController == null) return;
 
         // Get movement direction
         Vector3 cameraForward = Camera.main.transform.forward;
         Vector3 horizontalDirection = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
 
-        Vector3 currentPosition = playerRigidbody.position;
+        Vector3 currentPosition = playerController.transform.position; // CHANGED: Use transform.position
         Vector3 moveVector = horizontalDirection * currentSpeed * Time.deltaTime;
         Vector3 targetPosition = currentPosition + moveVector;
 
@@ -147,8 +195,9 @@ public class PlayerMovement1 : MonoBehaviour
         // Apply ground following
         Vector3 finalPosition = ApplyGroundFollowing(targetPosition);
 
-        // Move the rigidbody
-        playerRigidbody.MovePosition(finalPosition);
+        // CHANGED: Use CharacterController.Move instead of Rigidbody.MovePosition
+        Vector3 movement = finalPosition - playerController.transform.position;
+        playerController.Move(movement);
 
         if (debugMode && Time.frameCount % 60 == 0)
         {
@@ -179,7 +228,7 @@ public class PlayerMovement1 : MonoBehaviour
                 }
 
                 // Check if it's the player itself
-                if (hit.collider.transform == playerRigidbody.transform)
+                if (hit.collider.transform == playerController.transform)
                 {
                     continue; // Ignore self-collision
                 }
@@ -213,7 +262,7 @@ public class PlayerMovement1 : MonoBehaviour
             int hitLayer = hit.collider.gameObject.layer;
             if (IsLayerInMask(hitLayer, ignoreCollisionLayers))
             {
-                return playerRigidbody.position; // Don't move, keep current position
+                return playerController.transform.position; // CHANGED: Use transform.position
             }
 
             // Check slope angle
@@ -221,12 +270,12 @@ public class PlayerMovement1 : MonoBehaviour
             if (slopeAngle > maxSlopeAngle)
             {
                 DebugLog($"Slope too steep: {slopeAngle:F1}° (max: {maxSlopeAngle}°)");
-                return playerRigidbody.position; // Don't move on steep slopes
+                return playerController.transform.position; // CHANGED: Use transform.position
             }
 
             // Valid ground found - apply smooth following
             float targetY = hit.point.y;
-            float currentY = playerRigidbody.position.y;
+            float currentY = playerController.transform.position.y; // CHANGED: Use transform.position
             float smoothedY = Mathf.Lerp(currentY, targetY, Time.deltaTime * terrainFollowSmoothness);
 
             Vector3 finalPosition = new Vector3(targetPosition.x, smoothedY, targetPosition.z);
@@ -245,7 +294,7 @@ public class PlayerMovement1 : MonoBehaviour
             {
                 DebugLog("No ground found - preventing movement");
             }
-            return playerRigidbody.position;
+            return playerController.transform.position; // CHANGED: Use transform.position
         }
     }
 
@@ -265,50 +314,35 @@ public class PlayerMovement1 : MonoBehaviour
                 hudCountdown.SetCountdown(actionDelay, hoverTimer);
             }
 
-            if (hoverTimer >= actionDelay)
+            float delay = (pendingAction == ActionType.Stop) ? stopDelay : actionDelay;
+
+            if (hoverTimer >= delay)
             {
                 ExecutePendingAction();
-                ResetHover();
             }
         }
     }
 
-    private void InitializeMovementState()
-    {
-        if (resetSavedSpeedOnStart)
-        {
-            PlayerPrefs.DeleteKey("walkspeed");
-            currentSpeed = 0f;
-            isMoving = false;
-        }
-        else if (safeStart)
-        {
-            currentSpeed = 0f;
-            isMoving = false;
-        }
-        else
-        {
-            currentSpeed = PlayerPrefs.GetFloat("walkspeed", 0f);
-            isMoving = currentSpeed > 0f;
-        }
-
-        DebugLog($"Movement initialized - Speed: {currentSpeed}, Moving: {isMoving}");
-    }
-
     private void ExecutePendingAction()
     {
-        DebugLog($"=== EXECUTING PENDING ACTION: {pendingAction} ===");
-
         switch (pendingAction)
         {
             case ActionType.StartWalk:
                 StartWalking();
+                startStopIconController?.SelectIcon();
                 break;
+
             case ActionType.ChangeSpeed:
                 ChangeSpeed(speedDelta);
+                if (speedDelta > 0)
+                    speedUpIconController?.SelectIcon();
+                else
+                    speedDownIconController?.SelectIcon();
                 break;
+
             case ActionType.Stop:
                 StopWalking();
+                startStopIconController?.SelectIcon();
                 break;
         }
 
@@ -316,32 +350,23 @@ public class PlayerMovement1 : MonoBehaviour
         UpdateIcons();
         UpdateLevel3Controls();
         SaveSpeed();
+        ResetHover();
     }
 
     private void StartWalking()
     {
-        if (!isMoving)
+        if (currentSpeed <= 0f)
         {
             currentSpeed = defaultSpeed;
-            isMoving = true;
-            DebugLog($"Started walking at speed: {currentSpeed}");
         }
+        isMoving = true;
+        DebugLog("Started walking");
     }
 
     private void ChangeSpeed(float delta)
     {
-        if (isMoving)
-        {
-            currentSpeed = Mathf.Clamp(currentSpeed + delta, minSpeed, maxSpeed);
-            if (currentSpeed <= 0f)
-            {
-                StopWalking();
-            }
-        }
-        else if (delta > 0f)
-        {
-            StartWalking();
-        }
+        currentSpeed = Mathf.Clamp(currentSpeed + delta, minSpeed, maxSpeed);
+        DebugLog($"Speed changed to: {currentSpeed}");
     }
 
     private void StopWalking()

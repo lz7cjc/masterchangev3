@@ -71,10 +71,8 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\passwordreset.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\EnhancedVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRCurvedMenuLayout.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\VideoIntegrationHelper.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TipButton.cs" />
@@ -83,6 +81,7 @@
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInstantiator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\syncfromdb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\EnhancedVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInitializer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRViewToggle.cs" />
@@ -92,6 +91,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
     <Compile Include="Assets\MCAssets\Scripts\InventoryItemData.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraManager.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\VideoIntegrationHelper.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\InteractScript.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
@@ -120,7 +120,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\MinimalLoadingIndicator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\FilmZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRLoadingManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
@@ -238,6 +237,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\IntegratedTipsController.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\FilmZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\EventSystemCoordinator.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ShowHide.cs" />
@@ -250,7 +250,6 @@
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\DynamicFilmLoading\EventTriggerFixer.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\habits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
@@ -276,6 +275,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\EventTriggerFixer.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />

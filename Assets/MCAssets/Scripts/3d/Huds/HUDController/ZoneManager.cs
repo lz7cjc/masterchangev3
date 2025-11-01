@@ -5,7 +5,7 @@ using TMPro;
 
 /// <summary>
 /// Enhanced ZoneManager - Single source of truth for zone teleportation
-/// Consolidated from CameraManager functionality
+/// UPDATED: Converted from Rigidbody to CharacterController for better VR teleportation
 /// </summary>
 public class ZoneManager : MonoBehaviour
 {
@@ -21,13 +21,12 @@ public class ZoneManager : MonoBehaviour
     }
 
     [Header("Core References")]
-    [SerializeField] private Rigidbody player;
+    [SerializeField] private CharacterController player; // CHANGED: From Rigidbody to CharacterController
     [SerializeField] private hudCountdown hudCountdown;
     [SerializeField] private closeAllHuds closeAllHuds;
 
     [Header("Settings")]
     [SerializeField] private float hoverDelay = 3.0f;
-    [SerializeField] private bool useGravity = true;
 
     [Header("Zone Definitions")]
     [SerializeField] private List<ZoneDefinition> zones = new List<ZoneDefinition>();
@@ -62,7 +61,7 @@ public class ZoneManager : MonoBehaviour
             }
         }
 
-        Debug.Log("Enhanced ZoneManager initialized - Single zone teleportation system");
+        Debug.Log("Enhanced ZoneManager initialized - Single zone teleportation system with CharacterController");
     }
 
     private void Update()
@@ -258,7 +257,7 @@ public class ZoneManager : MonoBehaviour
             }
         }
 
-        // Update global ToggleActiveIcons if available (for CameraManager compatibility)
+        // Also update ToggleActiveIcons if available
         if (toggleActiveIcons != null)
         {
             switch (state)
@@ -314,7 +313,7 @@ public class ZoneManager : MonoBehaviour
             closeAllHuds.CloseTheHuds($"Zone teleport to {zone.zoneName}");
         }
 
-        // FIXED: Use the same approach as StartUp script (parenting method)
+        // CHANGED: Simplified teleportation for CharacterController
         if (player != null)
         {
             try
@@ -323,13 +322,8 @@ public class ZoneManager : MonoBehaviour
                 Debug.Log($"Target object: {zone.zoneTarget.name}");
                 Debug.Log($"Player current position: {player.transform.position}");
 
-                // Stop all physics immediately
-                player.isKinematic = true;
-                player.linearVelocity = Vector3.zero;
-                player.angularVelocity = Vector3.zero;
-
-                // Use the same method as StartUp script
-                MovePlayerToPosition(Vector3.zero, Quaternion.identity, zone);
+                // Teleport using CharacterController - much simpler!
+                TeleportToZone(zone);
             }
             catch (System.Exception e)
             {
@@ -339,33 +333,29 @@ public class ZoneManager : MonoBehaviour
         }
     }
 
-    private System.Collections.IEnumerator CompleteMovementAfterUnparent(Vector3 targetPosition, Quaternion targetRotation, Transform originalParent, ZoneDefinition zone)
+    private void TeleportToZone(ZoneDefinition zone)
     {
-        yield return null; // Wait one frame
-
-        MovePlayerToPosition(targetPosition, targetRotation, zone);
-
-        // Optionally re-parent if needed (usually not necessary for teleportation)
-        // player.transform.SetParent(originalParent, true);
-    }
-
-    private void MovePlayerToPosition(Vector3 targetPosition, Quaternion targetRotation, ZoneDefinition zone)
-    {
-        // FIXED: Use the same parenting approach as StartUp script
+        // CHANGED: Simple CharacterController teleportation
         if (zone.zoneTarget != null)
         {
-            // Clear any existing parent
+            // Step 1: Disable CharacterController (required for teleportation)
+            player.enabled = false;
+
+            // Step 2: Clear any existing parent
             player.transform.SetParent(null);
 
-            // Reset to world origin first
+            // Step 3: Reset to world origin first
             player.transform.position = Vector3.zero;
             player.transform.rotation = Quaternion.identity;
 
-            // Now set the parent and local position (same as StartUp script)
+            // Step 4: Set the parent and local position (same as StartUp script)
             player.transform.SetParent(zone.zoneTarget.transform);
             player.transform.localPosition = Vector3.zero;        // Reset to (0,0,0) relative to target
             player.transform.localRotation = Quaternion.identity;
             player.transform.localScale = Vector3.one;
+
+            // Step 5: Re-enable CharacterController
+            player.enabled = true;
 
             Debug.Log($"Player parented to: {zone.zoneTarget.name}");
             Debug.Log($"Local position set to: {player.transform.localPosition}");
@@ -374,25 +364,12 @@ public class ZoneManager : MonoBehaviour
         else
         {
             // Fallback to world position if no target
-            player.transform.position = targetPosition;
-            player.transform.rotation = targetRotation;
+            player.enabled = false;
+            player.transform.position = Vector3.zero;
+            player.transform.rotation = Quaternion.identity;
             player.transform.localScale = Vector3.one;
+            player.enabled = true;
         }
-
-        // Re-enable physics after a small delay to ensure position is set
-        StartCoroutine(ReEnablePhysicsAfterDelay(zone));
-    }
-
-    private System.Collections.IEnumerator ReEnablePhysicsAfterDelay(ZoneDefinition zone)
-    {
-        yield return new WaitForFixedUpdate(); // Wait for physics update
-
-        // Re-enable physics
-        player.useGravity = useGravity;
-        player.isKinematic = false;
-
-        Debug.Log($"Player physics re-enabled at position: {player.transform.position}");
-        Debug.Log($"Player local position: {player.transform.localPosition}");
 
         // Save to PlayerPrefs - single source of truth
         PlayerPrefs.SetString("lastknownzone", zone.zoneName);
@@ -447,7 +424,7 @@ public class ZoneManager : MonoBehaviour
             var playerGO = GameObject.FindGameObjectWithTag("Player");
             if (playerGO != null)
             {
-                player = playerGO.GetComponent<Rigidbody>();
+                player = playerGO.GetComponent<CharacterController>(); // CHANGED: Look for CharacterController
             }
         }
 
@@ -495,8 +472,8 @@ public class ZoneManager : MonoBehaviour
             Debug.Log($"Player Rotation: {player.transform.rotation}");
             Debug.Log($"Player Parent: {(player.transform.parent != null ? player.transform.parent.name : "None")}");
             Debug.Log($"Player Scale: {player.transform.localScale}");
-            Debug.Log($"Player IsKinematic: {player.isKinematic}");
-            Debug.Log($"Player UseGravity: {player.useGravity}");
+            Debug.Log($"Player CharacterController Enabled: {player.enabled}");
+            Debug.Log($"Player IsGrounded: {player.isGrounded}");
         }
     }
 

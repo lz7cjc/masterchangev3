@@ -876,10 +876,67 @@ public class FilmZoneEditorWindow : EditorWindow
             enhancedPlayer.returntoscene = "mainVR";
         if (string.IsNullOrEmpty(enhancedPlayer.nextscene))
             enhancedPlayer.nextscene = "360VideoApp";
+        // FIXED: Configure EventTrigger with proper events
+        ConfigureEventTrigger(instance, enhancedPlayer);
+
 
         EditorUtility.SetDirty(enhancedPlayer);
     }
 
+
+    // FIXED: Added method to configure EventTrigger with proper events
+    private void ConfigureEventTrigger(GameObject instance, EnhancedVideoPlayer videoPlayer)
+    {
+        if (instance == null || videoPlayer == null) return;
+
+        EventTrigger eventTrigger = instance.GetComponent<EventTrigger>();
+        if (eventTrigger == null)
+        {
+            eventTrigger = instance.AddComponent<EventTrigger>();
+        }
+
+        // Initialize triggers list
+        if (eventTrigger.triggers == null)
+        {
+            eventTrigger.triggers = new List<EventTrigger.Entry>();
+        }
+        else
+        {
+            eventTrigger.triggers.Clear(); // Clear any existing to avoid duplicates
+        }
+
+        // Setup Pointer Enter event
+        EventTrigger.Entry pointerEnter = new EventTrigger.Entry();
+        pointerEnter.eventID = EventTriggerType.PointerEnter;
+
+        UnityEngine.Events.UnityAction<BaseEventData> enterAction = (data) => {
+            videoPlayer.SendMessage("MouseHoverChangeScene", SendMessageOptions.DontRequireReceiver);
+        };
+        pointerEnter.callback.AddListener(enterAction);
+        eventTrigger.triggers.Add(pointerEnter);
+
+        // Setup Pointer Exit event
+        EventTrigger.Entry pointerExit = new EventTrigger.Entry();
+        pointerExit.eventID = EventTriggerType.PointerExit;
+
+        UnityEngine.Events.UnityAction<BaseEventData> exitAction = (data) => {
+            videoPlayer.SendMessage("MouseExit", SendMessageOptions.DontRequireReceiver);
+        };
+        pointerExit.callback.AddListener(exitAction);
+        eventTrigger.triggers.Add(pointerExit);
+
+        // Setup Pointer Click event (for immediate activation)
+        EventTrigger.Entry pointerClick = new EventTrigger.Entry();
+        pointerClick.eventID = EventTriggerType.PointerClick;
+
+        UnityEngine.Events.UnityAction<BaseEventData> clickAction = (data) => {
+            videoPlayer.SendMessage("MouseHoverChangeScene", SendMessageOptions.DontRequireReceiver);
+        };
+        pointerClick.callback.AddListener(clickAction);
+        eventTrigger.triggers.Add(pointerClick);
+
+        EditorUtility.SetDirty(eventTrigger);
+    }
     private void ClearAllPlacedPrefabs()
     {
         foreach (var kvp in zonePrefabs)

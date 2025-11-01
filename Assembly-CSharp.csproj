@@ -275,7 +275,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
-    <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\EventTriggerFixer.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />

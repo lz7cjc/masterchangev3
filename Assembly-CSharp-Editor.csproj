@@ -71,6 +71,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetBundleFolder.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\PlayServices\TextAreaDialog.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AndroidAssetPackagingTool.cs" />
+    <Compile Include="Assets\Editor\Scripts\SimpleEventTriggerFix.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Config\SerializableMultiTargetingAssetBundle.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AndroidManifest\AssetPackManifestHelper.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\TextureTargetingTools.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\JarSigner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\DeprecatedAarDetector.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\BundletoolConfig.cs" />
+    <Compile Include="Assets\Editor\Scripts\RevertEventTriggersToPrefa.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AndroidSdk.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\GoogleMenuItems.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetPackFolderState.cs" />
@@ -125,19 +127,18 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\JavaUtils.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\BuildToolNotInitializedException.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AndroidBuildTools.cs" />
-    <Compile Include="Assets\Editor\Scripts\EventTriggerFixerEditor.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\Editor\Mac\Plist.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\CompressionOptions.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetDeliveryConfig.cs" />
     <Compile Include="Assets\PlayerPrefsEditor\Editor\PlayerPrefsEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\DeviceTierTargetingTools.cs" />
-    <Compile Include="Assets\Editor\Scripts\EventTriggerBatchFixer.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AppBundleRunner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Utils\EmptyDictionary.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildAndRunner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Utils\PostBuildCommandLineDialog.cs" />
     <Compile Include="Assets\Editor\SceneSettingEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\PlayServices\CommandLine.cs" />
+    <Compile Include="Assets\Editor\Scripts\EventTriggerFixFinal.cs" />
     <Compile Include="Assets\Editor\DefaultSceneSettingsApplier.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetDeliveryWindow.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Utils\NameAndDescriptionAttribute.cs" />

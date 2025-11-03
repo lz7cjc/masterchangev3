@@ -4,20 +4,21 @@ using TMPro;
 using System.Collections;
 
 /// <summary>
-/// OPTIMIZED: Central loading screen manager for VR application
-/// - Unified debug keyword: [VRLOAD]
-/// - Faster loading times
-/// - Guaranteed overlay visibility
-/// - Better progress tracking
+/// FINAL VERSION: Loading screen manager that works when parent canvas is inactive
+/// - Activates canvas when showing
+/// - Properly handles inactive parent
+/// - Smooth fading
+/// - Works from any scene transition
 /// </summary>
 public class VRLoadingManager : MonoBehaviour
 {
     public static VRLoadingManager Instance { get; private set; }
 
     [Header("UI References")]
-    [SerializeField] private GameObject loadingPanel;
+    [SerializeField] private GameObject loadingPanel;  // This GameObject (LoadingPanel)
     [SerializeField] private Image progressBar;
     [SerializeField] private TextMeshProUGUI loadingText;
+    [SerializeField] private CanvasGroup canvasGroup; // Optional for fade effects
 
     [Header("Loading Messages")]
     [SerializeField] private string initializingVRMessage = "Initializing VR...";
@@ -26,12 +27,13 @@ public class VRLoadingManager : MonoBehaviour
     [SerializeField] private string switching360Message = "Switching to 360 Mode...";
 
     [Header("Timing")]
-    [SerializeField] private float minimumDisplayTime = 0.5f; // Minimum time to show loading screen
+    [SerializeField] private float minimumDisplayTime = 0.5f;
     [SerializeField] private float fadeOutDuration = 0.3f;
 
     private float loadingStartTime;
     private bool isLoading = false;
     private Coroutine hideCoroutine;
+    private Canvas parentCanvas;
 
     private void Awake()
     {
@@ -48,19 +50,86 @@ public class VRLoadingManager : MonoBehaviour
             return;
         }
 
-        // Ensure loading panel starts hidden
-        if (loadingPanel != null)
+        // Get parent canvas
+        parentCanvas = GetComponentInParent<Canvas>();
+        if (parentCanvas == null)
         {
-            loadingPanel.SetActive(false);
-            Debug.Log("[VRLOAD] Loading panel initialized (hidden)");
+            Debug.LogError("[VRLOAD] No parent Canvas found! Loading screen won't work.");
         }
         else
         {
-            Debug.LogError("[VRLOAD] Loading panel not assigned in Inspector!");
+            Debug.Log($"[VRLOAD] Found parent canvas: {parentCanvas.gameObject.name}");
+
+            // Ensure canvas is set up correctly
+            if (parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                Debug.LogWarning("[VRLOAD] Canvas is not Screen Space Overlay - may not cover everything!");
+            }
+        }
+
+        // Try to get or add CanvasGroup for fade effects
+        if (canvasGroup == null)
+        {
+            canvasGroup = loadingPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = loadingPanel.AddComponent<CanvasGroup>();
+                Debug.Log("[VRLOAD] Added CanvasGroup for fade effects");
+            }
+        }
+
+        // Ensure LoadingPanel starts inactive (parent canvas may be inactive too)
+        if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(false);
+            Debug.Log("[VRLOAD] Loading panel initialized (inactive)");
         }
     }
 
     #region Public Show Methods
+
+    /// <summary>
+    /// Show loading screen with custom message and initial progress
+    /// </summary>
+    public void ShowLoading(string message, float initialProgress)
+    {
+        if (loadingPanel == null)
+        {
+            Debug.LogError("[VRLOAD] Cannot show loading - panel is null!");
+            return;
+        }
+
+        // Cancel any pending hide operations
+        if (hideCoroutine != null)
+        {
+            StopCoroutine(hideCoroutine);
+            hideCoroutine = null;
+            Debug.Log("[VRLOAD] Cancelled pending hide operation");
+        }
+
+        loadingStartTime = Time.time;
+        isLoading = true;
+
+        // CRITICAL: Activate parent canvas if it's inactive
+        if (parentCanvas != null && !parentCanvas.gameObject.activeSelf)
+        {
+            parentCanvas.gameObject.SetActive(true);
+            Debug.Log("[VRLOAD] ✓ Activated parent canvas");
+        }
+
+        // Reset canvas group alpha
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+        }
+
+        // Activate loading panel
+        loadingPanel.SetActive(true);
+        UpdateStatus(message);
+        UpdateProgress(initialProgress);
+
+        Debug.Log($"[VRLOAD] ✓✓✓ Loading screen VISIBLE ✓✓✓ - Message: '{message}'");
+    }
 
     /// <summary>
     /// Show loading screen for initial VR initialization
@@ -96,36 +165,7 @@ public class VRLoadingManager : MonoBehaviour
 
     #endregion
 
-    #region Core Loading Methods
-
-    /// <summary>
-    /// Internal method to show loading screen with message and progress
-    /// </summary>
-    private void ShowLoading(string message, float initialProgress)
-    {
-        if (loadingPanel == null)
-        {
-            Debug.LogError("[VRLOAD] Cannot show loading - panel is null!");
-            return;
-        }
-
-        // Cancel any pending hide operations
-        if (hideCoroutine != null)
-        {
-            StopCoroutine(hideCoroutine);
-            hideCoroutine = null;
-            Debug.Log("[VRLOAD] Cancelled pending hide operation");
-        }
-
-        loadingStartTime = Time.time;
-        isLoading = true;
-
-        loadingPanel.SetActive(true);
-        UpdateStatus(message);
-        UpdateProgress(initialProgress);
-
-        Debug.Log($"[VRLOAD] ✓ Loading screen VISIBLE - Message: '{message}'");
-    }
+    #region Update Methods
 
     /// <summary>
     /// Update loading status text
@@ -135,24 +175,36 @@ public class VRLoadingManager : MonoBehaviour
         if (loadingText != null)
         {
             loadingText.text = message;
-            Debug.Log($"[VRLOAD] Status updated: '{message}'");
         }
     }
 
     /// <summary>
-    /// Update loading progress (0 to 1)
+    /// Update loading progress (0 to 1) with smooth animation
     /// </summary>
     public void UpdateProgress(float progress)
     {
         if (progressBar != null)
         {
-            progressBar.fillAmount = Mathf.Clamp01(progress);
-            Debug.Log($"[VRLOAD] Progress: {(progress * 100):F0}%");
+            float targetProgress = Mathf.Clamp01(progress);
+
+            // Smooth transition
+            if (progressBar.fillAmount < targetProgress)
+            {
+                progressBar.fillAmount = Mathf.Lerp(progressBar.fillAmount, targetProgress, Time.deltaTime * 5f);
+            }
+            else
+            {
+                progressBar.fillAmount = targetProgress;
+            }
         }
     }
 
+    #endregion
+
+    #region Hide Methods
+
     /// <summary>
-    /// Hide the loading screen with fade out
+    /// Hide the loading screen with smooth fade out
     /// </summary>
     public void HideLoading()
     {
@@ -175,7 +227,7 @@ public class VRLoadingManager : MonoBehaviour
     /// </summary>
     private IEnumerator HideLoadingCoroutine()
     {
-        Debug.Log("[VRLOAD] Hide sequence started");
+        Debug.Log("[VRLOAD] === HIDE SEQUENCE START ===");
 
         // Ensure minimum display time
         float elapsedTime = Time.time - loadingStartTime;
@@ -183,26 +235,58 @@ public class VRLoadingManager : MonoBehaviour
 
         if (remainingTime > 0)
         {
-            Debug.Log($"[VRLOAD] Waiting {remainingTime:F2}s to meet minimum display time");
+            Debug.Log($"[VRLOAD] Waiting {remainingTime:F2}s for minimum display time");
             yield return new WaitForSeconds(remainingTime);
         }
 
-        // Brief delay before fade out
+        // Ensure progress bar is at 100%
+        if (progressBar != null)
+        {
+            progressBar.fillAmount = 1f;
+        }
+
+        // Brief pause at 100%
         yield return new WaitForSeconds(0.2f);
 
-        // Fade out (you can add actual fade animation here if you have CanvasGroup)
+        // Fade out
         Debug.Log("[VRLOAD] Fading out...");
-        yield return new WaitForSeconds(fadeOutDuration);
+        if (canvasGroup != null)
+        {
+            float fadeStart = Time.time;
+            while (Time.time - fadeStart < fadeOutDuration)
+            {
+                float alpha = 1f - ((Time.time - fadeStart) / fadeOutDuration);
+                canvasGroup.alpha = alpha;
+                yield return null;
+            }
+            canvasGroup.alpha = 0f;
+        }
+        else
+        {
+            // No canvas group, just wait
+            yield return new WaitForSeconds(fadeOutDuration);
+        }
 
         // Hide the panel
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(false);
-            Debug.Log("[VRLOAD] ✓✓✓ Loading screen HIDDEN ✓✓✓");
+            Debug.Log("[VRLOAD] ✓ Loading panel hidden");
         }
+
+        // Optionally deactivate parent canvas to save performance
+        // (You can enable this if you want)
+        // if (parentCanvas != null)
+        // {
+        //     parentCanvas.gameObject.SetActive(false);
+        //     Debug.Log("[VRLOAD] ✓ Parent canvas deactivated");
+        // }
 
         isLoading = false;
         hideCoroutine = null;
+
+        Debug.Log("[VRLOAD] ✓✓✓ Loading screen HIDDEN ✓✓✓");
+        Debug.Log("[VRLOAD] === HIDE SEQUENCE COMPLETE ===");
     }
 
     /// <summary>
@@ -221,6 +305,11 @@ public class VRLoadingManager : MonoBehaviour
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(false);
+        }
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
         }
 
         isLoading = false;

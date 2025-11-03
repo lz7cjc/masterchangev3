@@ -7,11 +7,11 @@ using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// OPTIMIZED: XR management with unified debug keyword [VRLOAD]
-/// - Cleaner debug logging
-/// - Better coordination with loading screens
-/// - Faster initialization
-/// UPDATED: Now uses VRReticlePointer instead of CustomReticlePointer
+/// OPTIMIZED: XR management with faster switching and better error handling
+/// - Graceful editor mode handling (no XR errors)
+/// - Faster VR/360 switching
+/// - Better loading screen coordination
+/// - Smoother transitions
 /// </summary>
 public class togglingXR : MonoBehaviour
 {
@@ -29,16 +29,22 @@ public class togglingXR : MonoBehaviour
 
     private VRReticlePointer reticlePointer360;
     private VRReticlePointer reticlePointerVR;
-    private CameraController cameraController; // Legacy support if still used
+    private CameraController cameraController;
     private PlayerInput playerInput360;
     private PlayerInput playerInputVR;
     private EventSystem eventSystem;
     private bool isXRActive = false;
+    private bool isInEditorMode = false;
 
     void Start()
     {
         Debug.Log("[VRLOAD] === togglingXR START ===");
-        Debug.Log($"[VRLOAD] Initial switchVRon: {switchVRon}");
+
+        // Check if we're in editor
+#if UNITY_EDITOR
+        isInEditorMode = true;
+        Debug.Log("[VRLOAD] Running in Unity Editor - XR will be simulated");
+#endif
 
         // Get EventSystem reference
         eventSystem = FindFirstObjectByType<EventSystem>();
@@ -47,24 +53,31 @@ public class togglingXR : MonoBehaviour
             Debug.LogWarning("[VRLOAD] EventSystem not found!");
         }
 
-        // Get camera references and their VRReticlePointer components
+        // Get camera references and components
+        SetupCameraReferences();
+
+        if (!isInEditorMode)
+        {
+            LogSystemInfo();
+        }
+
+        Debug.Log("[VRLOAD] Waiting for StartUp to set initial mode...");
+    }
+
+    /// <summary>
+    /// Setup camera references and their components
+    /// </summary>
+    private void SetupCameraReferences()
+    {
         if (mainCamera360 != null)
         {
             playerInput360 = mainCamera360.GetComponent<PlayerInput>();
             reticlePointer360 = mainCamera360.GetComponent<VRReticlePointer>();
 
-            if (playerInput360 != null)
+            if (reticlePointer360 == null)
             {
-                Debug.Log("[VRLOAD] ✓ PlayerInput found on 360 camera");
-            }
-            if (reticlePointer360 != null)
-            {
-                Debug.Log("[VRLOAD] ✓ VRReticlePointer found on 360 camera");
-            }
-            else
-            {
-                Debug.LogWarning("[VRLOAD] VRReticlePointer not found on 360 camera - trying to add it");
                 reticlePointer360 = mainCamera360.AddComponent<VRReticlePointer>();
+                Debug.Log("[VRLOAD] Added VRReticlePointer to 360 camera");
             }
         }
         else
@@ -77,14 +90,10 @@ public class togglingXR : MonoBehaviour
             playerInputVR = mainCameraVR.GetComponent<PlayerInput>();
             reticlePointerVR = mainCameraVR.GetComponent<VRReticlePointer>();
 
-            if (reticlePointerVR != null)
+            if (reticlePointerVR == null)
             {
-                Debug.Log("[VRLOAD] ✓ VRReticlePointer found on VR camera");
-            }
-            else
-            {
-                Debug.LogWarning("[VRLOAD] VRReticlePointer not found on VR camera - trying to add it");
                 reticlePointerVR = mainCameraVR.AddComponent<VRReticlePointer>();
+                Debug.Log("[VRLOAD] Added VRReticlePointer to VR camera");
             }
         }
         else
@@ -92,20 +101,11 @@ public class togglingXR : MonoBehaviour
             Debug.LogError("[VRLOAD] Main CameraVR not assigned!");
         }
 
-        // Legacy support: Get VR reticle components from vrReticleObject if assigned
+        // Legacy support
         if (vrReticleObject != null)
         {
             cameraController = vrReticleObject.GetComponent<CameraController>();
-
-            // Also try to get VRReticlePointer from vrReticleObject as fallback
-            if (reticlePointer360 == null)
-            {
-                reticlePointer360 = vrReticleObject.GetComponent<VRReticlePointer>();
-            }
         }
-
-        LogSystemInfo();
-        Debug.Log("[VRLOAD] Waiting for StartUp to set initial mode...");
     }
 
     /// <summary>
@@ -131,10 +131,6 @@ public class togglingXR : MonoBehaviour
             Set360Mode();
             EnableTouchControls();
         }
-        else
-        {
-            Debug.Log($"[VRLOAD] Already in desired mode");
-        }
     }
 
     /// <summary>
@@ -144,20 +140,75 @@ public class togglingXR : MonoBehaviour
     {
         Debug.Log($"[VRLOAD] === SwitchingVR === Current: {(isXRActive ? "VR" : "360")}");
 
+        VRLoadingManager loadingManager = VRLoadingManager.Instance;
+
         if (!isXRActive)
         {
             Debug.Log("[VRLOAD] Switching TO VR");
-            StartCoroutine(StartXR());
+            if (loadingManager != null)
+            {
+                loadingManager.ShowSwitchToVR();
+            }
+            StartCoroutine(SwitchToVRWithLoading());
         }
         else
         {
             Debug.Log("[VRLOAD] Switching TO 360");
-            StopXR();
+            if (loadingManager != null)
+            {
+                loadingManager.ShowSwitchTo360();
+            }
+            StartCoroutine(SwitchTo360WithLoading());
         }
     }
 
     /// <summary>
-    /// OPTIMIZED: Start XR subsystems with better logging
+    /// Switch to VR with loading screen coordination
+    /// </summary>
+    private IEnumerator SwitchToVRWithLoading()
+    {
+        VRLoadingManager loadingManager = VRLoadingManager.Instance;
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(0.3f);
+        }
+
+        yield return StartXR();
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            yield return new WaitForSeconds(0.3f);
+            loadingManager.HideLoading();
+        }
+    }
+
+    /// <summary>
+    /// Switch to 360 with loading screen coordination
+    /// </summary>
+    private IEnumerator SwitchTo360WithLoading()
+    {
+        VRLoadingManager loadingManager = VRLoadingManager.Instance;
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(0.3f);
+        }
+
+        StopXR();
+        yield return new WaitForEndOfFrame();
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            yield return new WaitForSeconds(0.3f);
+            loadingManager.HideLoading();
+        }
+    }
+
+    /// <summary>
+    /// OPTIMIZED: Start XR subsystems with editor mode handling
     /// </summary>
     public IEnumerator StartXR()
     {
@@ -169,6 +220,19 @@ public class togglingXR : MonoBehaviour
             yield break;
         }
 
+        // Editor mode: Just switch cameras without XR
+        if (isInEditorMode)
+        {
+            Debug.Log("[VRLOAD] Editor mode - switching cameras without XR initialization");
+            SwitchToVRCamera();
+            EnableGyroscope();
+            DisableTouchControls();
+            SetVRModeOnReticle();
+            isXRActive = true;
+            Debug.Log("[VRLOAD] ========== XR START COMPLETE (EDITOR MODE) ✓ ==========");
+            yield break;
+        }
+
         // Check XR settings
         if (XRGeneralSettings.Instance == null)
         {
@@ -177,15 +241,11 @@ public class togglingXR : MonoBehaviour
             yield break;
         }
 
-        Debug.Log("[VRLOAD] ✓ XRGeneralSettings exists");
-
         if (XRGeneralSettings.Instance.Manager == null)
         {
             Debug.LogError("[VRLOAD] XR Manager is NULL!");
             yield break;
         }
-
-        Debug.Log("[VRLOAD] ✓ XR Manager exists");
 
         // Initialize loader if needed
         if (XRGeneralSettings.Instance.Manager.activeLoader == null)
@@ -201,21 +261,16 @@ public class togglingXR : MonoBehaviour
 
             Debug.Log($"[VRLOAD] ✓ Loader initialized: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
         }
-        else
-        {
-            Debug.Log($"[VRLOAD] ✓ Loader already active: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
-        }
 
         // Start subsystems
         Debug.Log("[VRLOAD] Starting XR subsystems...");
         XRGeneralSettings.Instance.Manager.StartSubsystems();
 
-        // Brief delay for subsystems to start
-        yield return new WaitForSeconds(0.2f);
+        // Brief delay for subsystems
+        yield return new WaitForSeconds(0.1f); // Reduced from 0.2f
 
         // Switch cameras
-        if (mainCamera360 != null) mainCamera360.SetActive(false);
-        if (mainCameraVR != null) mainCameraVR.SetActive(true);
+        SwitchToVRCamera();
 
         // Setup VR mode
         EnableGyroscope();
@@ -245,20 +300,16 @@ public class togglingXR : MonoBehaviour
             return;
         }
 
-        if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
+        // Stop XR subsystems (only if not in editor)
+        if (!isInEditorMode && XRGeneralSettings.Instance?.Manager?.activeLoader != null)
         {
             Debug.Log("[VRLOAD] Stopping XR subsystems...");
             XRGeneralSettings.Instance.Manager.StopSubsystems();
-
-            Debug.Log("[VRLOAD] Deinitializing XR loader...");
-            XRGeneralSettings.Instance.Manager.DeinitializeLoader();
-
             Debug.Log("[VRLOAD] ✓ XR stopped");
         }
 
         // Switch cameras
-        if (mainCameraVR != null) mainCameraVR.SetActive(false);
-        if (mainCamera360 != null) mainCamera360.SetActive(true);
+        SwitchTo360Camera();
 
         EnableTouchControls();
         Set360Mode();
@@ -267,9 +318,28 @@ public class togglingXR : MonoBehaviour
         Debug.Log("[VRLOAD] ========== XR STOP COMPLETE ✓ ==========");
     }
 
+    /// <summary>
+    /// Switch to VR camera
+    /// </summary>
+    private void SwitchToVRCamera()
+    {
+        if (mainCamera360 != null) mainCamera360.SetActive(false);
+        if (mainCameraVR != null) mainCameraVR.SetActive(true);
+        Debug.Log("[VRLOAD] ✓ Switched to VR camera");
+    }
+
+    /// <summary>
+    /// Switch to 360 camera
+    /// </summary>
+    private void SwitchTo360Camera()
+    {
+        if (mainCameraVR != null) mainCameraVR.SetActive(false);
+        if (mainCamera360 != null) mainCamera360.SetActive(true);
+        Debug.Log("[VRLOAD] ✓ Switched to 360 camera");
+    }
+
     private void SetVRModeOnReticle()
     {
-        // Set VR mode on VR camera's reticle pointer
         if (reticlePointerVR != null)
         {
             reticlePointerVR.SetMode(VRReticlePointer.ViewMode.ModeVR);
@@ -277,7 +347,6 @@ public class togglingXR : MonoBehaviour
         }
         else if (reticlePointer360 != null)
         {
-            // Fallback to 360 camera's pointer if VR pointer not available
             reticlePointer360.SetMode(VRReticlePointer.ViewMode.ModeVR);
             Debug.Log("[VRLOAD] ✓ 360 Camera Reticle (fallback): ModeVR");
         }
@@ -287,12 +356,10 @@ public class togglingXR : MonoBehaviour
         {
             try
             {
-                // Try to call SetMode with reflection in case CameraController has it
                 var method = cameraController.GetType().GetMethod("SetMode");
                 if (method != null)
                 {
-                    // Assuming CameraController has same ViewMode enum
-                    method.Invoke(cameraController, new object[] { 2 }); // ModeVR = 2
+                    method.Invoke(cameraController, new object[] { 2 });
                     Debug.Log("[VRLOAD] ✓ CameraController: ModeVR (legacy)");
                 }
             }
@@ -305,7 +372,6 @@ public class togglingXR : MonoBehaviour
 
     private void Set360Mode()
     {
-        // Set 360 mode on 360 camera's reticle pointer
         if (reticlePointer360 != null)
         {
             reticlePointer360.SetMode(VRReticlePointer.ViewMode.Mode360);
@@ -320,7 +386,7 @@ public class togglingXR : MonoBehaviour
                 var method = cameraController.GetType().GetMethod("SetMode");
                 if (method != null)
                 {
-                    method.Invoke(cameraController, new object[] { 1 }); // Mode360 = 1
+                    method.Invoke(cameraController, new object[] { 1 });
                     Debug.Log("[VRLOAD] ✓ CameraController: Mode360 (legacy)");
                 }
             }
@@ -333,37 +399,29 @@ public class togglingXR : MonoBehaviour
 
     private void DisableTouchControls()
     {
-        Debug.Log("[VRLOAD] Disabling touch controls...");
-
         if (playerInput360 != null)
         {
             playerInput360.enabled = false;
-            Debug.Log("[VRLOAD] ✓ 360 camera input disabled");
         }
 
         if (playerInputVR != null)
         {
             playerInputVR.enabled = false;
-            Debug.Log("[VRLOAD] ✓ VR camera input disabled");
         }
 
         if (eventSystem != null)
         {
             eventSystem.enabled = false;
-            Debug.Log("[VRLOAD] ✓ EventSystem disabled");
         }
 
-        Debug.Log("[VRLOAD] ✓✓✓ Touch controls disabled ✓✓✓");
+        Debug.Log("[VRLOAD] ✓ Touch controls disabled");
     }
 
     public void EnableTouchControls()
     {
-        Debug.Log("[VRLOAD] Enabling touch controls...");
-
         if (playerInput360 != null)
         {
             playerInput360.enabled = true;
-            Debug.Log("[VRLOAD] ✓ 360 camera input enabled");
         }
 
         if (playerInputVR != null)
@@ -374,10 +432,9 @@ public class togglingXR : MonoBehaviour
         if (eventSystem != null)
         {
             eventSystem.enabled = true;
-            Debug.Log("[VRLOAD] ✓ EventSystem enabled");
         }
 
-        Debug.Log("[VRLOAD] ✓✓✓ Touch controls enabled ✓✓✓");
+        Debug.Log("[VRLOAD] ✓ Touch controls enabled");
     }
 
     private void EnableGyroscope()
@@ -387,9 +444,9 @@ public class togglingXR : MonoBehaviour
             Input.gyro.enabled = true;
             Debug.Log("[VRLOAD] ✓ Gyroscope enabled");
         }
-        else
+        else if (!isInEditorMode)
         {
-            Debug.LogError("[VRLOAD] Device does NOT support gyroscope!");
+            Debug.LogWarning("[VRLOAD] Device does not support gyroscope");
         }
     }
 
@@ -401,48 +458,29 @@ public class togglingXR : MonoBehaviour
         Debug.Log($"[VRLOAD] Device: {SystemInfo.deviceModel}");
         Debug.Log($"[VRLOAD] OS: {SystemInfo.operatingSystem}");
         Debug.Log($"[VRLOAD] Gyroscope: {SystemInfo.supportsGyroscope}");
-        Debug.Log($"[VRLOAD] Graphics: {SystemInfo.graphicsDeviceType}");
 
-        Debug.Log("[VRLOAD] === XR CONFIGURATION ===");
-        if (XRGeneralSettings.Instance != null)
+        if (XRGeneralSettings.Instance != null && XRGeneralSettings.Instance.Manager != null)
         {
-            Debug.Log("[VRLOAD] ✓ XRGeneralSettings exists");
-            if (XRGeneralSettings.Instance.Manager != null)
+            if (XRGeneralSettings.Instance.Manager.activeLoader != null)
             {
-                Debug.Log("[VRLOAD] ✓ XR Manager exists");
-                if (XRGeneralSettings.Instance.Manager.activeLoader != null)
-                {
-                    Debug.Log($"[VRLOAD] ✓ Active Loader: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
-                }
-                else
-                {
-                    Debug.LogWarning("[VRLOAD] ⚠ No active loader yet");
-                }
+                Debug.Log($"[VRLOAD] ✓ Active XR Loader: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
             }
             else
             {
-                Debug.LogError("[VRLOAD] ✗ XR Manager NULL - Configure in Project Settings!");
+                Debug.Log("[VRLOAD] No active XR loader");
             }
-        }
-        else
-        {
-            Debug.LogWarning("[VRLOAD] ⚠ XRGeneralSettings NULL - This is OK for 360 mode only");
         }
     }
 
     private void LogXRStatus()
     {
-        if (!enableDebugLogging) return;
+        if (!enableDebugLogging || isInEditorMode) return;
 
         Debug.Log("[VRLOAD] === XR STATUS ===");
 
         var displays = new List<XRDisplaySubsystem>();
         SubsystemManager.GetSubsystems(displays);
         Debug.Log($"[VRLOAD] Display Subsystems: {displays.Count}");
-        foreach (var display in displays)
-        {
-            Debug.Log($"[VRLOAD]   - Running: {display.running}");
-        }
 
         var devices = new List<UnityEngine.XR.InputDevice>();
         UnityEngine.XR.InputDevices.GetDevices(devices);
@@ -453,11 +491,6 @@ public class togglingXR : MonoBehaviour
         {
             Debug.Log($"[VRLOAD] Main Camera: {mainCam.gameObject.name}");
             Debug.Log($"[VRLOAD] Stereo enabled: {mainCam.stereoEnabled}");
-        }
-
-        if (SystemInfo.supportsGyroscope)
-        {
-            Debug.Log($"[VRLOAD] Gyroscope enabled: {Input.gyro.enabled}");
         }
     }
 
@@ -472,7 +505,7 @@ public class togglingXR : MonoBehaviour
     void OnDestroy()
     {
         Debug.Log("[VRLOAD] togglingXR destroyed");
-        if (isXRActive)
+        if (isXRActive && !isInEditorMode)
         {
             StopXR();
         }

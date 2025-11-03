@@ -1,5 +1,10 @@
 using UnityEngine;
+using System.Collections;
 
+/// <summary>
+/// OPTIMIZED: Coordinates VR mode switching with loading screen
+/// Works with VRLoadingManager to ensure smooth transitions
+/// </summary>
 public class SetVrState : MonoBehaviour
 {
     [Header("UI Sprites")]
@@ -12,25 +17,30 @@ public class SetVrState : MonoBehaviour
     [SerializeField] private GameObject mainCameraVR;
 
     [Header("VR Components")]
-    [SerializeField] private GameObject vrReticle; // VR reticle pointer
+    [SerializeField] private GameObject vrReticle;
 
     private showHideHUD hudController;
     private togglingXR xrToggler;
+    private VRLoadingManager loadingManager;
 
     private void Start()
     {
         hudController = FindFirstObjectByType<showHideHUD>();
         xrToggler = FindFirstObjectByType<togglingXR>();
+        loadingManager = VRLoadingManager.Instance;
 
         int headsetOr2D = PlayerPrefs.GetInt("toggleToVR", 0);
         Debug.Log($"[SetVrState] Starting with VR mode: {headsetOr2D}");
 
         UpdateVRSprites(headsetOr2D == 1);
 
-        // Initial camera setup (but let togglingXR handle XR initialization)
-        SetupCameras(headsetOr2D == 1);
+        // DON'T setup cameras here - let StartUp handle initial setup
+        // This prevents conflicts during scene initialization
     }
 
+    /// <summary>
+    /// UPDATED: Set VR mode with loading screen coordination
+    /// </summary>
     public void SetVR(int headsetOr2D)
     {
         Debug.Log($"[SetVrState] SetVR called with state: {headsetOr2D}");
@@ -39,104 +49,94 @@ public class SetVrState : MonoBehaviour
         PlayerPrefs.SetInt("toggleToVR", headsetOr2D);
         PlayerPrefs.Save();
 
-        // Update sprites
+        // Update sprites immediately
         UpdateVRSprites(headsetOr2D == 1);
 
-        // Setup cameras with a small delay
-        Invoke(nameof(DelayedCameraSetup), 0.1f);
+        // Show loading screen immediately
+        if (loadingManager != null)
+        {
+            if (headsetOr2D == 1)
+            {
+                loadingManager.ShowSwitchToVR();
+            }
+            else
+            {
+                loadingManager.ShowSwitchTo360();
+            }
+        }
 
-        // Trigger XR toggling
+        // Start the switch coroutine
+        StartCoroutine(SwitchModeWithLoading(headsetOr2D));
+    }
+
+    /// <summary>
+    /// NEW: Switch mode with proper loading coordination
+    /// </summary>
+    private IEnumerator SwitchModeWithLoading(int headsetOr2D)
+    {
+        bool isVRMode = headsetOr2D == 1;
+
+        // Update progress
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(0.1f);
+        }
+
+        // Trigger XR toggling (this handles XR subsystems)
         if (xrToggler != null)
         {
-            xrToggler.SwitchingVR();
-        }
-        else
-        {
-            Debug.LogWarning("[SetVrState] togglingXR component not found!");
-        }
-    }
-
-    private void DelayedCameraSetup()
-    {
-        int headsetOr2D = PlayerPrefs.GetInt("toggleToVR", 0);
-        SetupCameras(headsetOr2D == 1);
-    }
-
-    private void SetupCameras(bool isVRMode)
-    {
-        Debug.Log($"[SetVrState] Setting up cameras. VR Mode: {isVRMode}");
-
-        // First disable both cameras
-        if (mainCamera2D != null)
-        {
-            mainCamera2D.SetActive(false);
-        }
-
-        if (mainCameraVR != null)
-        {
-            mainCameraVR.SetActive(false);
-        }
-
-        // Wait one frame for deactivation
-        StartCoroutine(ActivateCameraAfterFrame(isVRMode));
-    }
-
-    private System.Collections.IEnumerator ActivateCameraAfterFrame(bool isVRMode)
-    {
-        yield return null; // Wait one frame
-
-        if (isVRMode)
-        {
-            Debug.Log("[SetVrState] Activating VR camera");
-
-            if (mainCameraVR != null)
+            if (isVRMode)
             {
-                mainCameraVR.SetActive(true);
-
-                // Enable VR reticle
-                if (vrReticle != null)
-                {
-                    vrReticle.SetActive(true);
-                    Debug.Log("[SetVrState] VR reticle enabled");
-                }
-                else
-                {
-                    Debug.LogWarning("[SetVrState] VR reticle not assigned! Please assign it in the Inspector.");
-                }
+                yield return xrToggler.StartXR();
             }
             else
             {
-                Debug.LogError("[SetVrState] VR camera GameObject is not assigned!");
-            }
-
-            if (mainCamera2D != null)
-            {
-                mainCamera2D.SetActive(false);
+                xrToggler.StopXR();
+                yield return new WaitForEndOfFrame();
             }
         }
-        else
+
+        // Update progress
+        if (loadingManager != null)
         {
-            Debug.Log("[SetVrState] Activating 2D camera");
+            loadingManager.UpdateProgress(0.7f);
+        }
 
-            if (mainCamera2D != null)
-            {
-                mainCamera2D.SetActive(true);
-            }
-            else
-            {
-                Debug.LogError("[SetVrState] 2D camera GameObject is not assigned!");
-            }
+        // Wait a frame for XR to settle
+        yield return new WaitForEndOfFrame();
 
-            if (mainCameraVR != null)
-            {
-                mainCameraVR.SetActive(false);
-            }
+        // Setup cameras (togglingXR already did this, but ensure VR reticle)
+        SetupVRReticle(isVRMode);
 
-            // Disable VR reticle
-            if (vrReticle != null)
-            {
-                vrReticle.SetActive(false);
-            }
+        // Update progress
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(0.9f);
+        }
+
+        // Brief delay for everything to settle
+        yield return new WaitForSeconds(0.2f);
+
+        // Update to 100% and hide
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            yield return new WaitForSeconds(0.2f);
+            loadingManager.HideLoading();
+        }
+
+        Debug.Log($"[SetVrState] Mode switch complete. VR Mode: {isVRMode}");
+    }
+
+    /// <summary>
+    /// Setup VR reticle (cameras are handled by togglingXR)
+    /// </summary>
+    private void SetupVRReticle(bool isVRMode)
+    {
+        if (vrReticle != null)
+        {
+            vrReticle.SetActive(isVRMode);
+            Debug.Log($"[SetVrState] VR reticle: {(isVRMode ? "enabled" : "disabled")}");
         }
     }
 
@@ -144,14 +144,8 @@ public class SetVrState : MonoBehaviour
     {
         if (spriterendererVR != null)
         {
-            // When in VR mode, show the "No VR" button (to switch back)
-            // When in 2D mode, show the "VR" button (to switch to VR)
             spriterendererVR.sprite = isVRMode ? spritePickedNoVR : spritePickedVR;
             Debug.Log($"[SetVrState] Updated sprite. Is VR Mode: {isVRMode}");
-        }
-        else
-        {
-            Debug.LogWarning("[SetVrState] Sprite renderer not assigned!");
         }
     }
 

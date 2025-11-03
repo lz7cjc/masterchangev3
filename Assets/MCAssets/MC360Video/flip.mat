@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: flip
-  m_Shader: {fileID: 4800000, guid: a77256914ec7c594fae47f9f202eb272, type: 3}
+  m_Shader: {fileID: 4800000, guid: b870f6c331f974f47892ff38e2398c87, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

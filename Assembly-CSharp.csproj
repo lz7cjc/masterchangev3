@@ -76,10 +76,12 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TipButton.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\LockCameraAtSphereCenter.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\SetSkipVRSwitchScene.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TogglePlayPauseIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInstantiator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\syncfromdb.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\loading_with_video.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\userBehavioursfromhabits.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\EnhancedVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
@@ -89,6 +91,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\tutorialPages.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsert.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoStreamDownloadTracker.cs" />
     <Compile Include="Assets\MCAssets\Scripts\InventoryItemData.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraManager.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\VideoIntegrationHelper.cs" />
@@ -127,6 +130,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\LoadingScreenTester.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerHierarchyMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ScreenDisplayLearning.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\CurvedButtonLayout.cs" />
@@ -151,6 +155,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\rirofromprefs.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadItem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingDisplayManager.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraLock.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\isloggedon.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ToggleActiveIcons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\PickBCT.cs" />
@@ -166,6 +171,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoControllerV2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsertsandpit.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\TestInterfaceButtons.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoStreamDebugOverlay.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\BuyInventoryItem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicLoadVideo1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsHUD.cs" />
@@ -248,6 +254,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\slitog.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\ExtendedFlycam.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\DirectToMainVR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />
@@ -260,6 +267,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\justGetRirosForTips.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\DoorScript.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\register.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\FastSceneLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\showfilm.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\adddrink.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LoadingManager.cs" />
@@ -277,6 +285,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\DiagnosticSceneLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\sendemail.cs" />
@@ -309,6 +318,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Food.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSphere360Setup.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ZoneManager.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -342,11 +352,13 @@
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF.shader" />
+    <None Include="Assets\MCAssets\Materials\videoplayer\InsideSphere360.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile SSD.shader" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Vertex.hlsl" />
+    <None Include="Assets\MCAssets\Materials\videoplayer\InsideSpere.shader" />
     <None Include="Assets\MCAssets\Materials\SpriteFadeOut.shader" />
     <None Include="Assets\PlayerPrefsEditor\README.txt" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />

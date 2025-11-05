@@ -89,6 +89,8 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\VRViewToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCameraNoToggleIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\tutorialPages.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\LoadingScreenAutoSetup.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\HudNearClipFix.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsert.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoStreamDownloadTracker.cs" />
@@ -103,6 +105,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\Uireticlepointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\favourites.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSceneDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRHUDMaterials.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmove.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTrigger.cs" />
@@ -131,6 +134,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\LoadingScreenTester.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\FOVAdjuster.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerHierarchyMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ScreenDisplayLearning.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\CurvedButtonLayout.cs" />
@@ -229,6 +233,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateuserdb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\SimpleHUDFaceCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SignageGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showhide3d.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\InteractiveZone.cs" />

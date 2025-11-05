@@ -152,9 +152,17 @@ public class VideoLoader : MonoBehaviour
         }
 
         // Play video
+        // Play video
         if (autoPlayOnLoad)
         {
             Debug.Log("[VIDEO-LOADER] Starting playback...");
+
+            // ADD THIS:
+            if (VRLoadingManager.Instance != null)
+            {
+                VRLoadingManager.Instance.HideLoading();
+            }
+
             videoPlayer.Play();
         }
     }

@@ -202,8 +202,10 @@ public class VideoSphere360SetupImproved : MonoBehaviour
             Gizmos.DrawLine(transform.position, targetCamera.transform.position);
 
             // Draw label
+#if UNITY_EDITOR
             UnityEditor.Handles.Label(targetCamera.transform.position + Vector3.up * 2,
                 $"Distance: {distance:F2}");
+#endif
         }
     }
 }

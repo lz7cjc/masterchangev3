@@ -1395,9 +1395,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1118203192}
-  m_LocalRotation: {x: 0.13052596, y: -0, z: -0, w: 0.99144495}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1750503497}
@@ -1406,8 +1406,8 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 2960, y: 1440}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &1118203194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1447,7 +1447,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &1118203196
 Canvas:
   m_ObjectHideFlags: 0
@@ -1457,7 +1457,7 @@ Canvas:
   m_GameObject: {fileID: 1118203192}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 2
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -2527,7 +2527,25 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4956916165539388703, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 3163376552942392542, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1548011632}
   m_SourcePrefab: {fileID: 100100000, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
+--- !u!1 &1168598790 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 639706056600653329, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
+  m_PrefabInstance: {fileID: 1168598789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!212 &1168598791 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 7403344635935081976, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
+  m_PrefabInstance: {fileID: 1168598789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!212 &1168598792 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 8411941818156890291, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
+  m_PrefabInstance: {fileID: 1168598789}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1188104649
 GameObject:
   m_ObjectHideFlags: 0
@@ -3134,6 +3152,49 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6133580776408319190, guid: a06d8a04fc1eeff4d83b1e1a95b5ea19, type: 3}
   m_PrefabInstance: {fileID: 1168598789}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1548011632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920730887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea73c9cd7a67b54e858618789a7a473, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  videoPlayer: {fileID: 1727236118}
+  audioPlayer: {fileID: 1727236118}
+  mousehover: 0
+  counter: 0
+  delay: 3
+  spriterendererPlay: {fileID: 670141063}
+  spriterendererPause: {fileID: 1168598791}
+  spriterendererStop: {fileID: 1168598792}
+  spriterendererFF: {fileID: 2124867424}
+  spriterendererFFFF: {fileID: 602784730}
+  spriteDefaultPause: {fileID: 21300000, guid: f16645e3fcef1a1468c30fde070c9f5d, type: 3}
+  spriteHoverPause: {fileID: 21300000, guid: 8c280575a7b785e46a8e235e14f14c26, type: 3}
+  spriteDefaultStop: {fileID: 21300000, guid: 49aef40bfe0d5d6439da47c3a0d08ba5, type: 3}
+  spriteHoverStop: {fileID: 21300000, guid: 2452e03ab13f41340ad288e5c75d04bc, type: 3}
+  spriteDefaultPlay: {fileID: 21300000, guid: ad09b98b4bb8a074aa6125f3433587d8, type: 3}
+  spriteHoverPlay: {fileID: 21300000, guid: 1e9fc6a0db0e47749a7fc0fd87a70b20, type: 3}
+  spriteDefaultFF: {fileID: 21300000, guid: 37cc985c9bbabf946913639740eb9967, type: 3}
+  spriteHoverFF: {fileID: 21300000, guid: 133cb25bdd8575148bd92d605ce1b0f2, type: 3}
+  spriteSelectedFF: {fileID: 21300000, guid: 2a009523d168c824c8dcc066dac02f4f, type: 3}
+  spriteDefaultFFFF: {fileID: 21300000, guid: 37cc985c9bbabf946913639740eb9967, type: 3}
+  spriteHoverFFFF: {fileID: 21300000, guid: 9ff6f56e56aa6b44f815e355c24eb482, type: 3}
+  spriteSelectedFFFF: {fileID: 21300000, guid: f247d880b568c7145be6da3943c1db5b, type: 3}
+  spriteDefaultRewind: {fileID: 21300000, guid: cca51897ae1e93647a15d14fcee67a9f, type: 3}
+  spriteHoverRewind: {fileID: 21300000, guid: 4b371cc41df2eb84c83b172dd27d01ae, type: 3}
+  spriteSelectedRewind: {fileID: 21300000, guid: ed0482ae98fad194188eeb99eca31631, type: 3}
+  playGameObject: {fileID: 670141062}
+  pauseGameObject: {fileID: 1168598790}
+  objectsToShowOnStop: []
+  objectsToHideOnStop: []
+  elapsedTimeText: {fileID: 0}
+  filmLengthText: {fileID: 1026243654}
 --- !u!1 &1552114103
 GameObject:
   m_ObjectHideFlags: 0

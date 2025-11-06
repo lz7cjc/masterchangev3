@@ -14,7 +14,7 @@ using UnityEngine.EventSystems;
 /// - Smoother transitions
 /// - Canvas event camera switching
 /// </summary>
-public class togglingXR : MonoBehaviour
+public class togglingXRFilm : MonoBehaviour
 {
     public bool switchVRon;
 
@@ -327,8 +327,21 @@ public class togglingXR : MonoBehaviour
     /// </summary>
     private void SwitchToVRCamera()
     {
-        if (mainCamera360 != null) mainCamera360.SetActive(false);
-        if (mainCameraVR != null) mainCameraVR.SetActive(true);
+        if (mainCamera360 != null)
+        {
+            mainCamera360.SetActive(false);
+            // Disable 360 reticle
+            if (reticlePointer360 != null)
+                reticlePointer360.enabled = false;
+        }
+
+        if (mainCameraVR != null)
+        {
+            mainCameraVR.SetActive(true);
+            // Enable VR reticle
+            if (reticlePointerVR != null)
+                reticlePointerVR.enabled = true;
+        }
 
         if (hudCanvas != null && mainCameraVR != null)
         {
@@ -344,8 +357,21 @@ public class togglingXR : MonoBehaviour
     /// </summary>
     private void SwitchTo360Camera()
     {
-        if (mainCameraVR != null) mainCameraVR.SetActive(false);
-        if (mainCamera360 != null) mainCamera360.SetActive(true);
+        if (mainCameraVR != null)
+        {
+            mainCameraVR.SetActive(false);
+            // Disable VR reticle
+            if (reticlePointerVR != null)
+                reticlePointerVR.enabled = false;
+        }
+
+        if (mainCamera360 != null)
+        {
+            mainCamera360.SetActive(true);
+            // Enable 360 reticle
+            if (reticlePointer360 != null)
+                reticlePointer360.enabled = true;
+        }
 
         if (hudCanvas != null && mainCamera360 != null)
         {

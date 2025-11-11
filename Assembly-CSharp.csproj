@@ -101,6 +101,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\AddressablePositioner.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRInteractionDiagnostic.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\Uireticlepointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ChangeScene3d.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\isloggedon.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ToggleActiveIcons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\PickBCT.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRReticlePointerFixed.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDFollower.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\TerminalVoice.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\DebugAddressableLoader.cs" />
@@ -263,6 +265,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRPlayerRotation.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Habits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\TestToggle.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDFollowerImproved.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\FPSController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmoveold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />
@@ -299,6 +302,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DiagnosticSceneLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
@@ -307,6 +311,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\showhideformat.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRVisualEnhancer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\togglingXR.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRCanvasEventCameraSwitcher.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\ShowfilmAdapter.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\StreetLightGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\riroStopGo.cs" />
@@ -314,6 +319,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BikeTrailGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
+    <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDDiagnostic.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
     <Compile Include="Assets\MCAssets\InputManager\UIInputController.cs" />

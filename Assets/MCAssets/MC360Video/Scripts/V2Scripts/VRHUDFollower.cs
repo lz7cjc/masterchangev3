@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Keeps HUD in front of camera when player rotates beyond threshold.
+/// HUD maintains fixed world position and only rotates when threshold exceeded.
 /// Attach to HUDPivot (parent of HUDCanvas).
-/// SIMPLE: Just tracks camera Y-axis rotation, no complex relative positioning.
 /// </summary>
 public class VRHUDFollower : MonoBehaviour
 {
@@ -11,9 +11,13 @@ public class VRHUDFollower : MonoBehaviour
     [SerializeField] private Transform camera360;
     [SerializeField] private Transform cameraVR;
 
-    [Header("Follow Settings")]
-    [SerializeField] private float rotationThreshold = 15f; // Degrees before HUD moves (lowered from 30)
-    [SerializeField] private float followSpeed = 8f; // Increased from 5
+    [Header("Position Settings")]
+    [SerializeField] private float distanceFromCamera = 1.5f;
+    [SerializeField] private bool setPositionOnStart = true;
+
+    [Header("Rotation Settings")]
+    [SerializeField] private float rotationThreshold = 15f; // Degrees before HUD rotates
+    [SerializeField] private float followSpeed = 8f;
     [SerializeField] private bool smoothFollow = true;
 
     [Header("Debug")]
@@ -28,9 +32,20 @@ public class VRHUDFollower : MonoBehaviour
 
         if (activeCamera != null)
         {
-            lastCameraYRotation = activeCamera.eulerAngles.y;
+            // Set initial position ONCE - based on camera's starting position and orientation
+            if (setPositionOnStart)
+            {
+                Vector3 targetPosition = activeCamera.position + activeCamera.forward * distanceFromCamera;
+                transform.position = targetPosition;
 
-            // Set initial HUD rotation to match camera
+                if (showDebug)
+                {
+                    Debug.Log($"HUD positioned at: {transform.position}");
+                }
+            }
+
+            // Set initial rotation to match camera
+            lastCameraYRotation = activeCamera.eulerAngles.y;
             Vector3 currentRot = transform.eulerAngles;
             currentRot.y = lastCameraYRotation;
             transform.eulerAngles = currentRot;
@@ -43,6 +58,7 @@ public class VRHUDFollower : MonoBehaviour
 
         if (activeCamera == null) return;
 
+        // ONLY handle rotation threshold - do NOT update position
         float currentCameraY = activeCamera.eulerAngles.y;
         float angleDiff = Mathf.DeltaAngle(lastCameraYRotation, currentCameraY);
 
@@ -112,10 +128,14 @@ public class VRHUDFollower : MonoBehaviour
         UpdateActiveCamera();
         if (activeCamera != null)
         {
+            Vector3 targetPosition = activeCamera.position + activeCamera.forward * distanceFromCamera;
+            transform.position = targetPosition;
+
             Vector3 currentRot = transform.eulerAngles;
             currentRot.y = activeCamera.eulerAngles.y;
             transform.eulerAngles = currentRot;
             lastCameraYRotation = activeCamera.eulerAngles.y;
+
             Debug.Log("HUD snapped to camera direction");
         }
     }

@@ -1,22 +1,15 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.Events;
 
-/// <summary>
-/// DEBUG VERSION: Now has extensive logging to diagnose interaction issues
-/// UPDATED: Now uses UIReticlePointer for screen-space reticle that's always visible
-/// Handles raycasting and interaction logic for VR and 360 modes
-/// </summary>
 public class VRReticlePointer : MonoBehaviour
 {
     public enum ViewMode { Mode2D, Mode360, ModeVR }
 
     [Header("Mode Settings")]
     [SerializeField] private ViewMode currentMode = ViewMode.Mode360;
-    [SerializeField] private bool showDebugRay = true; // CHANGED: Default to true for debugging
+    [SerializeField] private bool showDebugRay = false;
 
     [Header("Camera Movement Settings")]
     [SerializeField, Range(0.1f, 20f)] private float horizontalSensitivity = 0.5f;
@@ -33,13 +26,6 @@ public class VRReticlePointer : MonoBehaviour
     [SerializeField] private float maxInteractionDistance = 10f;
     [SerializeField] private LayerMask interactableLayers = -1;
 
-    [Header("Reticle Settings")]
-    [SerializeField] private bool createReticleAutomatically = true;
-
-    [Header("Events")]
-    [SerializeField] private UnityEvent<GameObject> OnPointerEnter;
-    [SerializeField] private UnityEvent<GameObject> OnPointerExit;
-
     private PlayerInput playerInput;
     private InputAction lookAction;
     private InputAction touchPressAction;
@@ -47,55 +33,35 @@ public class VRReticlePointer : MonoBehaviour
 
     private Camera mainCamera;
     private GameObject currentTarget;
-
-    private UIReticlePointer reticle; // NEW: UI-based reticle
+    private WorldSpaceFocusIndicator focusIndicator;
 
     private bool isRotating = false;
     private Vector2 previousLookInput;
     private Vector3 currentRotation;
     private Vector3 targetRotation;
 
-    // Flag to track if we're using Input System or fallback
-    private bool useInputSystemFallback = false;
-
     private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
         mainCamera = GetComponentInChildren<Camera>();
+        focusIndicator = GetComponent<WorldSpaceFocusIndicator>();
 
-        Debug.Log($"[VRReticlePointer] Awake - Camera found: {mainCamera != null}");
-        if (mainCamera != null)
+        if (focusIndicator == null)
         {
-            Debug.Log($"[VRReticlePointer] Camera name: {mainCamera.name}, Position: {mainCamera.transform.position}");
+            // Try adding the component if it doesn't exist
+            focusIndicator = gameObject.AddComponent<WorldSpaceFocusIndicator>();
+            Debug.Log("Added WorldSpaceFocusIndicator component");
         }
 
-        // NEW: Setup UI reticle system
-        SetupReticle();
-
-        // Try to get Input Actions, but don't fail if they're not configured
-        if (playerInput != null)
+        if (playerInput == null)
         {
-            try
-            {
-                lookAction = playerInput.actions["Look"];
-                touchPressAction = playerInput.actions["TouchPress"];
-                clickAction = playerInput.actions["Click"];
+            Debug.LogError("PlayerInput component not found!");
+            return;
+        }
 
-                Debug.Log("[VRReticlePointer] Using Input System actions");
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[VRReticlePointer] Input Actions not configured: {e.Message}");
-                Debug.LogWarning("[VRReticlePointer] Falling back to direct mouse input for editor testing");
-                useInputSystemFallback = true;
-                playerInput = null;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[VRReticlePointer] No PlayerInput component - using mouse input fallback");
-            useInputSystemFallback = true;
-        }
+        lookAction = playerInput.actions["Look"];
+        touchPressAction = playerInput.actions["TouchPress"];
+        clickAction = playerInput.actions["Click"];
 
         currentRotation = transform.eulerAngles;
         targetRotation = currentRotation;
@@ -103,50 +69,8 @@ public class VRReticlePointer : MonoBehaviour
         ConfigureControls();
     }
 
-    private void Start()
-    {
-        // FIXED: Ensure reticle starts in idle state (not hovering)
-        if (reticle != null)
-        {
-            reticle.SetHoverState(false);
-            reticle.SetActiveState(false);
-
-            Debug.Log("[VRReticlePointer] Reticle initialized to idle state");
-        }
-
-        Debug.Log($"[VRReticlePointer] Start complete - Mode: {currentMode}, MaxDist: {maxInteractionDistance}, Layers: {LayerMaskToString(interactableLayers)}");
-    }
-
-    /// <summary>
-    /// NEW: Setup the UI-based reticle
-    /// </summary>
-    private void SetupReticle()
-    {
-        // Check if reticle already exists
-        reticle = GetComponent<UIReticlePointer>();
-
-        if (reticle == null && createReticleAutomatically)
-        {
-            // Create the reticle component
-            reticle = gameObject.AddComponent<UIReticlePointer>();
-            Debug.Log("[VRReticlePointer] UIReticlePointer created automatically");
-        }
-        else if (reticle != null)
-        {
-            Debug.Log("[VRReticlePointer] Using existing UIReticlePointer");
-        }
-        else
-        {
-            Debug.LogWarning("[VRReticlePointer] No reticle will be displayed - add UIReticlePointer manually if needed");
-        }
-    }
-
     private void ConfigureControls()
     {
-        // Only configure if we have valid Input System setup
-        if (playerInput == null || useInputSystemFallback)
-            return;
-
         if (touchPressAction != null)
         {
             touchPressAction.performed -= StartRotation;
@@ -196,53 +120,51 @@ public class VRReticlePointer : MonoBehaviour
     {
         if (currentMode == ViewMode.ModeVR) return;
 
-        // Handle rotation in 360 mode
-        if (currentMode == ViewMode.Mode360)
+        if (currentMode == ViewMode.Mode360 && isRotating)
         {
-            // If using fallback input, handle mouse directly
-            if (useInputSystemFallback || playerInput == null)
-            {
-                HandleMouseInput();
-            }
-
-            if (isRotating)
-            {
-                HandleRotation();
-            }
+            HandleRotation();
         }
 
         CheckInteractions();
     }
 
-    private void HandleMouseInput()
+    private void HandleRotation()
     {
-        // Direct mouse input for editor testing when Input System is not configured
-        // Use right mouse button for rotation
-        if (Input.GetMouseButtonDown(1)) // Right click
+        Vector2 lookInput = lookAction.ReadValue<Vector2>();
+        Vector2 lookDelta = lookInput - previousLookInput;
+
+        // Allow full 360 horizontal rotation
+        targetRotation.y += lookDelta.x * horizontalSensitivity;
+
+        // Limit vertical rotation if enabled
+        if (limitVerticalRotation)
         {
-            isRotating = true;
-            previousLookInput = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            currentRotation = new Vector3(
-                Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
-                transform.eulerAngles.y,
-                0
-            );
-            targetRotation = currentRotation;
+            targetRotation.x = Mathf.Clamp(targetRotation.x - lookDelta.y * verticalSensitivity, minVerticalAngle, maxVerticalAngle);
+        }
+        else
+        {
+            targetRotation.x -= lookDelta.y * verticalSensitivity;
         }
 
-        if (Input.GetMouseButtonUp(1))
+        if (useSmoothing)
         {
-            isRotating = false;
+            currentRotation = Vector3.Lerp(currentRotation, targetRotation, Time.deltaTime * dampingStrength);
+            transform.rotation = Quaternion.Euler(currentRotation);
         }
+        else
+        {
+            transform.rotation = Quaternion.Euler(targetRotation);
+        }
+
+        previousLookInput = lookInput;
     }
 
     private void StartRotation(InputAction.CallbackContext context)
     {
-        isRotating = true;
-        Vector2 touchPosition = context.ReadValue<Vector2>();
-        previousLookInput = touchPosition;
+        if (currentMode == ViewMode.Mode2D || currentMode == ViewMode.ModeVR) return;
 
-        // Store current rotation
+        isRotating = true;
+        previousLookInput = lookAction.ReadValue<Vector2>();
         currentRotation = new Vector3(
             Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
             transform.eulerAngles.y,
@@ -256,367 +178,134 @@ public class VRReticlePointer : MonoBehaviour
         isRotating = false;
     }
 
-    private void HandleRotation()
+    private void CheckInteractions()
     {
-        Vector2 lookInput;
+        Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
+        RaycastHit hitInfo;
 
-        if (useInputSystemFallback || playerInput == null)
+        // Draw debug ray
+        if (showDebugRay)
         {
-            // Direct mouse delta for editor testing
-            Vector2 currentMousePos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            lookInput = currentMousePos - previousLookInput;
-            previousLookInput = currentMousePos;
+            Debug.DrawRay(ray.origin, ray.direction * maxInteractionDistance, Color.yellow);
         }
-        else if (lookAction != null)
+
+        if (Physics.Raycast(ray, out hitInfo, maxInteractionDistance, interactableLayers))
         {
-            lookInput = lookAction.ReadValue<Vector2>();
+            if (showDebugRay)
+            {
+                // Draw a hit point marker
+                Debug.DrawLine(ray.origin, hitInfo.point, Color.green);
+            }
+            HandleTargetInteraction(hitInfo.collider.gameObject);
         }
         else
         {
-            return;
+            ClearCurrentTarget();
+        }
+    }
+
+    private void HandleTargetInteraction(GameObject hitObject)
+    {
+        // Check if this is an interactable object
+        bool isInteractable = false;
+
+        // Consider object interactable if it has a BoxCollider on the correct layer
+        BoxCollider boxCollider = hitObject.GetComponent<BoxCollider>();
+        if (boxCollider != null && ((1 << hitObject.layer) & interactableLayers) != 0)
+        {
+            isInteractable = true;
         }
 
-        if (lookInput.magnitude > 0.001f)
+        // Also consider objects with EventTrigger components as interactable
+        EventTrigger eventTrigger = hitObject.GetComponent<EventTrigger>();
+        if (eventTrigger != null)
         {
-            targetRotation.y += lookInput.x * horizontalSensitivity;
-            targetRotation.x -= lookInput.y * verticalSensitivity;
+            isInteractable = true;
+        }
 
-            if (limitVerticalRotation)
+        // Handle the target interaction based on interactability
+        if (isInteractable)
+        {
+            if (currentTarget != hitObject)
             {
-                targetRotation.x = Mathf.Clamp(targetRotation.x, minVerticalAngle, maxVerticalAngle);
-            }
+                ClearCurrentTarget();
+                currentTarget = hitObject;
+                TriggerPointerEnter(hitObject);
 
-            if (useSmoothing)
-            {
-                currentRotation = Vector3.Lerp(currentRotation, targetRotation, dampingStrength * Time.deltaTime);
+                // Update focus indicator state
+                if (focusIndicator != null)
+                {
+                    focusIndicator.SetInteractiveState(true);
+                }
             }
-            else
-            {
-                currentRotation = targetRotation;
-            }
-
-            transform.eulerAngles = currentRotation;
+        }
+        else if (currentTarget != null)
+        {
+            ClearCurrentTarget();
         }
     }
 
     private void HandleClick(InputAction.CallbackContext context)
     {
-        Debug.Log("Click detected in 2D mode");
+        if (currentMode != ViewMode.Mode2D || currentTarget == null) return;
+
+        EventTrigger eventTrigger = currentTarget.GetComponent<EventTrigger>();
+        if (eventTrigger != null)
+        {
+            var clickEntry = eventTrigger.triggers.Find(
+                trigger => trigger.eventID == EventTriggerType.PointerClick);
+
+            if (clickEntry != null)
+            {
+                var eventData = new PointerEventData(EventSystem.current);
+                clickEntry.callback.Invoke(eventData);
+            }
+        }
     }
 
-    // ============================================
-    // UPDATED CHECKINTERACTIONS WITH DEBUG LOGGING
-    // ============================================
-    private void CheckInteractions()
+    private void ClearCurrentTarget()
     {
-        if (mainCamera == null) return;
-
-        Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-        RaycastHit hit;
-
-        if (showDebugRay)
+        if (currentTarget != null)
         {
-            Debug.DrawRay(ray.origin, ray.direction * maxInteractionDistance, Color.green, 0.1f);
-        }
+            TriggerPointerExit(currentTarget);
+            currentTarget = null;
 
-        bool hitSomething = Physics.Raycast(ray, out hit, maxInteractionDistance, interactableLayers);
-
-        // DEBUG: Log every 60 frames (about once per second at 60fps)
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"<color=cyan>[RAYCAST DEBUG]</color> Hit: {hitSomething}, Distance: {(hitSomething ? hit.distance.ToString("F2") : "N/A")}, Target: {(hitSomething ? hit.collider.gameObject.name : "None")}");
-            Debug.Log($"<color=cyan>[RAYCAST DEBUG]</color> Ray Origin: {ray.origin}, Direction: {ray.direction}, MaxDist: {maxInteractionDistance}");
-            Debug.Log($"<color=cyan>[RAYCAST DEBUG]</color> Layers: {LayerMaskToString(interactableLayers)}");
-        }
-
-        if (hitSomething)
-        {
-            GameObject target = hit.collider.gameObject;
-
-            // DEBUG: Log when hitting something new
-            if (target != currentTarget)
+            // Reset focus indicator state
+            if (focusIndicator != null)
             {
-                Debug.Log($"<color=yellow>[HIT]</color> New target detected: {target.name} on layer {LayerMask.LayerToName(target.layer)} at distance {hit.distance:F2}");
-                Debug.Log($"<color=yellow>[HIT]</color> Target has components: {string.Join(", ", System.Array.ConvertAll(target.GetComponents<Component>(), c => c.GetType().Name))}");
-            }
-
-            // Update reticle visual state
-            if (reticle != null)
-            {
-                reticle.SetHoverState(true);
-            }
-
-            if (target != currentTarget)
-            {
-                if (currentTarget != null)
-                {
-                    Debug.Log($"<color=orange>[EXIT]</color> Leaving previous target: {currentTarget.name}");
-                    TriggerPointerExit(currentTarget);
-                }
-
-                currentTarget = target;
-                Debug.Log($"<color=green>[ENTER]</color> Entering new target: {target.name}");
-                TriggerPointerEnter(target);
-            }
-        }
-        else
-        {
-            // Update reticle to idle state
-            if (reticle != null)
-            {
-                reticle.SetHoverState(false);
-            }
-
-            if (currentTarget != null)
-            {
-                Debug.Log($"<color=orange>[EXIT]</color> No longer hitting anything, leaving: {currentTarget.name}");
-                TriggerPointerExit(currentTarget);
-                currentTarget = null;
+                focusIndicator.SetInteractiveState(false);
             }
         }
     }
 
     private void TriggerPointerEnter(GameObject target)
     {
-        if (target == null) return;
-
-        Debug.Log($"<color=lime>[TRIGGER ENTER]</color> Attempting to trigger pointer enter on: {target.name}");
-
-        // IMPROVED: Better error handling for UnityEvent invocation
-        try
-        {
-            // Validate the event before invoking
-            if (OnPointerEnter != null && OnPointerEnter.GetPersistentEventCount() > 0)
-            {
-                // Check if all persistent events are valid
-                bool allEventsValid = true;
-                for (int i = 0; i < OnPointerEnter.GetPersistentEventCount(); i++)
-                {
-                    if (OnPointerEnter.GetPersistentTarget(i) == null)
-                    {
-                        Debug.LogWarning($"OnPointerEnter event {i} has null target. Skipping event invocation.");
-                        allEventsValid = false;
-                        break;
-                    }
-                }
-
-                if (allEventsValid)
-                {
-                    OnPointerEnter.Invoke(target);
-                    Debug.Log($"<color=lime>[TRIGGER ENTER]</color> UnityEvent OnPointerEnter invoked successfully");
-                }
-                else
-                {
-                    Debug.LogError($"OnPointerEnter has invalid event connections. Please check the Inspector and reassign missing scripts.");
-                }
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Error invoking OnPointerEnter for {target.name}: {e.Message}");
-            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
-        }
-
-        // Try IPointerEnterHandler interface
-        var enterHandlers = target.GetComponents<IPointerEnterHandler>();
-        if (enterHandlers.Length > 0)
-        {
-            Debug.Log($"<color=lime>[TRIGGER ENTER]</color> Found {enterHandlers.Length} IPointerEnterHandler components");
-            PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2);
-
-            foreach (var handler in enterHandlers)
-            {
-                Debug.Log($"<color=lime>[TRIGGER ENTER]</color> Calling OnPointerEnter on: {handler.GetType().Name}");
-                handler.OnPointerEnter(eventData);
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"<color=red>[TRIGGER ENTER]</color> No IPointerEnterHandler found on {target.name}!");
-        }
-
-        // Handle EventTrigger components with better error handling
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            Debug.Log($"<color=lime>[TRIGGER ENTER]</color> EventTrigger component found");
-            try
+            var enterEntry = eventTrigger.triggers.Find(
+                trigger => trigger.eventID == EventTriggerType.PointerEnter);
+
+            if (enterEntry != null)
             {
-                // Create a properly initialized pointer event data
-                PointerEventData eventData = new PointerEventData(EventSystem.current);
-                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
-
-                // Manually trigger the pointer enter using ExecuteEvents
-                ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerEnterHandler);
-
-                // Check for EventTrigger component's entries
-                if (eventTrigger.triggers != null)
-                {
-                    EventTrigger.Entry enterEntry = null;
-
-                    // Find the pointer enter entry
-                    foreach (EventTrigger.Entry entry in eventTrigger.triggers)
-                    {
-                        if (entry.eventID == EventTriggerType.PointerEnter)
-                        {
-                            enterEntry = entry;
-                            break;
-                        }
-                    }
-
-                    // Invoke the callback if found and valid
-                    if (enterEntry != null && enterEntry.callback != null)
-                    {
-                        // Validate the callback before invoking
-                        if (enterEntry.callback.GetPersistentEventCount() > 0)
-                        {
-                            bool callbackValid = true;
-                            for (int i = 0; i < enterEntry.callback.GetPersistentEventCount(); i++)
-                            {
-                                if (enterEntry.callback.GetPersistentTarget(i) == null)
-                                {
-                                    Debug.LogWarning($"EventTrigger PointerEnter callback {i} has null target on {target.name}");
-                                    callbackValid = false;
-                                    break;
-                                }
-                            }
-
-                            if (callbackValid)
-                            {
-                                enterEntry.callback.Invoke(eventData);
-                                Debug.Log($"<color=lime>[TRIGGER ENTER]</color> EventTrigger callback invoked");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"<color=yellow>[TRIGGER ENTER]</color> EventTrigger has no PointerEnter entry configured");
-                    }
-                }
+                var eventData = new PointerEventData(EventSystem.current);
+                enterEntry.callback.Invoke(eventData);
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Error triggering EventTrigger pointer enter for {target.name}: {e.Message}");
-                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"<color=yellow>[TRIGGER ENTER]</color> No EventTrigger component on {target.name}");
         }
     }
 
     private void TriggerPointerExit(GameObject target)
     {
-        if (target == null) return;
-
-        Debug.Log($"<color=orange>[TRIGGER EXIT]</color> Attempting to trigger pointer exit on: {target.name}");
-
-        // IMPROVED: Better error handling for UnityEvent invocation
-        try
-        {
-            // Validate the event before invoking
-            if (OnPointerExit != null && OnPointerExit.GetPersistentEventCount() > 0)
-            {
-                // Check if all persistent events are valid
-                bool allEventsValid = true;
-                for (int i = 0; i < OnPointerExit.GetPersistentEventCount(); i++)
-                {
-                    if (OnPointerExit.GetPersistentTarget(i) == null)
-                    {
-                        Debug.LogWarning($"OnPointerExit event {i} has null target. Skipping event invocation.");
-                        allEventsValid = false;
-                        break;
-                    }
-                }
-
-                if (allEventsValid)
-                {
-                    OnPointerExit.Invoke(target);
-                }
-                else
-                {
-                    Debug.LogError($"OnPointerExit has invalid event connections. Please check the Inspector and reassign missing scripts.");
-                }
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Error invoking OnPointerExit for {target.name}: {e.Message}");
-            Debug.LogError($"This usually means there's a missing script or type mismatch in the Unity Events. Please check the Inspector.");
-        }
-
-        // Try IPointerExitHandler interface
-        var exitHandlers = target.GetComponents<IPointerExitHandler>();
-        if (exitHandlers.Length > 0)
-        {
-            PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = new Vector2(Screen.width / 2, Screen.height / 2);
-
-            foreach (var handler in exitHandlers)
-            {
-                handler.OnPointerExit(eventData);
-            }
-        }
-
-        // Handle EventTrigger components with better error handling
         EventTrigger eventTrigger = target.GetComponent<EventTrigger>();
         if (eventTrigger != null)
         {
-            try
+            var exitEntry = eventTrigger.triggers.Find(
+                trigger => trigger.eventID == EventTriggerType.PointerExit);
+
+            if (exitEntry != null)
             {
-                // Create a properly initialized pointer event data
-                PointerEventData eventData = new PointerEventData(EventSystem.current);
-                eventData.position = new Vector2(Screen.width / 2, Screen.height / 2); // Center of screen
-
-                // Manually trigger the pointer exit using ExecuteEvents
-                ExecuteEvents.Execute(target, eventData, ExecuteEvents.pointerExitHandler);
-
-                // Check for EventTrigger component's entries
-                if (eventTrigger.triggers != null)
-                {
-                    EventTrigger.Entry exitEntry = null;
-
-                    // Find the pointer exit entry
-                    foreach (EventTrigger.Entry entry in eventTrigger.triggers)
-                    {
-                        if (entry.eventID == EventTriggerType.PointerExit)
-                        {
-                            exitEntry = entry;
-                            break;
-                        }
-                    }
-
-                    // Invoke the callback if found and valid
-                    if (exitEntry != null && exitEntry.callback != null)
-                    {
-                        // Validate the callback before invoking
-                        if (exitEntry.callback.GetPersistentEventCount() > 0)
-                        {
-                            bool callbackValid = true;
-                            for (int i = 0; i < exitEntry.callback.GetPersistentEventCount(); i++)
-                            {
-                                if (exitEntry.callback.GetPersistentTarget(i) == null)
-                                {
-                                    Debug.LogWarning($"EventTrigger PointerExit callback {i} has null target on {target.name}");
-                                    callbackValid = false;
-                                    break;
-                                }
-                            }
-
-                            if (callbackValid)
-                            {
-                                exitEntry.callback.Invoke(eventData);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Error triggering EventTrigger pointer exit for {target.name}: {e.Message}");
-                Debug.LogError($"This usually indicates a missing script or method in the EventTrigger configuration.");
+                var eventData = new PointerEventData(EventSystem.current);
+                exitEntry.callback.Invoke(eventData);
             }
         }
     }
@@ -625,13 +314,6 @@ public class VRReticlePointer : MonoBehaviour
     {
         currentMode = newMode;
         ConfigureControls();
-
-        // NEW: Show/hide reticle based on mode
-        if (reticle != null)
-        {
-            // Always show reticle in 360 and VR modes
-            reticle.SetVisible(newMode == ViewMode.Mode360 || newMode == ViewMode.ModeVR);
-        }
     }
 
     private void OnDrawGizmos()
@@ -642,96 +324,4 @@ public class VRReticlePointer : MonoBehaviour
             Gizmos.DrawRay(mainCamera.transform.position, mainCamera.transform.forward * maxInteractionDistance);
         }
     }
-
-    // DIAGNOSTIC METHODS - Add these to help identify issues
-    [ContextMenu("Diagnose Event Connections")]
-    private void DiagnoseEventConnections()
-    {
-        Debug.Log("=== VRReticlePointer Event Diagnostics ===");
-
-        if (OnPointerEnter != null)
-        {
-            Debug.Log($"OnPointerEnter has {OnPointerEnter.GetPersistentEventCount()} persistent events:");
-            for (int i = 0; i < OnPointerEnter.GetPersistentEventCount(); i++)
-            {
-                var target = OnPointerEnter.GetPersistentTarget(i);
-                var methodName = OnPointerEnter.GetPersistentMethodName(i);
-                Debug.Log($"  Event {i}: Target = {(target != null ? target.name : "NULL")}, Method = {methodName}");
-            }
-        }
-        else
-        {
-            Debug.Log("OnPointerEnter is null");
-        }
-
-        if (OnPointerExit != null)
-        {
-            Debug.Log($"OnPointerExit has {OnPointerExit.GetPersistentEventCount()} persistent events:");
-            for (int i = 0; i < OnPointerExit.GetPersistentEventCount(); i++)
-            {
-                var target = OnPointerExit.GetPersistentTarget(i);
-                var methodName = OnPointerExit.GetPersistentMethodName(i);
-                Debug.Log($"  Event {i}: Target = {(target != null ? target.name : "NULL")}, Method = {methodName}");
-            }
-        }
-        else
-        {
-            Debug.Log("OnPointerExit is null");
-        }
-    }
-
-    // Helper method to convert LayerMask to readable string
-    private string LayerMaskToString(LayerMask mask)
-    {
-        if (mask == -1) return "Everything";
-        if (mask == 0) return "Nothing";
-
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        for (int i = 0; i < 32; i++)
-        {
-            if ((mask & (1 << i)) != 0)
-            {
-                if (sb.Length > 0) sb.Append(", ");
-                sb.Append(LayerMask.LayerToName(i));
-            }
-        }
-        return sb.Length > 0 ? sb.ToString() : "Nothing";
-    }
-
-    #region Public API for Reticle Customization
-
-    /// <summary>
-    /// NEW: Customize reticle colors
-    /// </summary>
-    public void SetReticleColors(Color idle, Color hover, Color active)
-    {
-        if (reticle != null)
-        {
-            reticle.SetColors(idle, hover, active);
-        }
-    }
-
-    /// <summary>
-    /// NEW: Customize reticle sizes (in pixels)
-    /// </summary>
-    public void SetReticleSizes(float dotSize, float circleSize, float ringThickness)
-    {
-        if (reticle != null)
-        {
-            reticle.SetSizes(dotSize, circleSize, ringThickness);
-        }
-    }
-
-    /// <summary>
-    /// NEW: Change reticle shape
-    /// </summary>
-    public void SetReticleShape(UIReticlePointer.ReticleShape shape)
-    {
-        if (reticle != null)
-        {
-            reticle.SetReticleShape(shape);
-        }
-    }
-
-    #endregion
 }

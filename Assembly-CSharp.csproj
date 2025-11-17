@@ -302,7 +302,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\VRReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DiagnosticSceneLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />

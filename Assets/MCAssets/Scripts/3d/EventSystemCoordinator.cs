@@ -3,12 +3,16 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.XR;
 
+/// <summary>
+/// UPDATED: Event System coordinator for GazeReticlePointer
+/// Changed VRReticlePointer to GazeReticlePointer
+/// </summary>
 public class EventSystemCoordinator : MonoBehaviour
 {
     [Header("Components")]
     [SerializeField] private EventSystem eventSystem;
     [SerializeField] private InputSystemUIInputModule uiInputModule;
-    [SerializeField] private VRReticlePointer vrReticlePointer;
+    [SerializeField] private GazeReticlePointer gazeReticlePointer;  // CHANGED: was VRReticlePointer
 
     [Header("VR Settings")]
     [SerializeField] private Camera vrCamera;
@@ -23,8 +27,8 @@ public class EventSystemCoordinator : MonoBehaviour
         if (uiInputModule == null)
             uiInputModule = FindFirstObjectByType<InputSystemUIInputModule>();
 
-        if (vrReticlePointer == null)
-            vrReticlePointer = FindFirstObjectByType<VRReticlePointer>();
+        if (gazeReticlePointer == null)
+            gazeReticlePointer = FindFirstObjectByType<GazeReticlePointer>();  // CHANGED
 
         if (eventSystem == null)
         {
@@ -67,16 +71,16 @@ public class EventSystemCoordinator : MonoBehaviour
             Debug.Log($"[EventSystemCoordinator] UI Module pointer behavior: {uiInputModule.pointerBehavior}");
         }
 
-        // Update the VR reticle pointer mode
-        if (vrReticlePointer != null)
+        // Update the gaze reticle pointer mode
+        if (gazeReticlePointer != null)
         {
             if (isVRMode)
             {
-                vrReticlePointer.SetMode(VRReticlePointer.ViewMode.ModeVR);
+                gazeReticlePointer.SetMode(GazeReticlePointer.ViewMode.ModeVR);
             }
             else
             {
-                vrReticlePointer.SetMode(VRReticlePointer.ViewMode.Mode360);
+                gazeReticlePointer.SetMode(GazeReticlePointer.ViewMode.Mode360);
             }
         }
     }
@@ -105,7 +109,7 @@ public class EventSystemCoordinator : MonoBehaviour
         if (uiInputModule == null)
             uiInputModule = FindFirstObjectByType<InputSystemUIInputModule>();
 
-        if (vrReticlePointer == null)
-            vrReticlePointer = FindFirstObjectByType<VRReticlePointer>();
+        if (gazeReticlePointer == null)
+            gazeReticlePointer = FindFirstObjectByType<GazeReticlePointer>();
     }
 }

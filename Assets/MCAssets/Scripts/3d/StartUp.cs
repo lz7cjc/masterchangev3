@@ -5,11 +5,8 @@ using System.Collections;
 using UnityEngine.XR.Management;
 
 /// <summary>
-/// FINAL VERSION: Loading screen coordination with optional addressables
-/// - Ensures loading screen shows from scene start
-/// - Makes addressables optional
-/// - Works whether coming from "everything" scene or direct load
-/// - Handles both VR and 360 modes
+/// FIXED: Removed LoadingManager.IsLoadingComplete() and GetLoadingProgress() calls
+/// These methods don't exist in LoadingManager - just wait for addressables differently
 /// </summary>
 public class StartUp : MonoBehaviour
 {
@@ -31,7 +28,7 @@ public class StartUp : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private closeAllHuds closeAllHuds;
     [SerializeField] private SetVrState setVrState;
-    [SerializeField] private togglingXR togglingXR;
+    [SerializeField] private togglingXRFilm togglingXR;
 
     [Header("Stage Management")]
     private int stage;
@@ -55,10 +52,12 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject hud;
 
     [Header("Loading Configuration")]
-    public togglingXR togglingXRScript;
+    public togglingXRFilm togglingXRScript;
     public GameObject loadingPanel;
     [Tooltip("Enable if using Addressables system")]
     public bool useAddressables = false;
+    [Tooltip("Time to wait for addressables to load (seconds)")]
+    public float addressablesTimeout = 5f;
 
     private VRLoadingManager loadingManager;
     private bool xrInitializedByUs = false;
@@ -66,7 +65,6 @@ public class StartUp : MonoBehaviour
 
     void Awake()
     {
-        // CRITICAL: Get loading manager reference FIRST
         loadingManager = VRLoadingManager.Instance;
 
         if (loadingManager == null)
@@ -83,7 +81,6 @@ public class StartUp : MonoBehaviour
         Debug.Log($"[StartUp] User chose mode: {(startInVR ? "VR" : "360")}");
         Debug.Log($"[StartUp] Addressables enabled: {useAddressables}");
 
-        // Show loading screen IMMEDIATELY
         if (startInVR)
         {
             ShowLoadingScreen("Initializing VR...");
@@ -96,9 +93,6 @@ public class StartUp : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// OPTIMIZED: Initialize VR mode with proper loading coordination
-    /// </summary>
     IEnumerator InitializeVRMode()
     {
         if (isInitializing)
@@ -115,14 +109,11 @@ public class StartUp : MonoBehaviour
         if (useAddressables)
         {
             UpdateLoadingScreen(0f, "Loading assets...");
-            yield return WaitForAddressablesWithProgress((p) => {
-                UpdateLoadingScreen(0f + (p * 0.3f), "Loading assets...");
-            });
+            yield return WaitForAddressablesSimple();
             progress = 0.3f;
         }
         else
         {
-            // Skip addressables, go straight to XR init
             UpdateLoadingScreen(0f, "Initializing...");
             yield return new WaitForSeconds(0.2f);
             progress = 0.3f;
@@ -154,8 +145,8 @@ public class StartUp : MonoBehaviour
 
         // Step 5: Setup scene configuration (75-90%)
         UpdateLoadingScreen(progress, "Configuring scene...");
-        ResetScene(); // This sets up zones and moves player
-        yield return new WaitForEndOfFrame(); // Let physics settle
+        ResetScene();
+        yield return new WaitForEndOfFrame();
         progress = 0.9f;
 
         // Step 6: Final checks (90-100%)
@@ -171,9 +162,6 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] === VR MODE INITIALIZATION COMPLETE ===");
     }
 
-    /// <summary>
-    /// OPTIMIZED: Initialize 360 mode with proper loading coordination
-    /// </summary>
     IEnumerator Initialize360Mode()
     {
         if (isInitializing)
@@ -190,14 +178,11 @@ public class StartUp : MonoBehaviour
         if (useAddressables)
         {
             UpdateLoadingScreen(0f, "Loading assets...");
-            yield return WaitForAddressablesWithProgress((p) => {
-                UpdateLoadingScreen(0f + (p * 0.5f), "Loading assets...");
-            });
+            yield return WaitForAddressablesSimple();
             progress = 0.5f;
         }
         else
         {
-            // Skip addressables
             UpdateLoadingScreen(0f, "Initializing...");
             yield return new WaitForSeconds(0.2f);
             progress = 0.5f;
@@ -232,14 +217,13 @@ public class StartUp : MonoBehaviour
     }
 
     /// <summary>
-    /// Wait for addressables with progress callback (OPTIONAL)
+    /// FIXED: Simple wait for addressables without calling non-existent methods
     /// </summary>
-    IEnumerator WaitForAddressablesWithProgress(System.Action<float> onProgress)
+    IEnumerator WaitForAddressablesSimple()
     {
         if (!useAddressables)
         {
             Debug.Log("[StartUp] Addressables disabled - skipping");
-            onProgress?.Invoke(1f);
             yield break;
         }
 
@@ -248,110 +232,73 @@ public class StartUp : MonoBehaviour
         if (addressablesLoader == null)
         {
             Debug.Log("[StartUp] No LoadingManager found - skipping addressables wait");
-            onProgress?.Invoke(1f);
             yield break;
         }
 
         Debug.Log("[StartUp] Waiting for addressables...");
-        float timeout = 10f;
-        float elapsed = 0f;
 
-        while (addressablesLoader != null && elapsed < timeout)
-        {
-            // Estimate progress based on time (smooth animation)
-            float estimatedProgress = Mathf.Clamp01(elapsed / 3f);
-            onProgress?.Invoke(estimatedProgress);
+        // Just wait for the timeout period
+        // If LoadingManager has its own loading logic, it will complete during this time
+        yield return new WaitForSeconds(addressablesTimeout);
 
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        onProgress?.Invoke(1f);
-        Debug.Log("[StartUp] Addressables ready");
+        Debug.Log("[StartUp] ✓ Addressables wait complete");
     }
 
-    /// <summary>
-    /// Check if XR is already initialized
-    /// </summary>
     bool IsXRAlreadyInitialized()
     {
-        // In editor, XR might not be available - this is OK
-#if UNITY_EDITOR
-        if (XRGeneralSettings.Instance == null)
-        {
-            Debug.Log("[StartUp] Editor mode - XR not available (expected)");
-            return false;
-        }
-#endif
-
-        if (XRGeneralSettings.Instance == null) return false;
-        if (XRGeneralSettings.Instance.Manager == null) return false;
-
-        bool hasLoader = XRGeneralSettings.Instance.Manager.activeLoader != null;
-        if (hasLoader)
-        {
-            Debug.Log($"[StartUp] ✓ XR already initialized: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
-        }
-        return hasLoader;
-    }
-
-    /// <summary>
-    /// Initialize XR system
-    /// </summary>
-    IEnumerator InitializeXRSystem()
-    {
-#if UNITY_EDITOR
-        Debug.LogWarning("[StartUp] Editor mode - XR initialization will fail (expected)");
-        yield break;
-#endif
-
         if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
         {
-            Debug.LogError("[StartUp] Cannot initialize XR - XRGeneralSettings not configured!");
+            return false;
+        }
+
+        bool hasActiveLoader = XRGeneralSettings.Instance.Manager.activeLoader != null;
+        Debug.Log($"[StartUp] XR already initialized: {hasActiveLoader}");
+        return hasActiveLoader;
+    }
+
+    IEnumerator InitializeXRSystem()
+    {
+        if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
+        {
+            Debug.LogError("[StartUp] XRGeneralSettings not available!");
             yield break;
         }
 
+        Debug.Log("[StartUp] Initializing XR loader...");
+        yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
+
         if (XRGeneralSettings.Instance.Manager.activeLoader == null)
         {
-            Debug.Log("[StartUp] Initializing XR loader...");
-            yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
-
-            if (XRGeneralSettings.Instance.Manager.activeLoader == null)
-            {
-                Debug.LogError("[StartUp] Failed to initialize XR loader!");
-                yield break;
-            }
-
-            Debug.Log($"[StartUp] ✓ XR loader initialized: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
+            Debug.LogError("[StartUp] Failed to initialize XR loader!");
+        }
+        else
+        {
+            Debug.Log($"[StartUp] ✓ XR initialized: {XRGeneralSettings.Instance.Manager.activeLoader.GetType().Name}");
             xrInitializedByUs = true;
         }
     }
 
-    /// <summary>
-    /// Wait for VR camera to be ready
-    /// </summary>
     IEnumerator WaitForVRCameraReady()
     {
-        Debug.Log("[StartUp] Waiting for VR camera...");
-
-        // Wait a few frames for camera to activate
-        yield return new WaitForSeconds(0.2f);
-
-        // Check if main camera is active
         Camera mainCam = Camera.main;
-        if (mainCam != null)
+        if (mainCam == null)
         {
-            Debug.Log($"[StartUp] ✓ Main camera ready: {mainCam.gameObject.name}");
+            Debug.LogWarning("[StartUp] Main camera not found!");
+            yield break;
+        }
+
+        yield return new WaitForSeconds(0.3f);
+
+        if (mainCam.stereoEnabled)
+        {
+            Debug.Log("[StartUp] ✓ VR camera ready (stereo enabled)");
         }
         else
         {
-            Debug.LogWarning("[StartUp] Main camera not found!");
+            Debug.LogWarning("[StartUp] Main camera not in stereo mode");
         }
     }
 
-    /// <summary>
-    /// Reset scene configuration - CALLED AFTER CAMERA IS READY
-    /// </summary>
     public void ResetScene()
     {
         Debug.Log("[StartUp] === RESET SCENE START ===");
@@ -368,28 +315,19 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] === RESET SCENE COMPLETE ===");
     }
 
-    /// <summary>
-    /// Initialize scene - sets VR mode and positions player
-    /// </summary>
     private void InitializeScene()
     {
         Debug.Log("[StartUp] InitializeScene");
 
-        // Close HUDs
         if (closeAllHuds != null)
         {
             closeAllHuds.CloseTheHuds();
         }
 
         toggler = false;
-
-        // Move player to correct location
         MovePlayerToCurrentZone();
     }
 
-    /// <summary>
-    /// Handle zone navigation based on current zone
-    /// </summary>
     private void HandleZoneNavigation()
     {
         if (IsBCTZone(currentZone))
@@ -411,9 +349,6 @@ public class StartUp : MonoBehaviour
         };
     }
 
-    /// <summary>
-    /// OPTIMIZED: Teleport player using CharacterController
-    /// </summary>
     private void SetPlayerToTarget(GameObject target)
     {
         if (target != null && player != null)
@@ -456,9 +391,6 @@ public class StartUp : MonoBehaviour
         };
     }
 
-    /// <summary>
-    /// Move player to current zone
-    /// </summary>
     private void MovePlayerToCurrentZone()
     {
         Debug.Log($"[StartUp] Moving player to zone: {currentZone}");
@@ -552,8 +484,6 @@ public class StartUp : MonoBehaviour
 
         player.transform.localPosition = Vector3.zero;
     }
-
-    // === LOADING SCREEN HELPERS ===
 
     private void ShowLoadingScreen(string message)
     {

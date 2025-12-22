@@ -4,23 +4,27 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.XR.Management;
 
+/// <summary>
+/// UPDATED: Scene changing with GazeReticlePointer support
+/// Changed togglingXR to togglingXRFilm
+/// </summary>
 public class changeScene3d : MonoBehaviour
 {
     public bool mousehover = false;
     public bool toForms;
     public float counter = 0;
     private string Switchscenename;
-    [SerializeField] private togglingXR togglingXR;
+    [SerializeField] private togglingXRFilm togglingXRFilm;  // CHANGED: was togglingXR
 
     private void Awake()
     {
-        // Ensure togglingXR is assigned
-        if (togglingXR == null)
+        // Ensure togglingXRFilm is assigned
+        if (togglingXRFilm == null)
         {
-            togglingXR = FindFirstObjectByType<togglingXR>();
-            if (togglingXR == null)
+            togglingXRFilm = FindFirstObjectByType<togglingXRFilm>();  // CHANGED: was togglingXR
+            if (togglingXRFilm == null)
             {
-                Debug.LogError("togglingXR component not found!");
+                Debug.LogError("togglingXRFilm component not found!");
             }
         }
     }
@@ -36,9 +40,9 @@ public class changeScene3d : MonoBehaviour
                 mousehover = false;
                 counter = 0;
 
-                if (togglingXR != null)
+                if (togglingXRFilm != null)
                 {
-                    togglingXR.StopXR();
+                    togglingXRFilm.StopXR();
                 }
                 SceneManager.LoadScene(Switchscenename);
             }

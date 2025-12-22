@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections;
 
 /// <summary>
-/// OPTIMIZED: Coordinates VR mode switching with loading screen
-/// Works with VRLoadingManager to ensure smooth transitions
+/// UPDATED: Coordinates VR mode switching with GazeReticlePointer
+/// Works with VRLoadingManager and togglingXRFilm
 /// </summary>
 public class SetVrState : MonoBehaviour
 {
@@ -20,13 +20,13 @@ public class SetVrState : MonoBehaviour
     [SerializeField] private GameObject vrReticle;
 
     private showHideHUD hudController;
-    private togglingXR xrToggler;
+    private togglingXRFilm xrToggler;  // UPDATED: Changed from togglingXR
     private VRLoadingManager loadingManager;
 
     private void Start()
     {
         hudController = FindFirstObjectByType<showHideHUD>();
-        xrToggler = FindFirstObjectByType<togglingXR>();
+        xrToggler = FindFirstObjectByType<togglingXRFilm>();  // UPDATED: Changed from togglingXR
         loadingManager = VRLoadingManager.Instance;
 
         int headsetOr2D = PlayerPrefs.GetInt("toggleToVR", 0);
@@ -105,7 +105,7 @@ public class SetVrState : MonoBehaviour
         // Wait a frame for XR to settle
         yield return new WaitForEndOfFrame();
 
-        // Setup cameras (togglingXR already did this, but ensure VR reticle)
+        // Setup cameras (togglingXRFilm already did this, but ensure VR reticle)
         SetupVRReticle(isVRMode);
 
         // Update progress
@@ -129,7 +129,7 @@ public class SetVrState : MonoBehaviour
     }
 
     /// <summary>
-    /// Setup VR reticle (cameras are handled by togglingXR)
+    /// Setup VR reticle (cameras are handled by togglingXRFilm)
     /// </summary>
     private void SetupVRReticle(bool isVRMode)
     {

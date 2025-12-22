@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
-/// Enhanced showHideHUDcat - Fixed selective child activation to prevent movement conflicts
+/// Updated showHideHUDcat - Compatible with VRReticlePointer Event Trigger system
+/// NOW WORKS WITH: BaseEventData from Event Triggers
 /// </summary>
 public class showHideHUDcat : MonoBehaviour
 {
-    // Exact same public fields as original
+    // Public fields - same as before
     public bool mousehover = false;
     public float Counter = 0;
     public GameObject level3;
@@ -21,7 +23,6 @@ public class showHideHUDcat : MonoBehaviour
     [Tooltip("Only activate objects with these tags (leave empty to activate all except excluded)")]
     public string[] allowedTags = { };
 
-    // Enhanced internal coordination
     private HUDSystemCoordinator hudCoordinator;
     private int categoryIndex = 0;
 
@@ -41,13 +42,11 @@ public class showHideHUDcat : MonoBehaviour
             AutoFindLevel3Container();
         }
 
-        // FIXED: Ensure proper initial state regardless of scene setup
         EnsureProperInitialState();
 
-        Debug.Log($"showHideHUDcat initialized - Category: {categoryIndex}, Level3: {(level3 != null ? level3.name : "NOT ASSIGNED")}");
+        Debug.Log($"Updated showHideHUDcat initialized - Category: {categoryIndex}, Level3: {(level3 != null ? level3.name : "NOT ASSIGNED")}");
     }
 
-    // Public methods to control icon states
     public void SetIconToDefault()
     {
         if (ToggleActiveIcons != null)
@@ -99,7 +98,16 @@ public class showHideHUDcat : MonoBehaviour
         }
     }
 
-    public void MouseHoverChangeScene()
+    // ============================================
+    // NEW: Event Trigger compatible methods
+    // These accept BaseEventData from VRReticlePointer
+    // ============================================
+
+    /// <summary>
+    /// Called by Event Trigger - Pointer Enter
+    /// Accepts BaseEventData (compatible with VRReticlePointer)
+    /// </summary>
+    public void MouseHoverChangeScene(BaseEventData eventData)
     {
         // Close any other open Level 3 menus before starting hover
         if (hudCoordinator != null)
@@ -108,7 +116,6 @@ public class showHideHUDcat : MonoBehaviour
         }
         else
         {
-            // Fallback: close other menus manually
             CloseAllOtherLevel3MenusManually();
         }
 
@@ -120,10 +127,14 @@ public class showHideHUDcat : MonoBehaviour
             hudCoordinator.OnLevel2CategoryHovered(categoryIndex);
         }
 
-        Debug.Log($"MouseHoverChangeScene - Category: {categoryIndex}");
+        Debug.Log($"MouseHoverChangeScene (EventData) - Category: {categoryIndex}");
     }
 
-    public void MouseExit()
+    /// <summary>
+    /// Called by Event Trigger - Pointer Exit
+    /// Accepts BaseEventData (compatible with VRReticlePointer)
+    /// </summary>
+    public void MouseExit(BaseEventData eventData)
     {
         // Only reset icon to default if menu is not open
         if (!IsCurrentMenuOpen())
@@ -137,6 +148,26 @@ public class showHideHUDcat : MonoBehaviour
         }
         mousehover = false;
         Counter = 0;
+    }
+
+    // ============================================
+    // LEGACY: Keep old methods for backward compatibility
+    // ============================================
+
+    /// <summary>
+    /// Legacy version - no parameters
+    /// </summary>
+    public void MouseHoverChangeScene()
+    {
+        MouseHoverChangeScene(null);
+    }
+
+    /// <summary>
+    /// Legacy version - no parameters
+    /// </summary>
+    public void MouseExit()
+    {
+        MouseExit(null);
     }
 
     public void ResetHUDState()
@@ -183,7 +214,6 @@ public class showHideHUDcat : MonoBehaviour
 
     private void EnsureProperInitialState()
     {
-        // FIXED: Force proper initial state regardless of scene setup
         if (level3 != null)
         {
             CloseLevel3MenuCompletely();
@@ -199,26 +229,24 @@ public class showHideHUDcat : MonoBehaviour
     {
         string objectName = gameObject.name.ToLower();
 
-        // FIXED: Corrected mapping to match your HUDSystemCoordinator setup
         if (objectName.Contains("location") || objectName.Contains("zone") || objectName.Contains("travel"))
         {
-            categoryIndex = 0; // Maps to Level3a (locations) - Element 0
+            categoryIndex = 0;
         }
         else if (objectName.Contains("move") || objectName.Contains("walk") || objectName.Contains("speed"))
         {
-            categoryIndex = 1; // Maps to Level3b (move) - Element 1
+            categoryIndex = 1;
         }
         else if (objectName.Contains("home") || objectName.Contains("main"))
         {
-            categoryIndex = 0; // Default to locations
+            categoryIndex = 0;
         }
         else if (objectName.Contains("dashboard") || objectName.Contains("settings"))
         {
-            categoryIndex = 2; // For future expansion
+            categoryIndex = 2;
         }
         else
         {
-            // Fallback: use position in parent
             Transform parent = transform.parent;
             if (parent != null)
             {
@@ -240,13 +268,12 @@ public class showHideHUDcat : MonoBehaviour
     {
         GameObject foundContainer = null;
 
-        // FIXED: Corrected mapping to match your setup
-        if (categoryIndex == 0) // locations
+        if (categoryIndex == 0)
         {
             foundContainer = GameObject.Find("Level3a (locations)");
             if (foundContainer == null) foundContainer = GameObject.Find("Level3a");
         }
-        else if (categoryIndex == 1) // move
+        else if (categoryIndex == 1)
         {
             foundContainer = GameObject.Find("Level3b (move)");
             if (foundContainer == null) foundContainer = GameObject.Find("Level3b");
@@ -271,7 +298,6 @@ public class showHideHUDcat : MonoBehaviour
         {
             if (IsCurrentMenuOpen())
             {
-                // Closing current menu
                 CloseLevel3MenuCompletely();
                 turnon = true;
                 SetIconToDefault();
@@ -279,7 +305,6 @@ public class showHideHUDcat : MonoBehaviour
             }
             else
             {
-                // Opening this menu - coordinator will handle closing others
                 Debug.Log($"Opening Level 3 menu for category: {categoryIndex}");
                 hudCoordinator.OnLevel3MenuOpened(categoryIndex);
                 turnon = false;
@@ -293,9 +318,7 @@ public class showHideHUDcat : MonoBehaviour
 
             if (turnon)
             {
-                // Close all other menus first
                 CloseAllOtherLevel3MenusManually();
-
                 OpenLevel3MenuCompletely();
                 turnon = false;
                 SetIconToSelected();
@@ -311,7 +334,6 @@ public class showHideHUDcat : MonoBehaviour
 
     private void CloseAllOtherLevel3MenusManually()
     {
-        // Find all other showHideHUDcat scripts and close their menus
         showHideHUDcat[] allHudCats = FindObjectsOfType<showHideHUDcat>();
         foreach (showHideHUDcat hudCat in allHudCats)
         {
@@ -330,7 +352,6 @@ public class showHideHUDcat : MonoBehaviour
         return level3 != null && level3.activeInHierarchy;
     }
 
-    // FIXED: Safer Level3 menu opening with selective child activation
     private void OpenLevel3MenuCompletely()
     {
         if (level3 == null)
@@ -339,14 +360,10 @@ public class showHideHUDcat : MonoBehaviour
             return;
         }
 
-        // First activate the main container
         level3.SetActive(true);
-
-        // FIXED: Use selective activation instead of activating everything
         ActivateUIChildrenSelectively(level3.transform);
 
-        // Notify PlayerMovement1 that movement menu opened (if this is movement category)
-        if (categoryIndex == 1) // Movement category
+        if (categoryIndex == 1)
         {
             NotifyMovementMenuOpened();
         }
@@ -354,13 +371,11 @@ public class showHideHUDcat : MonoBehaviour
         Debug.Log($"Opened Level 3 menu selectively: {level3.name}");
     }
 
-    // FIXED: Proper Level3 menu closing
     private void CloseLevel3MenuCompletely()
     {
         if (level3 != null)
         {
-            // Notify PlayerMovement1 that movement menu closed (if this is movement category)
-            if (categoryIndex == 1) // Movement category
+            if (categoryIndex == 1)
             {
                 NotifyMovementMenuClosed();
             }
@@ -370,37 +385,30 @@ public class showHideHUDcat : MonoBehaviour
         }
     }
 
-    // FIXED: Selective activation that won't interfere with movement systems
     private void ActivateUIChildrenSelectively(Transform parent)
     {
         foreach (Transform child in parent)
         {
-            // Check if this object should be excluded
             if (ShouldExcludeFromActivation(child.gameObject))
             {
                 Debug.Log($"Skipping activation of: {child.name} (excluded)");
                 continue;
             }
 
-            // Check if it has movement-related components that shouldn't be auto-activated
             if (HasMovementComponents(child.gameObject))
             {
                 Debug.Log($"Skipping activation of: {child.name} (has movement components)");
                 continue;
             }
 
-            // Activate UI elements only
             if (IsUIElement(child.gameObject))
             {
                 child.gameObject.SetActive(true);
                 Debug.Log($"Activated UI element: {child.name}");
-
-                // Recursively activate UI children
                 ActivateUIChildrenSelectively(child);
             }
             else
             {
-                // For non-UI elements, still check children but don't activate the parent
                 ActivateUIChildrenSelectively(child);
             }
         }
@@ -423,7 +431,6 @@ public class showHideHUDcat : MonoBehaviour
 
     private bool HasMovementComponents(GameObject obj)
     {
-        // Check for movement-related components
         return obj.GetComponent<PlayerMovement1>() != null ||
                obj.GetComponent<floorceilingmove>() != null ||
                obj.GetComponent<Rigidbody>() != null ||
@@ -432,7 +439,6 @@ public class showHideHUDcat : MonoBehaviour
 
     private bool IsUIElement(GameObject obj)
     {
-        // Check if it's a UI element (has Canvas, UI components, etc.)
         return obj.GetComponent<UnityEngine.UI.Image>() != null ||
                obj.GetComponent<UnityEngine.UI.Button>() != null ||
                obj.GetComponent<UnityEngine.UI.Text>() != null ||
@@ -449,7 +455,6 @@ public class showHideHUDcat : MonoBehaviour
 
     private void NotifyMovementMenuOpened()
     {
-        // Find and notify PlayerMovement1 script that the menu opened
         PlayerMovement1 playerMovement = FindFirstObjectByType<PlayerMovement1>();
         if (playerMovement != null)
         {
@@ -460,41 +465,11 @@ public class showHideHUDcat : MonoBehaviour
 
     private void NotifyMovementMenuClosed()
     {
-        // Find and notify PlayerMovement1 script that the menu closed
         PlayerMovement1 playerMovement = FindFirstObjectByType<PlayerMovement1>();
         if (playerMovement != null)
         {
             playerMovement.OnMovementMenuClosed();
             Debug.Log("Notified PlayerMovement1 that movement menu closed");
         }
-    }
-
-    // DEPRECATED: Old method - kept for compatibility but not used
-    private void ActivateAllChildrenRecursively(Transform parent)
-    {
-        // This method is now deprecated and replaced with ActivateUIChildrenSelectively
-        Debug.LogWarning("ActivateAllChildrenRecursively is deprecated. Use ActivateUIChildrenSelectively instead.");
-    }
-
-    private void SetActiveRecursively(GameObject obj, bool state)
-    {
-        if (obj == null) return;
-
-        obj.SetActive(state);
-        foreach (Transform child in obj.transform)
-        {
-            SetActiveRecursively(child.gameObject, state);
-        }
-    }
-
-    // Legacy methods for compatibility
-    private void OpenLevel3Menu()
-    {
-        OpenLevel3MenuCompletely();
-    }
-
-    private void CloseLevel3Menu()
-    {
-        CloseLevel3MenuCompletely();
     }
 }

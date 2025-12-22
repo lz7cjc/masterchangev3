@@ -1,48 +1,42 @@
-using UnityEngine;
+癤퓎sing UnityEngine;
 
 /// <summary>
-/// Rotates the entire HUD system with the player's view direction
-/// Keeps all menus (Level1, Level2, Level3a, Level3b) accessible at all times
+/// SIMPLIFIED VRHUDRotationSystem - Horizontal rotation ONLY, no vertical tilt
+/// Keeps HUD at constant -10째 downward angle for optimal viewing
 /// </summary>
 public class VRHUDRotationSystem : MonoBehaviour
 {
     [Header("Player Reference")]
     [SerializeField] private Transform playerCamera;
-    [SerializeField] private Transform playerBody; // If you have a separate player body transform
-    [SerializeField] private bool autoFindActiveCamera = true; // NEW: Auto-detect active camera
+    [SerializeField] private Transform playerBody;
+    [SerializeField] private bool autoFindActiveCamera = true;
 
     [Header("Camera Switching Support")]
     [SerializeField] private Transform vrCamera; // Main CameraVR
-    [SerializeField] private Transform camera2D; // Main Camera2d  
+    [SerializeField] private Transform camera2D; // Main Camera360  
     [SerializeField] private bool supportCameraSwitching = true;
 
     [Header("Rotation Settings")]
-    [SerializeField] private bool followCameraRotation = true;
-    [SerializeField] private bool followPlayerBodyRotation = false; // Alternative if you track body rotation
-    [SerializeField] private float rotationSpeed = 3f; // How fast HUD rotates to follow
+    [Tooltip("Constant downward tilt angle for comfortable viewing (negative = down)")]
+    [SerializeField] private float fixedXTilt = -10f; // HUD tilts down for better visibility
+
+    [Tooltip("How fast HUD rotates horizontally to follow camera")]
+    [SerializeField] private float rotationSpeed = 2f;
+
     [SerializeField] private bool smoothRotation = true;
 
-    [Header("Rotation Constraints")]
-    [SerializeField] private bool lockVerticalRotation = true; // Keep HUD level (recommended for VR)
-    [SerializeField] private bool onlyRotateOnYAxis = true; // Only horizontal rotation
-    [SerializeField] private float rotationThreshold = 15f; // Degrees before HUD starts rotating
-
-    [Header("Positioning")]
-    [SerializeField] private bool maintainDistanceFromPlayer = false;
-    [SerializeField] private bool preserveEditorPosition = true;
-    [SerializeField] private bool onlyRotateYAxis = true; // NEW: Only rotate, don't move position
-    [SerializeField] private float hudDistance = 3f;
-    [SerializeField] private float hudHeight = 0f;
+    [Tooltip("Minimum horizontal rotation (degrees) before HUD starts following")]
+    [SerializeField] private float rotationThreshold = 120f;
 
     [Header("Advanced Options")]
     [SerializeField] private bool instantRotationOnLargeAngles = true;
-    [SerializeField] private float instantRotationThreshold = 120f; // Snap if player turns too far
+    [SerializeField] private float instantRotationThreshold = 120f;
     [SerializeField] private bool debugMode = false;
 
+    // Private state
     private Vector3 lastForwardDirection;
     private Quaternion targetRotation;
-    private Vector3 relativeHUDPosition; // NEW: Position relative to camera from editor
-    private Transform currentActiveCamera; // NEW: Track which camera is active
+    private Transform currentActiveCamera;
     private bool isInitialized = false;
 
     private void Start()
@@ -52,31 +46,30 @@ public class VRHUDRotationSystem : MonoBehaviour
 
     private void InitializeHUDRotationSystem()
     {
-        // Find or set the active camera
-        FindActiveCamera();
-
-        if (currentActiveCamera == null)
+        if (autoFindActiveCamera)
         {
-            Debug.LogError("VRHUDRotationSystem: No active camera found! Please assign cameras or enable autoFindActiveCamera.");
+            FindActiveCamera();
+        }
+        else if (playerCamera == null)
+        {
+            Debug.LogWarning("VRHUDRotationSystem: No camera assigned and auto-find disabled!");
             return;
         }
 
-        // Calculate the relative position from camera to HUD (from editor setup)
-        relativeHUDPosition = transform.position - currentActiveCamera.position;
+        currentActiveCamera = playerCamera;
 
-        lastForwardDirection = GetTrackingDirection();
-        targetRotation = transform.rotation;
+        // Initialize with current horizontal direction only
+        lastForwardDirection = GetHorizontalDirection();
+
+        // Set initial rotation with fixed tilt
+        float initialY = transform.eulerAngles.y;
+        transform.rotation = Quaternion.Euler(fixedXTilt, initialY, 0);
 
         isInitialized = true;
 
-        Debug.Log($"VR HUD Rotation System initialized - HUD relative position to camera: {relativeHUDPosition}");
-        Debug.Log($"Active camera: {currentActiveCamera.name}");
-
         if (debugMode)
         {
-            Debug.Log($"HUD world position: {transform.position}");
-            Debug.Log($"Camera world position: {currentActiveCamera.position}");
-            Debug.Log($"Relative position: {relativeHUDPosition}");
+            Debug.Log($"VRHUDRotationSystem initialized - Fixed tilt: {fixedXTilt}째, Initial Y rotation: {initialY:F1}째");
         }
     }
 
@@ -84,185 +77,160 @@ public class VRHUDRotationSystem : MonoBehaviour
     {
         if (supportCameraSwitching)
         {
-            // Auto-detect which camera is active
+            // Check VR camera first
             if (vrCamera != null && vrCamera.gameObject.activeInHierarchy)
             {
-                currentActiveCamera = vrCamera;
-                playerCamera = vrCamera;
-            }
-            else if (camera2D != null && camera2D.gameObject.activeInHierarchy)
-            {
-                currentActiveCamera = camera2D;
-                playerCamera = camera2D;
-            }
-            else if (autoFindActiveCamera)
-            {
-                // Fallback to any active camera
-                Camera activeCamera = Camera.main ?? FindObjectOfType<Camera>();
-                if (activeCamera != null)
+                Camera vrCam = vrCamera.GetComponent<Camera>();
+                if (vrCam != null && vrCam.enabled)
                 {
-                    currentActiveCamera = activeCamera.transform;
-                    playerCamera = currentActiveCamera;
+                    playerCamera = vrCamera;
+                    if (debugMode) Debug.Log("VRHUDRotationSystem: Using VR Camera");
+                    return;
+                }
+            }
+
+            // Check 2D/360 camera
+            if (camera2D != null && camera2D.gameObject.activeInHierarchy)
+            {
+                Camera cam2d = camera2D.GetComponent<Camera>();
+                if (cam2d != null && cam2d.enabled)
+                {
+                    playerCamera = camera2D;
+                    if (debugMode) Debug.Log("VRHUDRotationSystem: Using 360 Camera");
+                    return;
                 }
             }
         }
+
+        // Fallback to finding any active camera
+        Camera activeCamera = Camera.main;
+        if (activeCamera != null)
+        {
+            playerCamera = activeCamera.transform;
+            if (debugMode) Debug.Log("VRHUDRotationSystem: Using Main Camera as fallback");
+        }
         else
         {
-            // Use manually assigned camera
-            currentActiveCamera = playerCamera;
+            Debug.LogError("VRHUDRotationSystem: No active camera found!");
         }
-
-        Debug.Log($"Active camera detected: {(currentActiveCamera != null ? currentActiveCamera.name : "None")}");
     }
 
     private void Update()
     {
-        if (!isInitialized) return;
+        if (!isInitialized || currentActiveCamera == null) return;
 
-        // Check if active camera changed (for camera switching)
+        // Check for camera switches
         if (supportCameraSwitching)
         {
             CheckForCameraSwitch();
         }
 
-        if (currentActiveCamera == null) return;
-
-        // Update HUD position to maintain relative offset from camera
-        UpdateHUDRelativePosition();
-
-        // Update rotation to follow camera direction
+        // Update HUD rotation (horizontal only)
         UpdateHUDRotation();
-    }
-
-    private void UpdateHUDRelativePosition()
-    {
-        if (onlyRotateYAxis)
-        {
-            // Maintain relative position but only rotate it around Y axis with camera
-            Vector3 rotatedRelativePosition = Quaternion.AngleAxis(currentActiveCamera.eulerAngles.y, Vector3.up) * relativeHUDPosition;
-            Vector3 targetPosition = currentActiveCamera.position + rotatedRelativePosition;
-
-            if (smoothRotation)
-            {
-                transform.position = Vector3.Lerp(transform.position, targetPosition, rotationSpeed * Time.deltaTime);
-            }
-            else
-            {
-                transform.position = targetPosition;
-            }
-
-            if (debugMode && Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"HUD relative position updated - Camera Y rotation: {currentActiveCamera.eulerAngles.y:F1}�, HUD position: {transform.position}");
-            }
-        }
-        else
-        {
-            // Simple relative positioning without rotation compensation
-            Vector3 targetPosition = currentActiveCamera.position + relativeHUDPosition;
-
-            if (smoothRotation)
-            {
-                transform.position = Vector3.Lerp(transform.position, targetPosition, rotationSpeed * Time.deltaTime);
-            }
-            else
-            {
-                transform.position = targetPosition;
-            }
-        }
     }
 
     private void CheckForCameraSwitch()
     {
         Transform newActiveCamera = null;
 
-        // Check which camera is currently active
+        // Check VR camera
         if (vrCamera != null && vrCamera.gameObject.activeInHierarchy)
         {
-            newActiveCamera = vrCamera;
-        }
-        else if (camera2D != null && camera2D.gameObject.activeInHierarchy)
-        {
-            newActiveCamera = camera2D;
+            Camera vrCam = vrCamera.GetComponent<Camera>();
+            if (vrCam != null && vrCam.enabled)
+            {
+                newActiveCamera = vrCamera;
+            }
         }
 
-        // If camera switched, update reference
-        if (newActiveCamera != currentActiveCamera && newActiveCamera != null)
+        // Check 360 camera if VR not active
+        if (newActiveCamera == null && camera2D != null && camera2D.gameObject.activeInHierarchy)
         {
-            Debug.Log($"Camera switched from {(currentActiveCamera ? currentActiveCamera.name : "None")} to {newActiveCamera.name}");
+            Camera cam2d = camera2D.GetComponent<Camera>();
+            if (cam2d != null && cam2d.enabled)
+            {
+                newActiveCamera = camera2D;
+            }
+        }
+
+        // Switch camera if changed
+        if (newActiveCamera != null && newActiveCamera != currentActiveCamera)
+        {
+            if (debugMode)
+            {
+                Debug.Log($"VRHUDRotationSystem: Camera switched from {currentActiveCamera.name} to {newActiveCamera.name}");
+            }
+
             currentActiveCamera = newActiveCamera;
             playerCamera = newActiveCamera;
-            lastForwardDirection = GetTrackingDirection();
+            lastForwardDirection = GetHorizontalDirection();
         }
     }
 
     private void UpdateHUDRotation()
     {
-        Vector3 currentDirection = GetTrackingDirection();
+        Vector3 currentDirection = GetHorizontalDirection();
         float angleDifference = Vector3.Angle(lastForwardDirection, currentDirection);
 
-        if (angleDifference < rotationThreshold) return; // Don't rotate for small movements
+        // Don't rotate for small movements
+        if (angleDifference < rotationThreshold) return;
 
-        // Calculate target rotation
+        // Calculate target rotation (horizontal only with fixed tilt)
         CalculateTargetRotation(currentDirection);
 
         // Apply rotation (smooth or instant based on settings)
         if (instantRotationOnLargeAngles && angleDifference > instantRotationThreshold)
         {
-            // Instant rotation for large angle changes (player did a quick 180�)
+            // Instant rotation for large angle changes
             transform.rotation = targetRotation;
             lastForwardDirection = currentDirection;
 
             if (debugMode)
             {
-                Debug.Log($"Instant HUD rotation applied - angle difference: {angleDifference:F1}�");
+                Debug.Log($"Instant HUD rotation - Angle: {angleDifference:F1}째, New Y rotation: {transform.eulerAngles.y:F1}째");
             }
         }
         else if (smoothRotation)
         {
-            // Smooth rotation
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            // Smooth rotation using Euler angles to prevent unwanted roll (Z-axis rotation)
+            Vector3 currentEuler = transform.eulerAngles;
+            Vector3 targetEuler = targetRotation.eulerAngles;
 
-            // Update last direction when we're close to target
+            // Interpolate each axis independently
+            float newX = Mathf.LerpAngle(currentEuler.x, targetEuler.x, rotationSpeed * Time.deltaTime);
+            float newY = Mathf.LerpAngle(currentEuler.y, targetEuler.y, rotationSpeed * Time.deltaTime);
+            float newZ = 0; // ALWAYS zero - no roll allowed!
+
+            transform.rotation = Quaternion.Euler(newX, newY, newZ);
+
+            // Update last direction when close to target
             if (Quaternion.Angle(transform.rotation, targetRotation) < 5f)
             {
                 lastForwardDirection = currentDirection;
             }
+
+            if (debugMode && Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"Smooth HUD rotation - X: {newX:F1}째, Y: {newY:F1}째, Z: {newZ}째 (forced)");
+            }
         }
         else
         {
-            // Direct rotation
+            // Instant rotation
             transform.rotation = targetRotation;
             lastForwardDirection = currentDirection;
         }
     }
 
-    private void UpdateHUDPosition()
-    {
-        // Keep HUD at consistent distance from player
-        Vector3 directionFromPlayer = transform.position - currentActiveCamera.position;
-        directionFromPlayer.y = 0; // Keep at same height
-        directionFromPlayer.Normalize();
-
-        Vector3 targetPosition = currentActiveCamera.position +
-                               (directionFromPlayer * hudDistance) +
-                               (Vector3.up * hudHeight);
-
-        if (smoothRotation)
-        {
-            transform.position = Vector3.Lerp(transform.position, targetPosition, rotationSpeed * Time.deltaTime);
-        }
-        else
-        {
-            transform.position = targetPosition;
-        }
-    }
-
-    private Vector3 GetTrackingDirection()
+    /// <summary>
+    /// Gets camera's forward direction projected onto horizontal plane (Y=0)
+    /// This ensures we ONLY track horizontal rotation
+    /// </summary>
+    private Vector3 GetHorizontalDirection()
     {
         Vector3 direction;
 
-        if (followPlayerBodyRotation && playerBody != null)
+        if (playerBody != null)
         {
             direction = playerBody.forward;
         }
@@ -272,113 +240,84 @@ public class VRHUDRotationSystem : MonoBehaviour
         }
         else
         {
-            direction = Vector3.forward; // Fallback
+            direction = Vector3.forward;
         }
 
-        // Lock vertical rotation if enabled
-        if (lockVerticalRotation)
-        {
-            direction.y = 0;
-            direction.Normalize();
-        }
+        // CRITICAL: Force Y to zero to get horizontal direction only
+        direction.y = 0;
+        direction.Normalize();
 
         return direction;
     }
 
-    private void CalculateTargetRotation(Vector3 direction)
+    /// <summary>
+    /// Calculates target rotation: fixed X tilt + horizontal Y rotation only
+    /// Z rotation is always 0 (no roll)
+    /// </summary>
+    private void CalculateTargetRotation(Vector3 horizontalDirection)
     {
-        if (onlyRotateOnYAxis)
+        // Calculate Y rotation from horizontal direction
+        float yRotation = Mathf.Atan2(horizontalDirection.x, horizontalDirection.z) * Mathf.Rad2Deg;
+
+        // FIXED ROTATION: X = constant tilt, Y = follow camera horizontally, Z = always 0
+        targetRotation = Quaternion.Euler(fixedXTilt, yRotation, 0);
+
+        if (debugMode && Time.frameCount % 60 == 0)
         {
-            // Only rotate around Y axis (horizontal rotation)
-            float yRotation = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
-            targetRotation = Quaternion.Euler(0, yRotation, 0);
-        }
-        else
-        {
-            // Full rotation to match direction
-            targetRotation = Quaternion.LookRotation(direction);
+            Debug.Log($"Target rotation calculated - X: {fixedXTilt}째 (fixed), Y: {yRotation:F1}째 (horizontal), Z: 0째");
         }
     }
 
-    #region Public Methods
-
-    [ContextMenu("Snap HUD to Player View")]
-    public void SnapHUDToPlayerView()
+    /// <summary>
+    /// Public method to manually adjust the fixed tilt angle
+    /// </summary>
+    public void SetFixedTilt(float tiltAngle)
     {
-        if (currentActiveCamera == null) return;
+        fixedXTilt = tiltAngle;
 
-        Vector3 currentDirection = GetTrackingDirection();
+        // Recalculate target rotation with new tilt
+        Vector3 currentDirection = GetHorizontalDirection();
         CalculateTargetRotation(currentDirection);
 
+        // Apply immediately
         transform.rotation = targetRotation;
 
-        // Update position to maintain relative offset
-        UpdateHUDRelativePosition();
-
-        lastForwardDirection = currentDirection;
-
-        Debug.Log("HUD snapped to current player view direction maintaining relative position");
+        Debug.Log($"HUD tilt updated to {fixedXTilt}째");
     }
 
-    [ContextMenu("Reset HUD to Original Position")]
-    public void ResetHUDToOriginalPosition()
+    /// <summary>
+    /// Get current horizontal rotation angle
+    /// </summary>
+    public float GetCurrentYRotation()
     {
-        if (currentActiveCamera != null)
-        {
-            transform.position = currentActiveCamera.position + relativeHUDPosition;
-        }
-        transform.rotation = Quaternion.identity;
-
-        if (currentActiveCamera != null)
-        {
-            lastForwardDirection = GetTrackingDirection();
-        }
-
-        Debug.Log("HUD reset to relative position from camera");
+        return transform.eulerAngles.y;
     }
 
-    public void SetRotationSpeed(float newSpeed)
+    private void OnValidate()
     {
-        rotationSpeed = Mathf.Clamp(newSpeed, 0.1f, 10f);
-        Debug.Log($"HUD rotation speed set to: {rotationSpeed}");
+        // Clamp fixed tilt to reasonable range
+        fixedXTilt = Mathf.Clamp(fixedXTilt, -45f, 45f);
+
+        // Ensure thresholds are positive
+        rotationThreshold = Mathf.Max(0, rotationThreshold);
+        instantRotationThreshold = Mathf.Max(rotationThreshold, instantRotationThreshold);
     }
-
-    public void EnableSmoothRotation(bool enable)
-    {
-        smoothRotation = enable;
-        Debug.Log($"HUD smooth rotation: {(enable ? "Enabled" : "Disabled")}");
-    }
-
-    #endregion
-
-    #region Debug Helpers
 
     private void OnDrawGizmosSelected()
     {
-        if (!debugMode || currentActiveCamera == null) return;
+        if (!Application.isPlaying || currentActiveCamera == null) return;
 
-        // Draw debug info in scene view
+        // Draw line showing HUD forward direction
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
+
+        // Draw line showing camera horizontal direction
+        Vector3 cameraHorizontal = GetHorizontalDirection();
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position, currentActiveCamera.position);
+        Gizmos.DrawLine(currentActiveCamera.position, currentActiveCamera.position + cameraHorizontal * 2f);
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(transform.position, transform.forward * 2f);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawRay(currentActiveCamera.position, GetTrackingDirection() * 2f);
-
-        // Draw fixed position marker
+        // Draw sphere at HUD position
         Gizmos.color = Color.green;
-        Vector3 relativeWorldPos = currentActiveCamera.position + relativeHUDPosition;
-        Gizmos.DrawWireSphere(relativeWorldPos, 0.1f);
+        Gizmos.DrawWireSphere(transform.position, 0.1f);
     }
-
-    [ContextMenu("Toggle Debug Mode")]
-    private void ToggleDebugMode()
-    {
-        debugMode = !debugMode;
-        Debug.Log($"VR HUD Rotation debug mode: {(debugMode ? "ON" : "OFF")}");
-    }
-
-    #endregion
 }

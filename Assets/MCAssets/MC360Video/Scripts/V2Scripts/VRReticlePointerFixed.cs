@@ -216,22 +216,22 @@ public class VRReticlePointerFixed : MonoBehaviour
 
     private void HandleMouseInput()
     {
-        if (Input.GetMouseButtonDown(1))
-        {
-            isRotating = true;
-            previousLookInput = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            currentRotation = new Vector3(
-                Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
-                transform.eulerAngles.y,
-                0
-            );
-            targetRotation = currentRotation;
-        }
-
-        if (Input.GetMouseButtonUp(1))
-        {
-            isRotating = false;
-        }
+        //         if (Input.GetMouseButtonDown(1))
+        //         {
+        //             isRotating = true;
+        //             previousLookInput = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+        //             currentRotation = new Vector3(
+        //                 Mathf.Clamp(transform.eulerAngles.x > 180 ? transform.eulerAngles.x - 360 : transform.eulerAngles.x, minVerticalAngle, maxVerticalAngle),
+        //                 transform.eulerAngles.y,
+        //                 0
+        //             );
+        //             targetRotation = currentRotation;
+        //         }
+        // 
+        //         if (Input.GetMouseButtonUp(1))
+        //         {
+        //             isRotating = false;
+        //         }
     }
 
     private void StartRotation(InputAction.CallbackContext context)

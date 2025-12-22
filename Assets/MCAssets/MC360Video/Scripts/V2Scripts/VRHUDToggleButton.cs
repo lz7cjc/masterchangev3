@@ -50,7 +50,7 @@ public class VRHUDToggleButton : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     void Update()
     {
-        if (isHovering)
+        if (isHovering && !actionTriggered)  // Add this check
         {
             hoverTimer += Time.deltaTime;
 
@@ -61,13 +61,12 @@ public class VRHUDToggleButton : MonoBehaviour, IPointerEnterHandler, IPointerEx
             }
 
             // Trigger toggle when timer exceeds delay
-            if (hoverTimer >= hoverDelaySeconds && !actionTriggered)
+            if (hoverTimer >= hoverDelaySeconds)
             {
                 ToggleState();
             }
         }
     }
-
     public void OnPointerEnter(PointerEventData eventData)
     {
         isHovering = true;

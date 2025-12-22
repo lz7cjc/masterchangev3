@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Debug enhanced showHideHUD - Added logging to diagnose timer issues
+/// Updated showHideHUD - Compatible with VRReticlePointer Event Trigger system
+/// NOW WORKS WITH: BaseEventData from Event Triggers
 /// </summary>
 public class showHideHUD : MonoBehaviour
 {
-    // Exact same public fields as original
+    // Public fields - same as before
     public bool mousehover = false;
     public float Counter = 0;
     public float waitFor = 3f;
@@ -34,7 +36,7 @@ public class showHideHUD : MonoBehaviour
         Counter = 0;
         mousehover = false;
 
-        Debug.Log("Enhanced showHideHUD initialized");
+        Debug.Log("Updated showHideHUD initialized (VRReticlePointer compatible)");
     }
 
     public void resetShow()
@@ -55,8 +57,6 @@ public class showHideHUD : MonoBehaviour
             if (turnHudOff != null) turnHudOff.SetActive(false);
             if (turnHudOn != null) turnHudOn.SetActive(true);
 
-            // Note: Static state management is handled by coordinator
-            // Only set if coordinator is not available
             showing = false;
         }
 
@@ -69,7 +69,7 @@ public class showHideHUD : MonoBehaviour
         {
             Counter += Time.deltaTime;
 
-            // DEBUG: Log timer progress every 0.5 seconds
+            // Log timer progress every 0.5 seconds
             if (Mathf.FloorToInt(Counter * 2) > Mathf.FloorToInt((Counter - Time.deltaTime) * 2))
             {
                 Debug.Log($"HUD Timer: {Counter:F1}s / {waitFor}s");
@@ -94,9 +94,18 @@ public class showHideHUD : MonoBehaviour
         }
     }
 
-    public void MouseHoverChangeScene()
+    // ============================================
+    // NEW: Event Trigger compatible methods
+    // These accept BaseEventData from VRReticlePointer
+    // ============================================
+
+    /// <summary>
+    /// Called by Event Trigger - Pointer Enter
+    /// Accepts BaseEventData (compatible with VRReticlePointer)
+    /// </summary>
+    public void MouseHoverChangeScene(BaseEventData eventData)
     {
-        Debug.Log($"MouseHoverChangeScene called - Current mousehover: {mousehover}, Counter: {Counter}");
+        Debug.Log($"MouseHoverChangeScene (EventData) - Current mousehover: {mousehover}, Counter: {Counter}");
 
         // Only reset if not already hovering to prevent timer resets
         if (!mousehover)
@@ -116,9 +125,13 @@ public class showHideHUD : MonoBehaviour
         }
     }
 
-    public void MouseExit()
+    /// <summary>
+    /// Called by Event Trigger - Pointer Exit
+    /// Accepts BaseEventData (compatible with VRReticlePointer)
+    /// </summary>
+    public void MouseExit(BaseEventData eventData)
     {
-        Debug.Log($"MouseExit called - Was hovering: {mousehover}, Counter was: {Counter}");
+        Debug.Log($"MouseExit (EventData) - Was hovering: {mousehover}, Counter was: {Counter}");
 
         mousehover = false;
         Counter = 0;
@@ -131,6 +144,29 @@ public class showHideHUD : MonoBehaviour
         {
             hudCoordinator.OnMainHUDHoverEnded();
         }
+    }
+
+    // ============================================
+    // LEGACY: Keep old methods for backward compatibility
+    // These are the no-parameter versions
+    // ============================================
+
+    /// <summary>
+    /// Legacy version - no parameters
+    /// Kept for backward compatibility
+    /// </summary>
+    public void MouseHoverChangeScene()
+    {
+        MouseHoverChangeScene(null);
+    }
+
+    /// <summary>
+    /// Legacy version - no parameters
+    /// Kept for backward compatibility
+    /// </summary>
+    public void MouseExit()
+    {
+        MouseExit(null);
     }
 
     public void directClick()

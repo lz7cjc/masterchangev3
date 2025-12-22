@@ -33,7 +33,7 @@ public class VRHUDButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     void Update()
     {
-        if (isHovering && requireHoldToTrigger)
+        if (isHovering && requireHoldToTrigger && !actionTriggered)  // Add !actionTriggered
         {
             hoverTimer += Time.deltaTime;
 
@@ -44,13 +44,12 @@ public class VRHUDButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
 
             // Trigger action when timer exceeds delay
-            if (hoverTimer >= hoverDelaySeconds && !actionTriggered)
+            if (hoverTimer >= hoverDelaySeconds)
             {
                 TriggerAction();
             }
         }
     }
-
     public void OnPointerEnter(PointerEventData eventData)
     {
         isHovering = true;
@@ -126,4 +125,6 @@ public class VRHUDButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         OnButtonTriggered?.Invoke();
         Debug.Log($"VRHUDButton: Manually triggered - {actionName}");
     }
+
+
 }

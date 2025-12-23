@@ -28,7 +28,7 @@ public class StartUp : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private closeAllHuds closeAllHuds;
     [SerializeField] private SetVrState setVrState;
-    [SerializeField] private togglingXRFilm togglingXR;
+    [SerializeField] private togglingXR togglingXR;
 
     [Header("Stage Management")]
     private int stage;
@@ -52,7 +52,7 @@ public class StartUp : MonoBehaviour
     [SerializeField] private GameObject hud;
 
     [Header("Loading Configuration")]
-    public togglingXRFilm togglingXRScript;
+    public togglingXR togglingXRScript;
     public GameObject loadingPanel;
     [Tooltip("Enable if using Addressables system")]
     public bool useAddressables = false;
@@ -75,6 +75,20 @@ public class StartUp : MonoBehaviour
 
     void Start()
     {
+        // try to auto-assign togglingXRScript if inspector is empty
+        if (togglingXRScript == null)
+        {
+            togglingXRScript = FindObjectOfType<togglingXR>();
+            if (togglingXRScript == null)
+            {
+                Debug.LogWarning("[StartUp] togglingXRScript not assigned in inspector and not found in scene.");
+            }
+            else
+            {
+                Debug.Log("[StartUp] Assigned togglingXRScript from scene automatically.");
+            }
+        }
+
         bool startInVR = PlayerPrefs.GetInt("toggleToVR", 0) == 1;
 
         Debug.Log($"[StartUp] ========== SCENE START ==========");
@@ -135,7 +149,14 @@ public class StartUp : MonoBehaviour
 
         // Step 3: Start XR subsystems (50-65%)
         UpdateLoadingScreen(progress, "Starting VR...");
-        yield return togglingXRScript.StartXR();
+        if (togglingXRScript != null)
+        {
+            yield return togglingXRScript.StartXR();
+        }
+        else
+        {
+            Debug.LogWarning("[StartUp] togglingXRScript is null - skipping StartXR()");
+        }
         progress = 0.65f;
 
         // Step 4: Wait for VR camera to be ready (65-75%)
@@ -194,6 +215,10 @@ public class StartUp : MonoBehaviour
         {
             togglingXRScript.SetVRMode(false);
         }
+        else
+        {
+            Debug.LogWarning("[StartUp] togglingXRScript is null - skipping SetVRMode(false)");
+        }
         yield return new WaitForEndOfFrame();
         progress = 0.7f;
 
@@ -227,7 +252,8 @@ public class StartUp : MonoBehaviour
             yield break;
         }
 
-        LoadingManager addressablesLoader = FindFirstObjectByType<LoadingManager>();
+        // replaced unsupported API with supported one
+        LoadingManager addressablesLoader = FindObjectOfType<LoadingManager>();
 
         if (addressablesLoader == null)
         {
@@ -395,7 +421,8 @@ public class StartUp : MonoBehaviour
     {
         Debug.Log($"[StartUp] Moving player to zone: {currentZone}");
 
-        ZoneManager zoneManager = FindFirstObjectByType<ZoneManager>();
+        // replaced unsupported API with supported one
+        ZoneManager zoneManager = FindObjectOfType<ZoneManager>();
         GameObject targetObject = GetTargetForZone(currentZone);
 
         if (targetObject == null)

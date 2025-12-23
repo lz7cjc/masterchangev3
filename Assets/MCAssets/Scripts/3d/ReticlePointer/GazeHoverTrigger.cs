@@ -2,301 +2,270 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// Universal hover interaction component for VR gaze-based selection
-/// Works with EnhancedVideoPlayer, HUD buttons, and any interactive object
-/// Attach to any GameObject with a collider that should be interactable
-/// Compatible with both VR and 360 modes
+/// FIXED GazeHoverTrigger - Handles concave MeshColliders, fixes countdown
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class GazeHoverTrigger : MonoBehaviour
 {
     [Header("Action Settings")]
-    [Tooltip("Name for debugging")]
-    [SerializeField] private string actionName;
-    
-    [Tooltip("Time in seconds to trigger action")]
-    [SerializeField] private float hoverDelay = 3f;
-    
-    [Tooltip("Is this a HUD element? (affects HUD rotation freezing)")]
-    [SerializeField] private bool isHUDElement = true;
+    public string actionName;
+    public float hoverDelay = 3f;
+    public bool isHUDElement = false;
 
     [Header("Visual Feedback")]
-    [Tooltip("Show countdown on HUD")]
-    [SerializeField] private bool showCountdown = true;
+    public bool showCountdown = true;
 
-    [Header("EnhancedVideoPlayer Integration")]
-    [Tooltip("Forward hover events to EnhancedVideoPlayer (if present)")]
-    [SerializeField] private bool forwardToVideoPlayer = true;
-    private EnhancedVideoPlayer videoPlayer;
+    [Header("Auto-Detection")]
+    public bool autoDetectZoneManager = true;
+    public bool autoDetectVideoPlayer = true;
 
-    [Header("Scene Teleport Settings (Optional)")]
-    [Tooltip("Enable teleportation on hover complete")]
-    [SerializeField] private bool enableTeleport = false;
-    [SerializeField] private GameObject player;
-    [SerializeField] private GameObject targetLocation;
+    [Header("Manual References (Optional)")]
+    public ZoneManager manualZoneManager;
+    public EnhancedVideoPlayer manualVideoPlayer;
 
-    [Header("Events")]
-    public UnityEvent OnHoverComplete;
-    public UnityEvent OnHoverStart;
-    public UnityEvent OnHoverCancel;
+    [Header("Custom Events")]
+    public UnityEvent onHoverStart;
+    public UnityEvent onHoverComplete;
+    public UnityEvent onHoverCancel;
 
-    // State
+    [Header("Debug")]
+    public bool debugMode = false;
+
     private bool isHovering = false;
-    private float hoverCounter = 0f;
-    private GazeHUDCountdown hudCountdown;
-    private bool hasTriggered = false;
+    private float hoverTimer = 0f;
 
-    void Start()
+    private ZoneManager zoneManager;
+    private EnhancedVideoPlayer videoPlayer;
+    private hudCountdown hudCountdown;
+    private Collider triggerCollider;
+
+    private enum InteractionMode { None, ZoneTeleport, VideoPlayer, CustomEvent }
+    private InteractionMode currentMode = InteractionMode.None;
+
+    void Awake()
     {
-        // Ensure collider is trigger
-        Collider col = GetComponent<Collider>();
-        if (!col.isTrigger)
+        // FIX: Handle MeshColliders properly
+        triggerCollider = GetComponent<Collider>();
+        if (triggerCollider != null && !triggerCollider.isTrigger)
         {
-            Debug.LogWarning($"[GazeHoverTrigger] Collider on {gameObject.name} not set as trigger! Auto-fixing...");
-            col.isTrigger = true;
+            MeshCollider meshCol = triggerCollider as MeshCollider;
+            if (meshCol != null)
+            {
+                if (!meshCol.convex)
+                {
+                    Debug.LogWarning($"[GazeHoverTrigger] {gameObject.name} has concave MeshCollider - converting to BoxCollider");
+                    
+                    Bounds bounds = meshCol.bounds;
+                    Vector3 center = meshCol.bounds.center - transform.position;
+                    
+                    DestroyImmediate(meshCol);
+                    
+                    BoxCollider boxCol = gameObject.AddComponent<BoxCollider>();
+                    boxCol.center = center;
+                    boxCol.size = bounds.size;
+                    boxCol.isTrigger = true;
+                    
+                    triggerCollider = boxCol;
+                    if (debugMode) Debug.Log($"[GazeHoverTrigger] Replaced MeshCollider with BoxCollider");
+                }
+                else
+                {
+                    meshCol.isTrigger = true;
+                }
+            }
+            else
+            {
+                triggerCollider.isTrigger = true;
+            }
         }
 
-        // Find HUD countdown if needed
+        DetectInteractionMode();
+
+        // FIX: Find countdown using correct type
         if (showCountdown)
         {
-            hudCountdown = FindFirstObjectByType<GazeHUDCountdown>();
-            if (hudCountdown == null)
+            hudCountdown = FindObjectOfType<hudCountdown>();
+            if (hudCountdown != null && debugMode)
             {
-                Debug.LogWarning($"[GazeHoverTrigger] showCountdown enabled but no GazeHUDCountdown found");
+                Debug.Log($"[GazeHoverTrigger] Found hudCountdown");
             }
         }
 
-        // Check for EnhancedVideoPlayer
-        if (forwardToVideoPlayer)
+        if (debugMode)
         {
-            videoPlayer = GetComponent<EnhancedVideoPlayer>();
-            if (videoPlayer != null)
-            {
-                Debug.Log($"[GazeHoverTrigger] EnhancedVideoPlayer found on {gameObject.name}");
-            }
-        }
-
-        // Validate teleport settings
-        if (enableTeleport && (player == null || targetLocation == null))
-        {
-            Debug.LogWarning($"[GazeHoverTrigger] Teleport enabled but player/target not assigned on {gameObject.name}");
-        }
-
-        // Auto-assign action name if empty
-        if (string.IsNullOrEmpty(actionName))
-        {
-            actionName = gameObject.name;
+            Debug.Log($"[GazeHoverTrigger] Init: {gameObject.name}, Mode: {currentMode}, Delay: {hoverDelay}s");
         }
     }
 
     void Update()
     {
-        if (isHovering && !hasTriggered)
+        if (isHovering)
         {
-            UpdateHoverProgress();
+            hoverTimer += Time.deltaTime;
+
+            // FIX: Update countdown visual correctly
+            if (showCountdown && hudCountdown != null)
+            {
+                float progress = Mathf.Clamp01(hoverTimer / hoverDelay);
+                hudCountdown.SetCountdown(hoverDelay, hoverTimer);
+            }
+
+            if (hoverTimer >= hoverDelay)
+            {
+                CompleteHover();
+            }
         }
     }
 
-    /// <summary>
-    /// Called by GazeReticlePointer when reticle enters
-    /// </summary>
-    public void OnReticleEnter()
+    private void DetectInteractionMode()
     {
-        if (hasTriggered) return;
+        if (autoDetectZoneManager)
+        {
+            zoneManager = manualZoneManager != null ? manualZoneManager : FindObjectOfType<ZoneManager>();
+            if (zoneManager != null)
+            {
+                currentMode = InteractionMode.ZoneTeleport;
+                if (debugMode) Debug.Log($"[GazeHoverTrigger] Mode: ZoneTeleport");
+                return;
+            }
+        }
+
+        if (autoDetectVideoPlayer)
+        {
+            videoPlayer = manualVideoPlayer != null ? manualVideoPlayer : GetComponent<EnhancedVideoPlayer>();
+            if (videoPlayer != null)
+            {
+                currentMode = InteractionMode.VideoPlayer;
+                if (debugMode) Debug.Log($"[GazeHoverTrigger] Mode: VideoPlayer");
+                return;
+            }
+        }
+
+        if (onHoverComplete.GetPersistentEventCount() > 0)
+        {
+            currentMode = InteractionMode.CustomEvent;
+            if (debugMode) Debug.Log($"[GazeHoverTrigger] Mode: CustomEvent");
+            return;
+        }
+
+        currentMode = InteractionMode.None;
+    }
+
+    public void OnGazeEnter()
+    {
+        if (isHovering) return;
 
         isHovering = true;
-        hoverCounter = 0f;
+        hoverTimer = 0f;
 
-        // Start countdown visual
+        if (debugMode) Debug.Log($"[GazeHoverTrigger] Gaze entered: {actionName}");
+
+        // FIX: Start countdown correctly (hudCountdown doesn't expose StartCountdown)
         if (showCountdown && hudCountdown != null)
         {
-            hudCountdown.StartCountdown(hoverDelay);
+            // initialize display to full wait value (counter = 0)
+            hudCountdown.SetCountdown(hoverDelay, 0f);
         }
 
-        // Forward to EnhancedVideoPlayer
-        if (videoPlayer != null)
+        switch (currentMode)
         {
-            videoPlayer.MouseHoverChangeScene();
+            case InteractionMode.ZoneTeleport:
+                if (zoneManager != null)
+                {
+                    zoneManager.OnHoverEnter(gameObject.name);
+                }
+                break;
+
+            case InteractionMode.CustomEvent:
+                onHoverStart?.Invoke();
+                break;
         }
-
-        // Invoke event
-        OnHoverStart?.Invoke();
-
-        Debug.Log($"[GazeHoverTrigger] Started hovering on {actionName}");
     }
 
-    /// <summary>
-    /// Called by GazeReticlePointer when reticle exits
-    /// </summary>
-    public void OnReticleExit()
+    public void OnGazeExit()
     {
         if (!isHovering) return;
 
+        if (debugMode) Debug.Log($"[GazeHoverTrigger] Gaze exited: {actionName}");
+
+        // FIX: Reset countdown correctly (hudCountdown's method is resetCountdown)
+        if (showCountdown && hudCountdown != null)
+        {
+            hudCountdown.resetCountdown();
+        }
+
+        switch (currentMode)
+        {
+            case InteractionMode.ZoneTeleport:
+                if (zoneManager != null)
+                {
+                    zoneManager.OnHoverExit(gameObject.name);
+                }
+                break;
+
+            case InteractionMode.VideoPlayer:
+                if (videoPlayer != null)
+                {
+                    videoPlayer.MouseExit();
+                }
+                break;
+
+            case InteractionMode.CustomEvent:
+                onHoverCancel?.Invoke();
+                break;
+        }
+
         isHovering = false;
-        hoverCounter = 0f;
-        hasTriggered = false;
+        hoverTimer = 0f;
+    }
 
-        // Reset countdown visual
+    private void CompleteHover()
+    {
+        if (debugMode) Debug.Log($"[GazeHoverTrigger] Hover completed: {actionName}");
+
         if (showCountdown && hudCountdown != null)
         {
-            hudCountdown.ResetCountdown();
+            hudCountdown.SetCountdown(hoverDelay, hoverDelay);
+            hudCountdown.resetCountdown();
         }
 
-        // Forward to EnhancedVideoPlayer
-        if (videoPlayer != null)
+        switch (currentMode)
         {
-            videoPlayer.MouseExit();
-        }
+            case InteractionMode.ZoneTeleport:
+                // ZoneManager handles teleport in Update
+                break;
 
-        // Invoke event
-        OnHoverCancel?.Invoke();
+            case InteractionMode.VideoPlayer:
+                if (videoPlayer != null)
+                {
+                    videoPlayer.MouseHoverChangeScene();
+                }
+                isHovering = false;
+                hoverTimer = 0f;
+                break;
+
+            case InteractionMode.CustomEvent:
+                onHoverComplete?.Invoke();
+                isHovering = false;
+                hoverTimer = 0f;
+                break;
+
+            case InteractionMode.None:
+                Debug.LogWarning($"[GazeHoverTrigger] No action configured on {gameObject.name}");
+                isHovering = false;
+                hoverTimer = 0f;
+                break;
+        }
     }
 
-    /// <summary>
-    /// Update hover progress and trigger action when complete
-    /// </summary>
-    private void UpdateHoverProgress()
+    public void ResetHoverState()
     {
-        hoverCounter += Time.deltaTime;
-
-        // Update countdown visual
-        if (showCountdown && hudCountdown != null)
+        if (isHovering)
         {
-            float progress = Mathf.Clamp01(hoverCounter / hoverDelay);
-            hudCountdown.UpdateCountdown(progress);
-        }
-
-        // Check if hover complete
-        if (hoverCounter >= hoverDelay)
-        {
-            TriggerHoverComplete();
+            OnGazeExit();
         }
     }
 
-    /// <summary>
-    /// Execute action when hover delay is complete
-    /// </summary>
-    private void TriggerHoverComplete()
-    {
-        hasTriggered = true;
-        isHovering = false;
-        hoverCounter = 0f;
-
-        // Reset countdown visual
-        if (showCountdown && hudCountdown != null)
-        {
-            hudCountdown.ResetCountdown();
-        }
-
-        // Execute teleport if enabled
-        if (enableTeleport && player != null && targetLocation != null)
-        {
-            TeleportPlayer();
-        }
-
-        // Forward to EnhancedVideoPlayer
-        // NOTE: EnhancedVideoPlayer handles its own timer, so we don't call SetVideoUrl
-        // The video player's Update loop will trigger when its timer completes
-
-        // Invoke event
-        OnHoverComplete?.Invoke();
-
-        Debug.Log($"[GazeHoverTrigger] ✓ Hover complete on {actionName}");
-
-        // Reset after delay
-        Invoke(nameof(ResetTrigger), 0.5f);
-    }
-
-    /// <summary>
-    /// Teleport player to target location
-    /// </summary>
-    private void TeleportPlayer()
-    {
-        player.transform.position = targetLocation.transform.position;
-        player.transform.SetParent(targetLocation.transform);
-        player.transform.rotation = Quaternion.identity;
-
-        Debug.Log($"[GazeHoverTrigger] Teleported player to {targetLocation.name}");
-    }
-
-    /// <summary>
-    /// Reset trigger state
-    /// </summary>
-    private void ResetTrigger()
-    {
-        hasTriggered = false;
-    }
-
-    /// <summary>
-    /// Check if this is a HUD element
-    /// </summary>
-    public bool IsHUDElement()
-    {
-        return isHUDElement;
-    }
-
-    /// <summary>
-    /// Get hover delay
-    /// </summary>
-    public float GetHoverDelay()
-    {
-        return hoverDelay;
-    }
-
-    /// <summary>
-    /// Get current hover progress (0-1)
-    /// </summary>
-    public float GetHoverProgress()
-    {
-        return Mathf.Clamp01(hoverCounter / hoverDelay);
-    }
-
-    /// <summary>
-    /// Manually trigger action (for testing)
-    /// </summary>
-    [ContextMenu("Manual Trigger")]
-    public void ManualTrigger()
-    {
-        TriggerHoverComplete();
-    }
-
-    /// <summary>
-    /// Reset hover state
-    /// </summary>
-    public void ResetHover()
-    {
-        OnReticleExit();
-    }
-
-    /// <summary>
-    /// Set hover delay at runtime
-    /// </summary>
-    public void SetHoverDelay(float delay)
-    {
-        hoverDelay = Mathf.Max(0.1f, delay);
-    }
-
-    // Visualization in Scene view
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = isHUDElement ? Color.cyan : Color.yellow;
-        
-        Collider col = GetComponent<Collider>();
-        if (col != null)
-        {
-            Gizmos.DrawWireCube(col.bounds.center, col.bounds.size);
-        }
-        else
-        {
-            Gizmos.DrawWireSphere(transform.position, 0.1f);
-        }
-
-        // Draw line to teleport target
-        if (enableTeleport && targetLocation != null)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, targetLocation.transform.position);
-            Gizmos.DrawWireSphere(targetLocation.transform.position, 0.2f);
-        }
-    }
+    public bool IsHovering => isHovering;
+    public float HoverProgress => isHovering ? Mathf.Clamp01(hoverTimer / hoverDelay) : 0f;
 }

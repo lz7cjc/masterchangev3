@@ -2,12 +2,17 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// GazeReticlePointer - Dot when idle, Ring (torus) when hovering
+/// GazeReticlePointer - Dot when idle, Ring (torus) when hovering.
+/// Reticle maintains constant apparent size on screen via distance-compensated world scaling.
 /// </summary>
 public class GazeReticlePointer : MonoBehaviour
 {
+    [Header("Script Info")]
+    [SerializeField, Tooltip("Inspector-visible script version (read-only).")]
+    private string scriptVersion = "GazeReticlePointer v1.6.3";
+
     public enum ViewMode { ModeVR, Mode360 }
-    
+
     [Header("Mode")]
     public ViewMode currentMode = ViewMode.Mode360;
 
@@ -20,16 +25,24 @@ public class GazeReticlePointer : MonoBehaviour
     [SerializeField] private GameObject reticleRing;
     [SerializeField] private Material reticleMaterial;
     [SerializeField] private float reticleDistance = 2f;
-    
-    [Header("Dot Settings")]
-    [SerializeField] private float dotScale = 0.008f;
-    
-    [Header("Ring Settings")]
-    [SerializeField] private float ringIdleRadius = 0.015f;      // Outer radius when not hovering
-    [SerializeField] private float ringHoverRadius = 0.03f;       // Outer radius when hovering
-    [SerializeField] private float ringThickness = 0.004f;        // How thick the ring is
-    [SerializeField] private int ringSegments = 32;               // Quality of ring (higher = smoother)
-    [SerializeField] private float ringScaleSpeed = 8f;
+
+    [Header("Reticle Size")]
+    [Tooltip("Outer radius used for both the idle and hover reticle visuals. The script scales the reticle in world-space so it remains the same apparent size on screen regardless of distance.")]
+    [SerializeField] private float reticleOuterRadius = 0.015f;
+
+    [Tooltip("How much of the reticle's center is hollow (1 = almost solid, 100 = almost fully hollow). Higher values yield a thinner ring.")]
+    [Range(1f, 100f)]
+    [SerializeField] private float hollowPercent = 80f;
+
+    // Legacy fields retained for backwards-compatibility with existing prefabs/scenes.
+    // These are no longer used by the runtime logic and are hidden to avoid Inspector confusion.
+    [HideInInspector, SerializeField] private float dotScale = 0.008f;
+    [HideInInspector, SerializeField] private float ringIdleRadius = 0.015f;
+    [HideInInspector, SerializeField] private float ringHoverRadius = 0.03f;
+    [HideInInspector, SerializeField] private float ringThickness = 0.004f;
+
+    [SerializeField] private int ringSegments = 32;     // Quality of ring (higher = smoother)
+    [SerializeField] private float ringScaleSpeed = 8f; // Also used as visual lerp speed
 
     [Header("Reticle Colors")]
     [SerializeField] private Color dotIdleColor = Color.white;
@@ -67,15 +80,23 @@ public class GazeReticlePointer : MonoBehaviour
     [Header("Reticle Display Mode")]
     [SerializeField] private bool showBothDotAndRing = false;
 
+    // Visual sizing behavior: idle reticle is a solid dot slightly smaller than the hover ring.
+    private const float IdleDotScaleFactor = 0.65f;
+    private float currentSizeFactor;
+
     private GameObject currentHoverTarget;
     private GazeHoverTrigger currentHoverTrigger;
-    private Renderer reticleDotRenderer;
-    private Renderer reticleRingRenderer;
+
     private Material dotMaterialInstance;
     private Material ringMaterialInstance;
+
     private float currentRingRadius;
     private bool isHovering = false;
     private float currentReticleDistance;
+
+    private float lastReticleOuterRadius;
+    private float lastHollowPercent;
+    private int lastRingSegments;
 
     private Vector2 currentRotation;
     private Vector2 targetRotation;
@@ -108,6 +129,9 @@ public class GazeReticlePointer : MonoBehaviour
 
         CreateReticleVisuals();
 
+        CacheReticleShapeSettings();
+        RebuildReticleMeshesIfNeeded(force: true);
+
         Vector3 currentEuler = attachedCamera.transform.localEulerAngles;
         currentRotation = new Vector2(currentEuler.y, currentEuler.x);
         targetRotation = currentRotation;
@@ -117,8 +141,22 @@ public class GazeReticlePointer : MonoBehaviour
             EnableGyroscope();
         }
 
-        currentRingRadius = ringIdleRadius;
+        currentRingRadius = reticleOuterRadius;
         currentReticleDistance = reticleDistance;
+        currentSizeFactor = IdleDotScaleFactor;
+    }
+
+    void OnValidate()
+    {
+        // Keep version pinned for quick visual verification in Inspector (including during Play Mode).
+        scriptVersion = "GazeReticlePointer v1.6.3";
+
+        if (reticleOuterRadius < 0.0001f) reticleOuterRadius = 0.0001f;
+        hollowPercent = Mathf.Clamp(hollowPercent, 1f, 100f);
+        if (ringSegments < 3) ringSegments = 3;
+
+        // Rebuild in-editor immediately when tuning values.
+        RebuildReticleMeshesIfNeeded(force: false);
     }
 
     void Update()
@@ -126,6 +164,10 @@ public class GazeReticlePointer : MonoBehaviour
         HandleInput();
         ApplyRotation();
         PerformGazeRaycast();
+
+        // Support real-time tuning while playing (Inspector changes to radius/hollow/segments).
+        RebuildReticleMeshesIfNeeded(force: false);
+
         UpdateReticleVisuals();
     }
 
@@ -157,32 +199,31 @@ public class GazeReticlePointer : MonoBehaviour
 
     private void HandleMouseInput()
     {
-        if (requireRightClick)
+        if (!requireRightClick) return;
+
+        if (Mouse.current != null && Mouse.current.rightButton.isPressed)
         {
-            if (Mouse.current.rightButton.isPressed)
+            if (!rightMouseHeld)
             {
-                if (!rightMouseHeld)
-                {
-                    rightMouseHeld = true;
-                    lastMousePosition = Mouse.current.position.ReadValue();
-                }
-
-                Vector2 currentMousePos = Mouse.current.position.ReadValue();
-                Vector2 mouseDelta = currentMousePos - lastMousePosition;
-                lastMousePosition = currentMousePos;
-
-                targetRotation.x += mouseDelta.x * mouseSensitivity * 0.1f;
-                targetRotation.y -= mouseDelta.y * mouseSensitivity * 0.1f;
-
-                if (limitVerticalRotation)
-                {
-                    targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
-                }
+                rightMouseHeld = true;
+                lastMousePosition = Mouse.current.position.ReadValue();
             }
-            else
+
+            Vector2 currentMousePos = Mouse.current.position.ReadValue();
+            Vector2 mouseDelta = currentMousePos - lastMousePosition;
+            lastMousePosition = currentMousePos;
+
+            targetRotation.x += mouseDelta.x * mouseSensitivity * 0.1f;
+            targetRotation.y -= mouseDelta.y * mouseSensitivity * 0.1f;
+
+            if (limitVerticalRotation)
             {
-                rightMouseHeld = false;
+                targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
             }
+        }
+        else
+        {
+            rightMouseHeld = false;
         }
     }
 
@@ -191,7 +232,7 @@ public class GazeReticlePointer : MonoBehaviour
         if (Touchscreen.current == null) return;
 
         var touches = Touchscreen.current.touches;
-        
+
         if (touches[0].isInProgress)
         {
             Vector2 touchPos = touches[0].position.ReadValue();
@@ -232,7 +273,7 @@ public class GazeReticlePointer : MonoBehaviour
 
     private void ApplyRotation()
     {
-        if (currentMode == ViewMode.ModeVR && Application.isMobilePlatform && 
+        if (currentMode == ViewMode.ModeVR && Application.isMobilePlatform &&
             enableGyroControl && Input.gyro.enabled)
         {
             return;
@@ -259,11 +300,10 @@ public class GazeReticlePointer : MonoBehaviour
             Debug.DrawRay(ray.origin, ray.direction * maxRaycastDistance, Color.green);
         }
 
-        RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, maxRaycastDistance, interactableLayers))
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactableLayers))
         {
             currentReticleDistance = Mathf.Min(hit.distance, reticleDistance);
-            
+
             GameObject hitObject = hit.collider.gameObject;
             GazeHoverTrigger hitTrigger = hitObject.GetComponent<GazeHoverTrigger>();
 
@@ -288,7 +328,7 @@ public class GazeReticlePointer : MonoBehaviour
         else
         {
             currentReticleDistance = reticleDistance;
-            
+
             if (currentHoverTarget != null)
             {
                 ExitCurrentTarget();
@@ -328,159 +368,235 @@ public class GazeReticlePointer : MonoBehaviour
             if (reticleRing != null) reticleRing.SetActive(isHovering);
         }
 
-        Vector3 reticlePosition = attachedCamera.transform.position + 
+        Vector3 reticlePosition = attachedCamera.transform.position +
                                  attachedCamera.transform.forward * currentReticleDistance;
 
-        // Update dot
+        // Constant apparent size: world size scales linearly with distance from the camera.
+        float distanceScale = Mathf.Max(currentReticleDistance, 0.0001f);
+
+        // Smoothly grow/shrink between idle dot and hover ring.
+        if (!showBothDotAndRing)
+        {
+            float targetFactor = isHovering ? 1f : IdleDotScaleFactor;
+            currentSizeFactor = Mathf.Lerp(currentSizeFactor, targetFactor, Time.deltaTime * ringScaleSpeed);
+        }
+        else
+        {
+            currentSizeFactor = 1f;
+        }
+
+        // Update dot (sphere primitive diameter is 1 at localScale=1)
         if (reticleDot != null && reticleDot.activeSelf)
         {
             reticleDot.transform.position = reticlePosition;
-            reticleDot.transform.rotation = Quaternion.LookRotation(
-                reticlePosition - attachedCamera.transform.position);
-            reticleDot.transform.localScale = Vector3.one * dotScale;
-            
+            reticleDot.transform.rotation = Quaternion.LookRotation(reticlePosition - attachedCamera.transform.position);
+
+            float dotFactor = showBothDotAndRing ? IdleDotScaleFactor : currentSizeFactor;
+            float desiredWorldDiameter = reticleOuterRadius * 2f * distanceScale * dotFactor;
+            SetWorldUniformScale(reticleDot.transform, desiredWorldDiameter);
+
             if (dotMaterialInstance != null)
             {
                 Color targetColor = isHovering ? dotHoverColor : dotIdleColor;
-                
-                if (dotMaterialInstance.HasProperty("_BaseColor"))
-                {
-                    dotMaterialInstance.SetColor("_BaseColor", Color.Lerp(
-                        dotMaterialInstance.GetColor("_BaseColor"), targetColor, Time.deltaTime * ringScaleSpeed));
-                }
-                else if (dotMaterialInstance.HasProperty("_Color"))
-                {
-                    dotMaterialInstance.SetColor("_Color", Color.Lerp(
-                        dotMaterialInstance.GetColor("_Color"), targetColor, Time.deltaTime * ringScaleSpeed));
-                }
+                LerpMaterialColor(dotMaterialInstance, targetColor, ringScaleSpeed);
             }
         }
 
-        // Update ring - NOW SCALES THE ACTUAL RING MESH
+        // Update ring (torus mesh baked at reticleOuterRadius; scale by distance only)
         if (reticleRing != null && reticleRing.activeSelf)
         {
             reticleRing.transform.position = reticlePosition;
-            reticleRing.transform.rotation = Quaternion.LookRotation(
-                reticlePosition - attachedCamera.transform.position);
-            
-            // Animate ring size
-            float targetRadius = isHovering ? ringHoverRadius : ringIdleRadius;
-            currentRingRadius = Mathf.Lerp(currentRingRadius, targetRadius, Time.deltaTime * ringScaleSpeed);
-            
-            // Scale the ring (torus maintains its proportions)
-            float scaleRatio = currentRingRadius / ringIdleRadius;
-            reticleRing.transform.localScale = Vector3.one * scaleRatio;
-            
+            reticleRing.transform.rotation = Quaternion.LookRotation(reticlePosition - attachedCamera.transform.position);
+
+            currentRingRadius = reticleOuterRadius;
+
+            float ringFactor = showBothDotAndRing ? 1f : currentSizeFactor;
+            SetWorldUniformScale(reticleRing.transform, distanceScale * ringFactor);
+
             if (ringMaterialInstance != null)
             {
                 Color targetColor = isHovering ? ringHoverColor : ringIdleColor;
-                
-                if (ringMaterialInstance.HasProperty("_BaseColor"))
-                {
-                    ringMaterialInstance.SetColor("_BaseColor", Color.Lerp(
-                        ringMaterialInstance.GetColor("_BaseColor"), targetColor, Time.deltaTime * ringScaleSpeed));
-                }
-                else if (ringMaterialInstance.HasProperty("_Color"))
-                {
-                    ringMaterialInstance.SetColor("_Color", Color.Lerp(
-                        ringMaterialInstance.GetColor("_Color"), targetColor, Time.deltaTime * ringScaleSpeed));
-                }
+                LerpMaterialColor(ringMaterialInstance, targetColor, ringScaleSpeed);
             }
         }
     }
 
+    private static void LerpMaterialColor(Material mat, Color targetColor, float speed)
+    {
+        if (mat.HasProperty("_BaseColor"))
+        {
+            mat.SetColor("_BaseColor", Color.Lerp(mat.GetColor("_BaseColor"), targetColor, Time.deltaTime * speed));
+        }
+        else if (mat.HasProperty("_Color"))
+        {
+            mat.SetColor("_Color", Color.Lerp(mat.GetColor("_Color"), targetColor, Time.deltaTime * speed));
+        }
+    }
+
+    /// <summary>
+    /// Sets a uniform scale in world-space even when the transform is parented under a scaled hierarchy.
+    /// For a desired world uniform scale S, localScale must be S / parent.lossyScale (per axis).
+    /// </summary>
+    private static void SetWorldUniformScale(Transform t, float desiredWorldUniformScale)
+    {
+        Transform p = t.parent;
+        if (p == null)
+        {
+            t.localScale = Vector3.one * desiredWorldUniformScale;
+            return;
+        }
+
+        Vector3 parentLossy = p.lossyScale;
+        float sx = Mathf.Abs(parentLossy.x) > 0.000001f ? desiredWorldUniformScale / parentLossy.x : desiredWorldUniformScale;
+        float sy = Mathf.Abs(parentLossy.y) > 0.000001f ? desiredWorldUniformScale / parentLossy.y : desiredWorldUniformScale;
+        float sz = Mathf.Abs(parentLossy.z) > 0.000001f ? desiredWorldUniformScale / parentLossy.z : desiredWorldUniformScale;
+
+        t.localScale = new Vector3(sx, sy, sz);
+    }
+
     private void CreateReticleVisuals()
     {
-        // Create DOT (sphere)
+        // Create DOT (solid sphere) if not provided.
         if (reticleDot == null)
         {
             reticleDot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             reticleDot.name = "ReticleDot";
             reticleDot.transform.SetParent(transform);
-            Destroy(reticleDot.GetComponent<Collider>());
-            
-            reticleDotRenderer = reticleDot.GetComponent<Renderer>();
+
+            Collider c = reticleDot.GetComponent<Collider>();
+            if (c != null) Destroy(c);
+
             dotMaterialInstance = new Material(reticleMaterial);
-            
-            if (dotMaterialInstance.HasProperty("_BaseColor"))
-            {
-                dotMaterialInstance.SetColor("_BaseColor", dotIdleColor);
-            }
-            else if (dotMaterialInstance.HasProperty("_Color"))
-            {
-                dotMaterialInstance.SetColor("_Color", dotIdleColor);
-            }
-            
-            reticleDotRenderer.material = dotMaterialInstance;
+            ApplyMaterialColor(dotMaterialInstance, dotIdleColor);
+
+            Renderer r = reticleDot.GetComponent<Renderer>();
+            if (r != null) r.material = dotMaterialInstance;
+
             reticleDot.SetActive(showBothDotAndRing);
         }
+        else
+        {
+            var r = reticleDot.GetComponent<Renderer>();
+            if (r != null)
+            {
+                dotMaterialInstance = r.material != null ? r.material : new Material(reticleMaterial);
+                ApplyMaterialColor(dotMaterialInstance, dotIdleColor);
+                r.material = dotMaterialInstance;
+            }
+        }
 
-        // Create RING (torus)
+        // Create RING (torus) if not provided.
         if (reticleRing == null)
         {
             reticleRing = new GameObject("ReticleRing");
             reticleRing.transform.SetParent(transform);
-            
-            // Create torus mesh
+
             MeshFilter meshFilter = reticleRing.AddComponent<MeshFilter>();
-            meshFilter.mesh = CreateTorusMesh(ringIdleRadius, ringThickness, ringSegments, 16);
-            
-            // Add renderer
-            reticleRingRenderer = reticleRing.AddComponent<MeshRenderer>();
+            meshFilter.mesh = CreateReticleTorusMesh();
+
+            MeshRenderer meshRenderer = reticleRing.AddComponent<MeshRenderer>();
             ringMaterialInstance = new Material(reticleMaterial);
-            
-            if (ringMaterialInstance.HasProperty("_BaseColor"))
-            {
-                ringMaterialInstance.SetColor("_BaseColor", ringIdleColor);
-            }
-            else if (ringMaterialInstance.HasProperty("_Color"))
-            {
-                ringMaterialInstance.SetColor("_Color", ringIdleColor);
-            }
-            
-            reticleRingRenderer.material = ringMaterialInstance;
+            ApplyMaterialColor(ringMaterialInstance, ringIdleColor);
+            meshRenderer.material = ringMaterialInstance;
+
             reticleRing.SetActive(false);
         }
+        else
+        {
+            var mr = reticleRing.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                ringMaterialInstance = mr.material != null ? mr.material : new Material(reticleMaterial);
+                ApplyMaterialColor(ringMaterialInstance, ringIdleColor);
+                mr.material = ringMaterialInstance;
+            }
+        }
+    }
+
+    private static void ApplyMaterialColor(Material mat, Color c)
+    {
+        if (mat == null) return;
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", c);
+        else if (mat.HasProperty("_Color")) mat.SetColor("_Color", c);
+    }
+
+    private void CacheReticleShapeSettings()
+    {
+        lastReticleOuterRadius = reticleOuterRadius;
+        lastHollowPercent = hollowPercent;
+        lastRingSegments = ringSegments;
+    }
+
+    private void RebuildReticleMeshesIfNeeded(bool force)
+    {
+        if (!force &&
+            Mathf.Approximately(lastReticleOuterRadius, reticleOuterRadius) &&
+            Mathf.Approximately(lastHollowPercent, hollowPercent) &&
+            lastRingSegments == ringSegments)
+        {
+            return;
+        }
+
+        CacheReticleShapeSettings();
+
+        if (reticleRing != null)
+        {
+            MeshFilter ringFilter = reticleRing.GetComponent<MeshFilter>();
+            if (ringFilter != null) ringFilter.sharedMesh = CreateReticleTorusMesh();
+        }
+    }
+
+    private Mesh CreateReticleTorusMesh()
+    {
+        float outer = Mathf.Max(reticleOuterRadius, 0.0001f);
+
+        // hollowPercent ~= innerRadius / outerRadius (as a percentage).
+        float hollowRatio = Mathf.Clamp(hollowPercent / 100f, 0.01f, 0.99f);
+        float inner = outer * hollowRatio;
+
+        float radius = (outer + inner) * 0.5f;
+        float thickness = (outer - inner) * 0.5f;
+
+        return CreateTorusMesh(radius, thickness, ringSegments, 16);
     }
 
     // Creates a torus (donut) mesh
     private Mesh CreateTorusMesh(float radius, float thickness, int radialSegments, int tubularSegments)
     {
         Mesh mesh = new Mesh();
-        
+
         int vertexCount = (radialSegments + 1) * (tubularSegments + 1);
         Vector3[] vertices = new Vector3[vertexCount];
         Vector3[] normals = new Vector3[vertexCount];
         Vector2[] uvs = new Vector2[vertexCount];
-        
+
         int idx = 0;
         for (int i = 0; i <= radialSegments; i++)
         {
             float u = (float)i / radialSegments * 2f * Mathf.PI;
             Vector3 circleCenter = new Vector3(Mathf.Cos(u) * radius, Mathf.Sin(u) * radius, 0f);
-            
+
             for (int j = 0; j <= tubularSegments; j++)
             {
                 float v = (float)j / tubularSegments * 2f * Mathf.PI;
                 float x = (radius + thickness * Mathf.Cos(v)) * Mathf.Cos(u);
                 float y = (radius + thickness * Mathf.Cos(v)) * Mathf.Sin(u);
                 float z = thickness * Mathf.Sin(v);
-                
+
                 vertices[idx] = new Vector3(x, y, z);
-                
+
                 Vector3 normal = (vertices[idx] - circleCenter).normalized;
                 normals[idx] = normal;
-                
+
                 uvs[idx] = new Vector2((float)i / radialSegments, (float)j / tubularSegments);
-                
+
                 idx++;
             }
         }
-        
-        // Create triangles
+
         int triangleCount = radialSegments * tubularSegments * 6;
         int[] triangles = new int[triangleCount];
-        
+
         int triIdx = 0;
         for (int i = 0; i < radialSegments; i++)
         {
@@ -490,22 +606,22 @@ public class GazeReticlePointer : MonoBehaviour
                 int b = (i + 1) * (tubularSegments + 1) + j;
                 int c = (i + 1) * (tubularSegments + 1) + (j + 1);
                 int d = i * (tubularSegments + 1) + (j + 1);
-                
+
                 triangles[triIdx++] = a;
                 triangles[triIdx++] = b;
                 triangles[triIdx++] = c;
-                
+
                 triangles[triIdx++] = a;
                 triangles[triIdx++] = c;
                 triangles[triIdx++] = d;
             }
         }
-        
+
         mesh.vertices = vertices;
         mesh.normals = normals;
         mesh.uv = uvs;
         mesh.triangles = triangles;
-        
+
         return mesh;
     }
 

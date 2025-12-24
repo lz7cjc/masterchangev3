@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
 /// PlayerMovement1 - Simple collision detection with CharacterController
 /// UPDATED: Converted from Rigidbody to CharacterController for better VR teleportation
+/// UPDATED: Added support for SpeedController and StartStopController (Level 3b HUD controls)
 /// </summary>
 public class PlayerMovement1 : MonoBehaviour
 {
@@ -73,6 +74,7 @@ public class PlayerMovement1 : MonoBehaviour
     private bool isHovering = false;
     private bool isMoving = false;
     private bool isInitialized = false;
+    private bool movementEnabled = true; // NEW: For SpeedController/StartStopController
 
     // Action types
     private enum ActionType { None, StartWalk, ChangeSpeed, Stop }
@@ -175,13 +177,15 @@ public class PlayerMovement1 : MonoBehaviour
 
     private void HandleMovement()
     {
-        if (!isMoving || currentSpeed <= 0f || playerController == null) return;
+        // NEW: Check movementEnabled flag (for StartStopController)
+        if (!movementEnabled || !isMoving || currentSpeed <= 0f || playerController == null) 
+            return;
 
         // Get movement direction
         Vector3 cameraForward = Camera.main.transform.forward;
         Vector3 horizontalDirection = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
 
-        Vector3 currentPosition = playerController.transform.position; // CHANGED: Use transform.position
+        Vector3 currentPosition = playerController.transform.position;
         Vector3 moveVector = horizontalDirection * currentSpeed * Time.deltaTime;
         Vector3 targetPosition = currentPosition + moveVector;
 
@@ -195,7 +199,7 @@ public class PlayerMovement1 : MonoBehaviour
         // Apply ground following
         Vector3 finalPosition = ApplyGroundFollowing(targetPosition);
 
-        // CHANGED: Use CharacterController.Move instead of Rigidbody.MovePosition
+        // Use CharacterController.Move
         Vector3 movement = finalPosition - playerController.transform.position;
         playerController.Move(movement);
 
@@ -208,7 +212,7 @@ public class PlayerMovement1 : MonoBehaviour
     private bool CheckForObstacles(Vector3 fromPosition, Vector3 direction)
     {
         // Multiple height checks to catch different obstacles
-        float playerHeight = 2f; // Adjust based on your player size
+        float playerHeight = 2f;
         Vector3[] checkPoints = {
             fromPosition + Vector3.up * 0.2f,  // Foot level
             fromPosition + Vector3.up * 1f,    // Center level  
@@ -224,13 +228,13 @@ public class PlayerMovement1 : MonoBehaviour
                 int hitLayer = hit.collider.gameObject.layer;
                 if (IsLayerInMask(hitLayer, ignoreCollisionLayers))
                 {
-                    continue; // Ignore this collision
+                    continue;
                 }
 
                 // Check if it's the player itself
                 if (hit.collider.transform == playerController.transform)
                 {
-                    continue; // Ignore self-collision
+                    continue;
                 }
 
                 // Valid obstacle found
@@ -242,14 +246,14 @@ public class PlayerMovement1 : MonoBehaviour
             }
         }
 
-        return false; // No obstacles found
+        return false;
     }
 
     private Vector3 ApplyGroundFollowing(Vector3 targetPosition)
     {
         if (!useSimpleGroundDetection)
         {
-            return targetPosition; // Use original Y position
+            return targetPosition;
         }
 
         // Raycast down from above target position to find ground
@@ -262,7 +266,7 @@ public class PlayerMovement1 : MonoBehaviour
             int hitLayer = hit.collider.gameObject.layer;
             if (IsLayerInMask(hitLayer, ignoreCollisionLayers))
             {
-                return playerController.transform.position; // CHANGED: Use transform.position
+                return targetPosition;
             }
 
             // Check slope angle
@@ -270,32 +274,17 @@ public class PlayerMovement1 : MonoBehaviour
             if (slopeAngle > maxSlopeAngle)
             {
                 DebugLog($"Slope too steep: {slopeAngle:F1}° (max: {maxSlopeAngle}°)");
-                return playerController.transform.position; // CHANGED: Use transform.position
+                return targetPosition;
             }
 
-            // Valid ground found - apply smooth following
+            // Smoothly adjust Y position
             float targetY = hit.point.y;
-            float currentY = playerController.transform.position.y; // CHANGED: Use transform.position
-            float smoothedY = Mathf.Lerp(currentY, targetY, Time.deltaTime * terrainFollowSmoothness);
+            float smoothedY = Mathf.Lerp(targetPosition.y, targetY, Time.deltaTime * terrainFollowSmoothness);
 
-            Vector3 finalPosition = new Vector3(targetPosition.x, smoothedY, targetPosition.z);
-
-            if (debugMode && Time.frameCount % 60 == 0)
-            {
-                DebugLog($"Ground follow - Hit: {hit.collider.name}, Slope: {slopeAngle:F1}°, Y: {currentY:F2}→{smoothedY:F2}");
-            }
-
-            return finalPosition;
+            return new Vector3(targetPosition.x, smoothedY, targetPosition.z);
         }
-        else
-        {
-            // No ground found - don't move to prevent falling
-            if (debugMode && Time.frameCount % 60 == 0)
-            {
-                DebugLog("No ground found - preventing movement");
-            }
-            return playerController.transform.position; // CHANGED: Use transform.position
-        }
+
+        return targetPosition;
     }
 
     private bool IsLayerInMask(int layer, LayerMask mask)
@@ -305,21 +294,19 @@ public class PlayerMovement1 : MonoBehaviour
 
     private void HandleHoverTimer()
     {
-        if (isHovering)
+        if (!isHovering) return;
+
+        hoverTimer += Time.deltaTime;
+
+        if (hudCountdown != null)
         {
-            hoverTimer += Time.deltaTime;
+            hudCountdown.SetCountdown((int)actionDelay, hoverTimer);
+        }
 
-            if (hudCountdown != null)
-            {
-                hudCountdown.SetCountdown(actionDelay, hoverTimer);
-            }
-
-            float delay = (pendingAction == ActionType.Stop) ? stopDelay : actionDelay;
-
-            if (hoverTimer >= delay)
-            {
-                ExecutePendingAction();
-            }
+        if (hoverTimer >= actionDelay)
+        {
+            ExecutePendingAction();
+            ResetHover();
         }
     }
 
@@ -328,51 +315,62 @@ public class PlayerMovement1 : MonoBehaviour
         switch (pendingAction)
         {
             case ActionType.StartWalk:
-                StartWalking();
-                startStopIconController?.SelectIcon();
-                break;
-
-            case ActionType.ChangeSpeed:
-                ChangeSpeed(speedDelta);
-                if (speedDelta > 0)
-                    speedUpIconController?.SelectIcon();
-                else
-                    speedDownIconController?.SelectIcon();
+                if (!isMoving)
+                {
+                    StartWalking();
+                }
                 break;
 
             case ActionType.Stop:
-                StopWalking();
-                startStopIconController?.SelectIcon();
+                if (isMoving)
+                {
+                    StopWalking();
+                }
+                break;
+
+            case ActionType.ChangeSpeed:
+                if (isMoving)
+                {
+                    ChangeSpeed(speedDelta);
+                }
                 break;
         }
-
-        UpdateSpeedDisplay();
-        UpdateIcons();
-        UpdateLevel3Controls();
-        SaveSpeed();
-        ResetHover();
     }
 
     private void StartWalking()
     {
-        if (currentSpeed <= 0f)
-        {
-            currentSpeed = defaultSpeed;
-        }
+        currentSpeed = defaultSpeed;
         isMoving = true;
-        DebugLog("Started walking");
+        UpdateSpeedDisplay();
+        UpdateIcons();
+        UpdateLevel3Controls();
+        SaveSpeed();
+        DebugLog($"Started walking at speed {currentSpeed}");
     }
 
     private void ChangeSpeed(float delta)
     {
+        float oldSpeed = currentSpeed;
         currentSpeed = Mathf.Clamp(currentSpeed + delta, minSpeed, maxSpeed);
-        DebugLog($"Speed changed to: {currentSpeed}");
+
+        if (Mathf.Abs(currentSpeed - oldSpeed) < 0.01f)
+        {
+            return;
+        }
+
+        UpdateSpeedDisplay();
+        SaveSpeed();
+        DebugLog($"Changed speed from {oldSpeed} to {currentSpeed}");
     }
 
     private void StopWalking()
     {
         currentSpeed = 0f;
         isMoving = false;
+        UpdateSpeedDisplay();
+        UpdateIcons();
+        UpdateLevel3Controls();
+        SaveSpeed();
         DebugLog("Stopped walking");
     }
 
@@ -623,6 +621,44 @@ public class PlayerMovement1 : MonoBehaviour
     {
         OnMouseExit();
     }
+
+    #endregion
+
+    #region NEW: Methods Required by SpeedController and StartStopController
+
+    /// <summary>
+    /// Set movement speed - called by SpeedController
+    /// </summary>
+    public void SetMovementSpeed(float speed)
+    {
+        currentSpeed = Mathf.Clamp(speed, minSpeed, maxSpeed);
+        UpdateSpeedDisplay();
+        SaveSpeed();
+        DebugLog($"[SpeedController] Movement speed set to: {currentSpeed}");
+    }
+
+    /// <summary>
+    /// Enable player movement - called by StartStopController
+    /// </summary>
+    public void EnableMovement()
+    {
+        movementEnabled = true;
+        DebugLog("[StartStopController] Movement ENABLED");
+    }
+
+    /// <summary>
+    /// Disable player movement - called by StartStopController
+    /// </summary>
+    public void DisableMovement()
+    {
+        movementEnabled = false;
+        DebugLog("[StartStopController] Movement DISABLED");
+    }
+
+    /// <summary>
+    /// Check if movement is currently enabled
+    /// </summary>
+    public bool IsMovementEnabled => movementEnabled;
 
     #endregion
 

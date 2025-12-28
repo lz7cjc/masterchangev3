@@ -86,7 +86,6 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\V6\FilmHUDManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\HudButtonRelay.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RotateCameraV3.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VRHUDRotationController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\AddressableInitializer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRViewToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCameraNoToggleIcons.cs" />
@@ -135,6 +134,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\MinimalLoadingIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\VRLoadingManager.cs" />
@@ -200,6 +200,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\getfavourites.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\BackgroundPreloader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Movement\PlayerMovement1.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationController.cs" />
     <Compile Include="Assets\Default Example URP Assets\Scripts\SimpleCameraController.cs" />
     <Compile Include="Assets\3rdPartyAssets\StylizedWater2\Runtime\FloatingTransform.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\V6\HUDFollowerWithHoverFreeze.cs" />
@@ -275,8 +276,8 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinks.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Logon.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\IntegratedTipsController.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDBoundingBoxRotation.cs" />
     <Compile Include="Assets\3rdPartyAssets\Mountain Terrain rocks and tree\Script\Camera\CameraControl.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\FilmZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\spriteChange.cs" />
@@ -319,7 +320,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRirosDynamic.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\WaterSportsPlatformGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\CustomReticlePointer.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VRHUDBoundingBoxRotation.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\closeAllHudsold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\showHideHUDcat.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\ActiveCameraProvider.cs" />

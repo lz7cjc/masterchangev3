@@ -11,6 +11,7 @@ public class GazeHoverTrigger : MonoBehaviour
     public string actionName;
     public float hoverDelay = 3f;
     public bool isHUDElement = false;
+    public bool continuousHover = false; // NEW: Keep hover active after completion (for rotation, etc.)
 
     [Header("Visual Feedback")]
     public bool showCountdown = true;
@@ -246,8 +247,12 @@ public class GazeHoverTrigger : MonoBehaviour
 
             case InteractionMode.CustomEvent:
                 onHoverComplete?.Invoke();
-                isHovering = false;
-                hoverTimer = 0f;
+                // Only keep hovering if continuousHover is enabled (for rotation/continuous actions)
+                if (!continuousHover)
+                {
+                    isHovering = false;
+                    hoverTimer = 0f;
+                }
                 break;
 
             case InteractionMode.None:

@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// VRHUDRotationController - Ultimate simple version
-/// Just adjust BoxCollider size. Inside = control HUD, Outside = HUD rotates.
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class VRHUDRotationController : MonoBehaviour
 {
@@ -11,61 +7,48 @@ public class VRHUDRotationController : MonoBehaviour
     [SerializeField] private Transform vrCamera;
     [SerializeField] private Transform camera360;
 
-    [Header("Rotation Trigger")]
-    [Tooltip("Seconds looking outside BoxCollider before rotating")]
-    [SerializeField] private float stillnessDelay = 2f;
-    
-    [Tooltip("Min head movement (deg/sec) to reset timer")]
-    [SerializeField] private float movementThreshold = 1f;
+    [Header("Detection Settings")]
+    [SerializeField] private float triggerAngle = 40f;
 
-    [Header("Rotation Behavior")]
+    [Header("Rotation Trigger")]
+    [SerializeField] private float stillnessDelay = 2f;
+    [SerializeField] private float movementThreshold = 1000f;
+
+    [Header("HUD Positioning")]
+    [SerializeField] private float hudDistance = 3f;
     [Tooltip("Fixed downward tilt")]
     [SerializeField] private float fixedXTilt = -10f;
-    
-    [Tooltip("Rotation speed")]
-    [SerializeField] private float rotationSpeed = 2f;
-    
-    [SerializeField] private bool smoothRotation = true;
-
-    [Header("Visualization")]
-    [SerializeField] private bool showBoundsInScene = true;
-    [SerializeField] private Color boundsColor = new Color(0f, 1f, 0f, 0.3f);
+    [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private bool smoothMovement = true;
 
     [Header("Debug")]
-    [SerializeField] private bool debugMode = false;
+    [SerializeField] private bool debugLogs = true;
 
-    // State
     private Transform currentCamera;
     private BoxCollider boundsCollider;
-    private Vector3 lastCameraForward;
-    private float timeOutsideBounds = 0f;
-    private bool isRotating = false;
+    private Vector3 lastCameraYaw;
+    private float outsideTimer = 0f;
+    private bool isRepositioning = false;
+    private Vector3 targetPosition;
     private Quaternion targetRotation;
 
     private void Start()
     {
         boundsCollider = GetComponent<BoxCollider>();
-        if (boundsCollider == null)
-        {
-            Debug.LogError("[HUD] ERROR: No BoxCollider found!");
-            enabled = false;
-            return;
-        }
         boundsCollider.isTrigger = true;
 
         FindActiveCamera();
-        
+
         if (currentCamera == null)
         {
-            Debug.LogError("[HUD] ERROR: No camera found!");
+            Debug.LogError("[HUD] No camera found!");
             enabled = false;
             return;
         }
-        
-        InitializeRotation();
-        lastCameraForward = currentCamera.forward;
 
-        // Prevent falling
+        InitializePosition();
+        lastCameraYaw = GetHorizontalForward(currentCamera.forward);
+
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -73,68 +56,54 @@ public class VRHUDRotationController : MonoBehaviour
             rb.useGravity = false;
         }
 
-        Debug.Log($"[HUD] ===== INITIALIZED =====");
+        Debug.Log("╔══════════════════════════════════╗");
+        Debug.Log("║  HUD ORBIT CONTROLLER ACTIVE  ║");
+        Debug.Log("╚══════════════════════════════════╝");
         Debug.Log($"[HUD] Camera: {currentCamera.name}");
-        Debug.Log($"[HUD] Collider size: {boundsCollider.size}");
-        Debug.Log($"[HUD] Collider center (local): {boundsCollider.center}");
-        Debug.Log($"[HUD] Bounds center (world): {boundsCollider.bounds.center}");
-        Debug.Log($"[HUD] Bounds size (world): {boundsCollider.bounds.size}");
-        Debug.Log($"[HUD] HUD position: {transform.position}");
-        Debug.Log($"[HUD] Camera position: {currentCamera.position}");
-        Debug.Log($"[HUD] Stillness delay: {stillnessDelay}s");
-        Debug.Log($"[HUD] Movement threshold: {movementThreshold} deg/s");
-        Debug.Log($"[HUD] Debug mode: {debugMode}");
-        Debug.Log($"[HUD] ========================");
+        Debug.Log($"[HUD] Distance: {hudDistance}m");
+        Debug.Log($"[HUD] Trigger: {triggerAngle}°");
+        Debug.Log($"[HUD] Delay: {stillnessDelay}s");
     }
 
     private void Update()
     {
         if (currentCamera == null) return;
 
-        CheckCameraSwitch();
+        float angleToHUD = GetHorizontalAngleToHUD();
+        bool lookingAway = angleToHUD > triggerAngle;
+        float headSpeed = GetHeadMovementSpeed();
+        bool headStill = headSpeed < movementThreshold;
 
-        bool outsideBounds = IsLookingOutsideBounds();
-        bool headMoving = IsHeadMoving();
-
-        if (debugMode && Time.frameCount % 60 == 0) // Log every 60 frames
+        if (debugLogs && Time.frameCount % 60 == 0)
         {
-            Debug.Log($"[HUD] Status Check:");
-            Debug.Log($"  - Looking outside bounds: {outsideBounds}");
-            Debug.Log($"  - Head moving: {headMoving}");
-            Debug.Log($"  - Time outside: {timeOutsideBounds:F2}s / {stillnessDelay:F1}s");
-            Debug.Log($"  - Is rotating: {isRotating}");
+            string status = lookingAway ? "🔴 OUT" : "🟢 IN";
+            Debug.Log($"[HUD] {angleToHUD:F0}°/{triggerAngle:F0}° {status} | Timer: {outsideTimer:F1}s | Moving: {isRepositioning}");
         }
 
-        if (outsideBounds && !headMoving)
+        if (lookingAway && headStill)
         {
-            timeOutsideBounds += Time.deltaTime;
+            outsideTimer += Time.deltaTime;
 
-            if (debugMode && Time.frameCount % 30 == 0)
+            if (outsideTimer >= stillnessDelay && !isRepositioning)
             {
-                Debug.Log($"[HUD] Outside bounds: {timeOutsideBounds:F1}s / {stillnessDelay:F1}s");
-            }
-
-            if (timeOutsideBounds >= stillnessDelay && !isRotating)
-            {
-                StartRotation();
+                StartRepositioning();
             }
         }
         else
         {
-            if (timeOutsideBounds > 0f && debugMode)
+            if (outsideTimer > 0.5f && debugLogs)
             {
-                Debug.Log($"[HUD] Timer reset - was at {timeOutsideBounds:F2}s");
+                Debug.Log($"[HUD] Timer reset (was {outsideTimer:F1}s)");
             }
-            timeOutsideBounds = 0f;
-            isRotating = false;
+            outsideTimer = 0f;
         }
 
-        if (isRotating)
+        if (isRepositioning)
         {
-            ApplyRotation();
+            ApplyRepositioning();
         }
 
-        lastCameraForward = currentCamera.forward;
+        lastCameraYaw = GetHorizontalForward(currentCamera.forward);
     }
 
     private void FindActiveCamera()
@@ -162,149 +131,95 @@ public class VRHUDRotationController : MonoBehaviour
         currentCamera = Camera.main?.transform;
     }
 
-    private void CheckCameraSwitch()
+    private Vector3 GetHorizontalForward(Vector3 direction)
     {
-        Transform newCam = null;
-
-        if (vrCamera != null && vrCamera.GetComponent<Camera>()?.enabled == true)
-            newCam = vrCamera;
-        else if (camera360 != null && camera360.GetComponent<Camera>()?.enabled == true)
-            newCam = camera360;
-
-        if (newCam != null && newCam != currentCamera)
-        {
-            currentCamera = newCam;
-            InitializeRotation();
-            timeOutsideBounds = 0f;
-            if (debugMode) Debug.Log($"[HUD] Camera switched to {newCam.name}");
-        }
+        Vector3 flat = new Vector3(direction.x, 0, direction.z);
+        return flat.magnitude > 0.001f ? flat.normalized : Vector3.forward;
     }
 
-    private void InitializeRotation()
+    private float GetHorizontalAngleToHUD()
     {
-        Vector3 forward = currentCamera.forward;
-        forward.y = 0;
-        forward.Normalize();
+        Vector3 toHUD = transform.position - currentCamera.position;
+        Vector3 toHUDFlat = GetHorizontalForward(toHUD);
+        Vector3 cameraFlat = GetHorizontalForward(currentCamera.forward);
+        return Vector3.Angle(cameraFlat, toHUDFlat);
+    }
 
+    private float GetHeadMovementSpeed()
+    {
+        Vector3 currentYaw = GetHorizontalForward(currentCamera.forward);
+        float angleDelta = Vector3.Angle(lastCameraYaw, currentYaw);
+        return angleDelta / Time.deltaTime;
+    }
+
+    private void InitializePosition()
+    {
+        // Position HUD in front of camera at specified distance
+        Vector3 forward = GetHorizontalForward(currentCamera.forward);
+        Vector3 newPos = currentCamera.position + forward * hudDistance;
+        newPos.y = currentCamera.position.y; // Keep same height as camera
+        transform.position = newPos;
+
+        // Rotate to face camera
         float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(fixedXTilt, yRot, 0);
+
+        targetPosition = transform.position;
         targetRotation = transform.rotation;
     }
 
-    private bool IsLookingOutsideBounds()
+    private void StartRepositioning()
     {
-        Ray ray = new Ray(currentCamera.position, currentCamera.forward);
-        bool intersects = boundsCollider.bounds.IntersectRay(ray);
-        
-        if (debugMode && Time.frameCount % 120 == 0) // Every 2 seconds
-        {
-            Debug.Log($"[HUD] Bounds Check:");
-            Debug.Log($"  - Camera: {currentCamera.name}");
-            Debug.Log($"  - Ray origin: {ray.origin}");
-            Debug.Log($"  - Ray direction: {ray.direction}");
-            Debug.Log($"  - Bounds center: {boundsCollider.bounds.center}");
-            Debug.Log($"  - Bounds size: {boundsCollider.bounds.size}");
-            Debug.Log($"  - Ray intersects bounds: {intersects}");
-            Debug.Log($"  - Looking OUTSIDE: {!intersects}");
-        }
-        
-        return !intersects;
-    }
+        Debug.Log("╔════════════════════════════════╗");
+        Debug.Log("║   🔄 REPOSITIONING HUD! 🔄    ║");
+        Debug.Log("╚════════════════════════════════╝");
 
-    private bool IsHeadMoving()
-    {
-        float angle = Vector3.Angle(lastCameraForward, currentCamera.forward);
-        return (angle / Time.deltaTime) > movementThreshold;
-    }
+        isRepositioning = true;
 
-    private void StartRotation()
-    {
-        isRotating = true;
-        Vector3 forward = currentCamera.forward;
-        forward.y = 0;
-        forward.Normalize();
+        // Calculate new position in front of camera
+        Vector3 forward = GetHorizontalForward(currentCamera.forward);
+        targetPosition = currentCamera.position + forward * hudDistance;
+        targetPosition.y = currentCamera.position.y; // Keep same height
 
+        // Calculate rotation to face camera
         float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         targetRotation = Quaternion.Euler(fixedXTilt, yRot, 0);
 
-        if (debugMode)
+        if (debugLogs)
         {
-            Debug.Log($"[HUD] ROTATION TRIGGERED!");
-            Debug.Log($"[HUD] Current rotation: {transform.eulerAngles.y:F1}°");
-            Debug.Log($"[HUD] Target rotation: {yRot:F1}°");
-            Debug.Log($"[HUD] Rotation difference: {Mathf.DeltaAngle(transform.eulerAngles.y, yRot):F1}°");
+            Debug.Log($"[HUD] Current Pos: {transform.position}");
+            Debug.Log($"[HUD] Target Pos: {targetPosition}");
+            Debug.Log($"[HUD] Distance to move: {Vector3.Distance(transform.position, targetPosition):F2}m");
         }
     }
 
-    private void ApplyRotation()
+    private void ApplyRepositioning()
     {
-        if (smoothRotation)
+        if (smoothMovement)
         {
-            Vector3 current = transform.eulerAngles;
-            Vector3 target = targetRotation.eulerAngles;
+            // Smoothly move position
+            transform.position = Vector3.Lerp(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-            float x = Mathf.LerpAngle(current.x, target.x, rotationSpeed * Time.deltaTime);
-            float y = Mathf.LerpAngle(current.y, target.y, rotationSpeed * Time.deltaTime);
+            // Smoothly rotate
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, moveSpeed * Time.deltaTime);
 
-            transform.rotation = Quaternion.Euler(x, y, 0);
-
-            if (Quaternion.Angle(transform.rotation, targetRotation) < 1f)
+            // Check if close enough to finish
+            if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
             {
+                transform.position = targetPosition;
                 transform.rotation = targetRotation;
-                isRotating = false;
-                timeOutsideBounds = 0f;
-                if (debugMode) Debug.Log("[HUD] Rotation complete");
+                isRepositioning = false;
+                outsideTimer = 0f;
+                Debug.Log("[HUD] ✅ Repositioning complete!");
             }
         }
         else
         {
+            transform.position = targetPosition;
             transform.rotation = targetRotation;
-            isRotating = false;
-            timeOutsideBounds = 0f;
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (!showBoundsInScene) return;
-        if (boundsCollider == null) boundsCollider = GetComponent<BoxCollider>();
-        if (boundsCollider == null) return;
-
-        // Draw shaded box that works at any angle
-        Gizmos.matrix = transform.localToWorldMatrix;
-        
-        // Draw wireframe
-        Gizmos.color = new Color(boundsColor.r, boundsColor.g, boundsColor.b, 1f);
-        Gizmos.DrawWireCube(boundsCollider.center, boundsCollider.size);
-        
-        // Draw semi-transparent filled box
-        Gizmos.color = boundsColor;
-        Gizmos.DrawCube(boundsCollider.center, boundsCollider.size);
-        
-        Gizmos.matrix = Matrix4x4.identity;
-
-        // Draw camera ray during play
-        if (Application.isPlaying && currentCamera != null)
-        {
-            bool outside = IsLookingOutsideBounds();
-            Gizmos.color = outside ? Color.red : Color.cyan;
-            Gizmos.DrawLine(currentCamera.position, currentCamera.position + currentCamera.forward * 5f);
-            
-            // Draw rotation indicator
-            if (isRotating)
-            {
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawWireSphere(transform.position, 0.2f);
-                
-                // Draw current forward direction
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawLine(transform.position, transform.position + transform.forward * 1f);
-                
-                // Draw target direction
-                Gizmos.color = Color.white;
-                Vector3 targetForward = targetRotation * Vector3.forward;
-                Gizmos.DrawLine(transform.position, transform.position + targetForward * 1f);
-            }
+            isRepositioning = false;
+            outsideTimer = 0f;
+            Debug.Log("[HUD] ✅ Repositioning complete!");
         }
     }
 }

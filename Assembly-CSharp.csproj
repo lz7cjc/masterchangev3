@@ -328,6 +328,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\Selectionmanager_s.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\HUDAnchorController.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRSceneLoader.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDOpenCloseToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\redirectifregistered.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\IGazeClickable.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />

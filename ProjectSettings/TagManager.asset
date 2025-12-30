@@ -8,6 +8,7 @@ TagManager:
   - TipBoard
   - UI
   - HUD
+  - HUDBounds
   layers:
   - Default
   - TransparentFX

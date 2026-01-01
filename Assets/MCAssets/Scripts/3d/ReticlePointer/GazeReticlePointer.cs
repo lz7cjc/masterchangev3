@@ -4,12 +4,16 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// GazeReticlePointer - Dot when idle, Ring (torus) when hovering.
 /// Reticle maintains constant apparent size on screen via distance-compensated world scaling.
+/// 
+/// v1.7.0 - UPDATED: Mode-aware raycasting
+/// - VR Mode: Gaze-based interactions with reticle pointer
+/// - 360 Mode: Touch-based interactions, raycasting disabled
 /// </summary>
 public class GazeReticlePointer : MonoBehaviour
 {
     [Header("Script Info")]
     [SerializeField, Tooltip("Inspector-visible script version (read-only).")]
-    private string scriptVersion = "GazeReticlePointer v1.6.3";
+    private string scriptVersion = "GazeReticlePointer v1.7.0";
 
     public enum ViewMode { ModeVR, Mode360 }
 
@@ -79,6 +83,10 @@ public class GazeReticlePointer : MonoBehaviour
 
     [Header("Reticle Display Mode")]
     [SerializeField] private bool showBothDotAndRing = false;
+    
+    [Header("NEW - Mode Display Settings")]
+    [SerializeField] private bool hideReticleIn360Mode = false;
+    [Tooltip("If true, reticle visual is hidden in 360 mode (raycasting already disabled)")]
 
     // Visual sizing behavior: idle reticle is a solid dot slightly smaller than the hover ring.
     private const float IdleDotScaleFactor = 0.65f;
@@ -149,7 +157,7 @@ public class GazeReticlePointer : MonoBehaviour
     void OnValidate()
     {
         // Keep version pinned for quick visual verification in Inspector (including during Play Mode).
-        scriptVersion = "GazeReticlePointer v1.6.3";
+        scriptVersion = "GazeReticlePointer v1.7.0";
 
         if (reticleOuterRadius < 0.0001f) reticleOuterRadius = 0.0001f;
         hollowPercent = Mathf.Clamp(hollowPercent, 1f, 100f);
@@ -199,26 +207,52 @@ public class GazeReticlePointer : MonoBehaviour
 
     private void HandleMouseInput()
     {
-        if (!requireRightClick) return;
-
-        if (Mouse.current != null && Mouse.current.rightButton.isPressed)
+        // In VR mode: Use RIGHT-click (for head movement simulation)
+        // In 360 mode: Use LEFT-click (for camera drag - more intuitive)
+        
+        bool isVRMode = (currentMode == ViewMode.ModeVR);
+        bool useRightClick = isVRMode; // VR uses right-click, 360 uses left-click
+        
+        bool mousePressed = false;
+        
+        if (Mouse.current != null)
+        {
+            if (useRightClick)
+            {
+                // VR Mode: RIGHT-click for head movement
+                mousePressed = Mouse.current.rightButton.isPressed;
+            }
+            else
+            {
+                // 360 Mode: LEFT-click for camera drag
+                mousePressed = Mouse.current.leftButton.isPressed;
+            }
+        }
+        
+        if (mousePressed)
         {
             if (!rightMouseHeld)
             {
                 rightMouseHeld = true;
-                lastMousePosition = Mouse.current.position.ReadValue();
+                if (Mouse.current != null)
+                {
+                    lastMousePosition = Mouse.current.position.ReadValue();
+                }
             }
 
-            Vector2 currentMousePos = Mouse.current.position.ReadValue();
-            Vector2 mouseDelta = currentMousePos - lastMousePosition;
-            lastMousePosition = currentMousePos;
-
-            targetRotation.x += mouseDelta.x * mouseSensitivity * 0.1f;
-            targetRotation.y -= mouseDelta.y * mouseSensitivity * 0.1f;
-
-            if (limitVerticalRotation)
+            if (Mouse.current != null)
             {
-                targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
+                Vector2 currentMousePos = Mouse.current.position.ReadValue();
+                Vector2 mouseDelta = currentMousePos - lastMousePosition;
+                lastMousePosition = currentMousePos;
+
+                targetRotation.x += mouseDelta.x * mouseSensitivity * 0.1f;
+                targetRotation.y -= mouseDelta.y * mouseSensitivity * 0.1f;
+
+                if (limitVerticalRotation)
+                {
+                    targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
+                }
             }
         }
         else
@@ -229,34 +263,46 @@ public class GazeReticlePointer : MonoBehaviour
 
     private void HandleTouchInput()
     {
-        if (Touchscreen.current == null) return;
+        var touchscreen = Touchscreen.current;
+        if (touchscreen == null) return;
 
-        var touches = Touchscreen.current.touches;
-
-        if (touches[0].isInProgress)
+        // Get primary touch (first active touch)
+        var touches = touchscreen.touches;
+        if (touches.Count == 0)
         {
-            Vector2 touchPos = touches[0].position.ReadValue();
+            isTouching = false;
+            return;
+        }
 
-            if (!isTouching)
+        var touch = touches[0];
+
+        // Check if touch is active
+        if (!touch.isInProgress)
+        {
+            isTouching = false;
+            return;
+        }
+
+        if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
+        {
+            isTouching = true;
+            lastTouchPosition = touch.position.ReadValue();
+        }
+        else if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Moved && isTouching)
+        {
+            Vector2 currentTouchPos = touch.position.ReadValue();
+            Vector2 touchDelta = currentTouchPos - lastTouchPosition;
+            lastTouchPosition = currentTouchPos;
+
+            targetRotation.x += touchDelta.x * touchSensitivity * 0.1f;
+            targetRotation.y -= touchDelta.y * touchSensitivity * 0.1f;
+
+            if (limitVerticalRotation)
             {
-                isTouching = true;
-                lastTouchPosition = touchPos;
-            }
-            else
-            {
-                Vector2 touchDelta = touchPos - lastTouchPosition;
-                lastTouchPosition = touchPos;
-
-                targetRotation.x += touchDelta.x * touchSensitivity;
-                targetRotation.y -= touchDelta.y * touchSensitivity;
-
-                if (limitVerticalRotation)
-                {
-                    targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
-                }
+                targetRotation.y = Mathf.Clamp(targetRotation.y, minVerticalAngle, maxVerticalAngle);
             }
         }
-        else
+        else if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Ended || touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
         {
             isTouching = false;
         }
@@ -291,8 +337,26 @@ public class GazeReticlePointer : MonoBehaviour
         attachedCamera.transform.localRotation = Quaternion.Euler(currentRotation.y, currentRotation.x, 0);
     }
 
+    /// <summary>
+    /// UPDATED v1.7.0: Mode-aware raycasting
+    /// VR Mode: Full gaze interaction with countdown
+    /// 360 Mode: Raycasting disabled (touch interactions handled by GazeHoverTrigger.OnMouseDown)
+    /// </summary>
     private void PerformGazeRaycast()
     {
+        // NEW: Skip raycasting in 360 mode - touch interactions handled separately
+        if (currentMode == ViewMode.Mode360)
+        {
+            // Clean up any active hover state when switching to 360 mode
+            if (currentHoverTarget != null)
+            {
+                ExitCurrentTarget();
+            }
+            isHovering = false;
+            return;
+        }
+
+        // VR MODE: Original gaze raycast behavior (unchanged)
         Ray ray = new Ray(attachedCamera.transform.position, attachedCamera.transform.forward);
 
         if (showDebugRay)
@@ -356,6 +420,14 @@ public class GazeReticlePointer : MonoBehaviour
 
     private void UpdateReticleVisuals()
     {
+        // NEW: Optionally hide reticle in 360 mode
+        if (hideReticleIn360Mode && currentMode == ViewMode.Mode360)
+        {
+            if (reticleDot != null) reticleDot.SetActive(false);
+            if (reticleRing != null) reticleRing.SetActive(false);
+            return;
+        }
+
         // Toggle logic
         if (showBothDotAndRing)
         {
@@ -364,64 +436,90 @@ public class GazeReticlePointer : MonoBehaviour
         }
         else
         {
-            if (reticleDot != null) reticleDot.SetActive(!isHovering);
-            if (reticleRing != null) reticleRing.SetActive(isHovering);
-        }
-
-        Vector3 reticlePosition = attachedCamera.transform.position +
-                                 attachedCamera.transform.forward * currentReticleDistance;
-
-        // Constant apparent size: world size scales linearly with distance from the camera.
-        float distanceScale = Mathf.Max(currentReticleDistance, 0.0001f);
-
-        // Smoothly grow/shrink between idle dot and hover ring.
-        if (!showBothDotAndRing)
-        {
-            float targetFactor = isHovering ? 1f : IdleDotScaleFactor;
-            currentSizeFactor = Mathf.Lerp(currentSizeFactor, targetFactor, Time.deltaTime * ringScaleSpeed);
-        }
-        else
-        {
-            currentSizeFactor = 1f;
-        }
-
-        // Update dot (sphere primitive diameter is 1 at localScale=1)
-        if (reticleDot != null && reticleDot.activeSelf)
-        {
-            reticleDot.transform.position = reticlePosition;
-            reticleDot.transform.rotation = Quaternion.LookRotation(reticlePosition - attachedCamera.transform.position);
-
-            float dotFactor = showBothDotAndRing ? IdleDotScaleFactor : currentSizeFactor;
-            float desiredWorldDiameter = reticleOuterRadius * 2f * distanceScale * dotFactor;
-            SetWorldUniformScale(reticleDot.transform, desiredWorldDiameter);
-
-            if (dotMaterialInstance != null)
+            if (isHovering)
             {
-                Color targetColor = isHovering ? dotHoverColor : dotIdleColor;
-                LerpMaterialColor(dotMaterialInstance, targetColor, ringScaleSpeed);
+                if (reticleDot != null) reticleDot.SetActive(false);
+                if (reticleRing != null) reticleRing.SetActive(true);
+            }
+            else
+            {
+                if (reticleDot != null) reticleDot.SetActive(true);
+                if (reticleRing != null) reticleRing.SetActive(false);
             }
         }
 
-        // Update ring (torus mesh baked at reticleOuterRadius; scale by distance only)
+        UpdateReticlePosition();
+        UpdateReticleSize();
+        UpdateReticleColors();
+    }
+
+    private void UpdateReticlePosition()
+    {
+        Vector3 targetPosition = attachedCamera.transform.position +
+                                 attachedCamera.transform.forward * currentReticleDistance;
+
+        if (reticleDot != null)
+        {
+            reticleDot.transform.position = targetPosition;
+            reticleDot.transform.rotation = Quaternion.LookRotation(
+                attachedCamera.transform.forward, attachedCamera.transform.up);
+        }
+
+        if (reticleRing != null)
+        {
+            reticleRing.transform.position = targetPosition;
+            reticleRing.transform.rotation = Quaternion.LookRotation(
+                attachedCamera.transform.forward, attachedCamera.transform.up);
+        }
+    }
+
+    private void UpdateReticleSize()
+    {
+        float targetSize = isHovering ? 1f : IdleDotScaleFactor;
+        currentSizeFactor = Mathf.Lerp(currentSizeFactor, targetSize, Time.deltaTime * ringScaleSpeed);
+
+        float worldScale = currentSizeFactor * reticleOuterRadius * currentReticleDistance;
+
+        if (reticleDot != null && reticleDot.activeSelf)
+        {
+            SetWorldUniformScale(reticleDot.transform, worldScale);
+        }
+
         if (reticleRing != null && reticleRing.activeSelf)
         {
-            reticleRing.transform.position = reticlePosition;
-            reticleRing.transform.rotation = Quaternion.LookRotation(reticlePosition - attachedCamera.transform.position);
+            SetWorldUniformScale(reticleRing.transform, worldScale);
+        }
+    }
 
-            currentRingRadius = reticleOuterRadius;
+    private void UpdateReticleColors()
+    {
+        float speed = ringScaleSpeed;
 
-            float ringFactor = showBothDotAndRing ? 1f : currentSizeFactor;
-            SetWorldUniformScale(reticleRing.transform, distanceScale * ringFactor);
-
+        if (isHovering)
+        {
+            if (dotMaterialInstance != null)
+            {
+                LerpMaterialColor(dotMaterialInstance, dotHoverColor, speed);
+            }
             if (ringMaterialInstance != null)
             {
-                Color targetColor = isHovering ? ringHoverColor : ringIdleColor;
-                LerpMaterialColor(ringMaterialInstance, targetColor, ringScaleSpeed);
+                LerpMaterialColor(ringMaterialInstance, ringHoverColor, speed);
+            }
+        }
+        else
+        {
+            if (dotMaterialInstance != null)
+            {
+                LerpMaterialColor(dotMaterialInstance, dotIdleColor, speed);
+            }
+            if (ringMaterialInstance != null)
+            {
+                LerpMaterialColor(ringMaterialInstance, ringIdleColor, speed);
             }
         }
     }
 
-    private static void LerpMaterialColor(Material mat, Color targetColor, float speed)
+    private void LerpMaterialColor(Material mat, Color targetColor, float speed)
     {
         if (mat.HasProperty("_BaseColor"))
         {
@@ -641,6 +739,8 @@ public class GazeReticlePointer : MonoBehaviour
         {
             EnableGyroscope();
         }
+        
+        Debug.Log($"[GazeReticlePointer] Mode set to: {mode}");
     }
 
     public GameObject GetCurrentHoverTarget() => currentHoverTarget;

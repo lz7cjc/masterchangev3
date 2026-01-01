@@ -70,7 +70,6 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\passwordreset.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRCurvedMenuLayout.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
@@ -141,6 +140,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHUDController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\ModeBasedUIController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsVR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\BioDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry.cs" />
@@ -258,7 +258,6 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\CleanIconRestorer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateuserdb.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbbio.cs" />

@@ -2,7 +2,11 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// FIXED GazeHoverTrigger - Handles concave MeshColliders, fixes countdown
+/// UPDATED GazeHoverTrigger v2.0 - Mode-aware interactions
+/// VR Mode: Gaze-based hover with countdown
+/// 360 Mode: Touch/tap to trigger instantly
+/// 
+/// Handles concave MeshColliders, fixes countdown
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class GazeHoverTrigger : MonoBehaviour
@@ -11,7 +15,7 @@ public class GazeHoverTrigger : MonoBehaviour
     public string actionName;
     public float hoverDelay = 3f;
     public bool isHUDElement = false;
-    public bool continuousHover = false; // NEW: Keep hover active after completion (for rotation, etc.)
+    public bool continuousHover = false; // Keep hover active after completion (for rotation, etc.)
 
     [Header("Visual Feedback")]
     public bool showCountdown = true;
@@ -28,6 +32,12 @@ public class GazeHoverTrigger : MonoBehaviour
     public UnityEvent onHoverStart;
     public UnityEvent onHoverComplete;
     public UnityEvent onHoverCancel;
+
+    [Header("NEW - 360 Mode Settings")]
+    [Tooltip("In 360 mode, require touch drag instead of tap (prevents accidental triggers)")]
+    public bool require360Drag = false;
+    [Tooltip("In 360 mode, use countdown delay (otherwise instant trigger)")]
+    public bool use360Countdown = false;
 
     [Header("Debug")]
     public bool debugMode = false;
@@ -64,25 +74,28 @@ public class GazeHoverTrigger : MonoBehaviour
                     BoxCollider boxCol = gameObject.AddComponent<BoxCollider>();
                     boxCol.center = center;
                     boxCol.size = bounds.size;
-                    boxCol.isTrigger = true;
+                    boxCol.isTrigger = false; // Must be false for OnMouseDown to work
                     
                     triggerCollider = boxCol;
                     if (debugMode) Debug.Log($"[GazeHoverTrigger] Replaced MeshCollider with BoxCollider");
                 }
                 else
                 {
-                    meshCol.isTrigger = true;
+                    // For gaze interactions, keep as trigger
+                    // OnMouseDown works with both trigger and non-trigger colliders
+                    meshCol.isTrigger = false;
                 }
             }
             else
             {
-                triggerCollider.isTrigger = true;
+                // For other collider types, keep as non-trigger for OnMouseDown
+                triggerCollider.isTrigger = false;
             }
         }
 
         DetectInteractionMode();
 
-        // FIX: Find countdown using correct type
+        // Find countdown using correct type
         if (showCountdown)
         {
             hudCountdown = FindObjectOfType<hudCountdown>();
@@ -100,11 +113,14 @@ public class GazeHoverTrigger : MonoBehaviour
 
     void Update()
     {
+        // NEW v2.0: Check for touch input in 360 mode
+        CheckForTouchInput();
+
         if (isHovering)
         {
             hoverTimer += Time.deltaTime;
 
-            // FIX: Update countdown visual correctly
+            // Update countdown visual correctly
             if (showCountdown && hudCountdown != null)
             {
                 float progress = Mathf.Clamp01(hoverTimer / hoverDelay);
@@ -114,6 +130,96 @@ public class GazeHoverTrigger : MonoBehaviour
             if (hoverTimer >= hoverDelay)
             {
                 CompleteHover();
+            }
+        }
+    }
+
+    // Double-click detection variables
+    private float lastClickTime = 0f;
+    private const float doubleClickThreshold = 0.3f; // 300ms for double-click
+
+    /// <summary>
+    /// NEW v2.0: Touch detection for 360 mode using raycast (works with trigger colliders)
+    /// Checks every frame for touch input and raycasts from camera
+    /// EDITOR: Double-click to trigger (easier testing without accidental single clicks)
+    /// DEVICE: Single tap to trigger
+    /// </summary>
+    private void CheckForTouchInput()
+    {
+        // Get current camera mode
+        Camera mainCam = Camera.main;
+        if (mainCam == null) return;
+
+        GazeReticlePointer pointer = mainCam.GetComponent<GazeReticlePointer>();
+        
+        // Only process touch in 360 mode
+        if (pointer == null || pointer.currentMode != GazeReticlePointer.ViewMode.Mode360)
+            return;
+
+        // Check for touch/click input
+        bool touchDown = false;
+        Vector2 touchPosition = Vector2.zero;
+
+        // Mobile: Check for touch (single tap)
+        if (Application.isMobilePlatform && UnityEngine.InputSystem.Touchscreen.current != null)
+        {
+            var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+            if (touchscreen.primaryTouch.press.wasPressedThisFrame)
+            {
+                touchDown = true;
+                touchPosition = touchscreen.primaryTouch.position.ReadValue();
+                if (debugMode) Debug.Log("[GazeHoverTrigger] Mobile tap detected");
+            }
+        }
+        // Editor/Desktop: Check for DOUBLE-CLICK (easier testing)
+        else if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            
+            // Double-click detection
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                float timeSinceLastClick = Time.time - lastClickTime;
+                
+                if (timeSinceLastClick < doubleClickThreshold)
+                {
+                    // Double-click detected!
+                    touchDown = true;
+                    touchPosition = mouse.position.ReadValue();
+                    if (debugMode) Debug.Log("[GazeHoverTrigger] Double-click detected in editor");
+                }
+                
+                lastClickTime = Time.time;
+            }
+        }
+
+        if (!touchDown) return;
+
+        // Raycast from camera to check if this object was tapped
+        Ray ray = mainCam.ScreenPointToRay(touchPosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, 100f))
+        {
+            if (hit.collider.gameObject == gameObject)
+            {
+                if (debugMode) Debug.Log($"[GazeHoverTrigger] 360 Mode touch detected on: {actionName}");
+
+                // Option 1: Instant trigger (default for 360 mode - good UX)
+                if (!use360Countdown)
+                {
+                    if (debugMode) Debug.Log("[GazeHoverTrigger] Instant trigger in 360 mode");
+                    CompleteHover();
+                }
+                // Option 2: Start countdown on tap (if use360Countdown enabled)
+                else
+                {
+                    if (!isHovering)
+                    {
+                        if (debugMode) Debug.Log("[GazeHoverTrigger] Starting countdown via touch");
+                        OnGazeEnter();
+                    }
+                }
             }
         }
     }
@@ -161,10 +267,9 @@ public class GazeHoverTrigger : MonoBehaviour
 
         if (debugMode) Debug.Log($"[GazeHoverTrigger] Gaze entered: {actionName}");
 
-        // FIX: Start countdown correctly (hudCountdown doesn't expose StartCountdown)
+        // Start countdown correctly (initialize display to full wait value)
         if (showCountdown && hudCountdown != null)
         {
-            // initialize display to full wait value (counter = 0)
             hudCountdown.SetCountdown(hoverDelay, 0f);
         }
 
@@ -189,7 +294,7 @@ public class GazeHoverTrigger : MonoBehaviour
 
         if (debugMode) Debug.Log($"[GazeHoverTrigger] Gaze exited: {actionName}");
 
-        // FIX: Reset countdown correctly (hudCountdown's method is resetCountdown)
+        // Reset countdown correctly
         if (showCountdown && hudCountdown != null)
         {
             hudCountdown.resetCountdown();

@@ -56,9 +56,9 @@ public class VRHUDRotationController : MonoBehaviour
             rb.useGravity = false;
         }
 
-        Debug.Log("╔══════════════════════════════════╗");
+        Debug.Log("╔═══════════════════════════════╗");
         Debug.Log("║  HUD ORBIT CONTROLLER ACTIVE  ║");
-        Debug.Log("╚══════════════════════════════════╝");
+        Debug.Log("╚═══════════════════════════════╝");
         Debug.Log($"[HUD] Camera: {currentCamera.name}");
         Debug.Log($"[HUD] Distance: {hudDistance}m");
         Debug.Log($"[HUD] Trigger: {triggerAngle}°");
@@ -152,20 +152,24 @@ public class VRHUDRotationController : MonoBehaviour
         return angleDelta / Time.deltaTime;
     }
 
+    /// <summary>
+    /// FIXED: Preserves the HUD's manually set position from the editor
+    /// Only adjusts rotation to face camera, doesn't move position on Start
+    /// </summary>
     private void InitializePosition()
     {
-        // Position HUD in front of camera at specified distance
+        // Don't reposition on Start - only when player looks away (handled by repositioning logic)
+        
+        // Just set the rotation to face camera, keep position as-is
         Vector3 forward = GetHorizontalForward(currentCamera.forward);
-        Vector3 newPos = currentCamera.position + forward * hudDistance;
-        newPos.y = currentCamera.position.y; // Keep same height as camera
-        transform.position = newPos;
-
-        // Rotate to face camera
         float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(fixedXTilt, yRot, 0);
 
+        // Store current position as initial target (no movement on start)
         targetPosition = transform.position;
         targetRotation = transform.rotation;
+        
+        Debug.Log($"[HUD] ✓ Initialized at editor position: {transform.position}");
     }
 
     private void StartRepositioning()

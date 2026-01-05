@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(BoxCollider))]
 public class VRHUDRotationController : MonoBehaviour
@@ -21,6 +22,10 @@ public class VRHUDRotationController : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private bool smoothMovement = true;
 
+    [Header("Mode-Aware Behavior")]
+    [SerializeField] private bool enable360ContinuousFollow = true;
+    [Tooltip("In 360 mode, HUD rotates continuously with camera (no delay)")]
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
@@ -31,9 +36,19 @@ public class VRHUDRotationController : MonoBehaviour
     private bool isRepositioning = false;
     private Vector3 targetPosition;
     private Quaternion targetRotation;
+    private int lastKnownToggleValue = -1;
 
     private void Start()
     {
+        // Start initialization after a delay to let cameras activate
+        StartCoroutine(DelayedInitialization());
+    }
+
+    private IEnumerator DelayedInitialization()
+    {
+        // Wait for cameras to be activated by StartUp.cs
+        yield return new WaitForSeconds(0.5f);
+
         boundsCollider = GetComponent<BoxCollider>();
         boundsCollider.isTrigger = true;
 
@@ -41,13 +56,17 @@ public class VRHUDRotationController : MonoBehaviour
 
         if (currentCamera == null)
         {
-            Debug.LogError("[HUD] No camera found!");
+            Debug.LogError("[HUD] No camera found after delay!");
             enabled = false;
-            return;
+            yield break;
         }
 
         InitializePosition();
         lastCameraYaw = GetHorizontalForward(currentCamera.forward);
+
+        // Detect current mode from PlayerPrefs and cache it
+        int toggleValue = PlayerPrefs.GetInt("toggleToVR", 0);
+        lastKnownToggleValue = toggleValue;
 
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
@@ -59,16 +78,37 @@ public class VRHUDRotationController : MonoBehaviour
         Debug.Log("╔═══════════════════════════════╗");
         Debug.Log("║  HUD ORBIT CONTROLLER ACTIVE  ║");
         Debug.Log("╚═══════════════════════════════╝");
-        Debug.Log($"[HUD] Camera: {currentCamera.name}");
+        Debug.Log($"[HUD] PlayerPrefs toggleToVR = {toggleValue}");
+        Debug.Log($"[HUD] Detected Mode: {(toggleValue == 0 ? "360" : "VR")}");
+        Debug.Log($"[HUD] Active Camera: {currentCamera.name}");
+        Debug.Log($"[HUD] VR Camera Ref: {(vrCamera != null ? vrCamera.name : "NULL")}");
+        Debug.Log($"[HUD] 360 Camera Ref: {(camera360 != null ? camera360.name : "NULL")}");
+        Debug.Log($"[HUD] Continuous Follow: {enable360ContinuousFollow}");
         Debug.Log($"[HUD] Distance: {hudDistance}m");
-        Debug.Log($"[HUD] Trigger: {triggerAngle}°");
-        Debug.Log($"[HUD] Delay: {stillnessDelay}s");
+        Debug.Log($"[HUD] Runtime mode switching: ENABLED");
     }
 
     private void Update()
     {
-        if (currentCamera == null) return;
+        // Safety: Re-find camera if reference lost
+        if (currentCamera == null)
+        {
+            FindActiveCamera();
+            if (currentCamera == null) return;
+        }
 
+        // Detect mode and handle changes
+        bool is360Mode = DetectCurrentMode();
+
+        // 360 MODE: Continuous follow (no delay, no angle check)
+        if (is360Mode && enable360ContinuousFollow)
+        {
+            ContinuousFollow360();
+            lastCameraYaw = GetHorizontalForward(currentCamera.forward);
+            return;
+        }
+
+        // VR MODE: Original behavior (delay + angle-based repositioning)
         float angleToHUD = GetHorizontalAngleToHUD();
         bool lookingAway = angleToHUD > triggerAngle;
         float headSpeed = GetHeadMovementSpeed();
@@ -76,8 +116,9 @@ public class VRHUDRotationController : MonoBehaviour
 
         if (debugLogs && Time.frameCount % 60 == 0)
         {
+            string mode = is360Mode ? "360" : "VR";
             string status = lookingAway ? "🔴 OUT" : "🟢 IN";
-            Debug.Log($"[HUD] {angleToHUD:F0}°/{triggerAngle:F0}° {status} | Timer: {outsideTimer:F1}s | Moving: {isRepositioning}");
+            Debug.Log($"[HUD] Mode:{mode} | {angleToHUD:F0}°/{triggerAngle:F0}° {status} | Timer: {outsideTimer:F1}s");
         }
 
         if (lookingAway && headStill)
@@ -131,6 +172,44 @@ public class VRHUDRotationController : MonoBehaviour
         currentCamera = Camera.main?.transform;
     }
 
+    private bool DetectCurrentMode()
+    {
+        int currentToggleValue = PlayerPrefs.GetInt("toggleToVR", -1);
+
+        // Detect mode change during gameplay
+        if (currentToggleValue != lastKnownToggleValue && lastKnownToggleValue != -1)
+        {
+            Debug.Log($"[HUD] ⚡ MODE CHANGE! {lastKnownToggleValue} → {currentToggleValue}");
+            OnModeChanged(currentToggleValue == 0);
+        }
+
+        lastKnownToggleValue = currentToggleValue;
+
+        // Return mode: 0 = 360, 1 = VR
+        if (currentToggleValue != -1)
+        {
+            return (currentToggleValue == 0);
+        }
+
+        // Fallback: check active camera
+        if (camera360 != null && currentCamera == camera360) return true;
+        if (vrCamera != null && currentCamera == vrCamera) return false;
+
+        return false; // Default to VR
+    }
+
+    private void OnModeChanged(bool newIs360Mode)
+    {
+        Debug.Log($"[HUD] Switching to {(newIs360Mode ? "360" : "VR")} mode");
+
+        isRepositioning = false;
+        outsideTimer = 0f;
+        FindActiveCamera();
+
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
+    }
+
     private Vector3 GetHorizontalForward(Vector3 direction)
     {
         Vector3 flat = new Vector3(direction.x, 0, direction.z);
@@ -152,24 +231,30 @@ public class VRHUDRotationController : MonoBehaviour
         return angleDelta / Time.deltaTime;
     }
 
-    /// <summary>
-    /// FIXED: Preserves the HUD's manually set position from the editor
-    /// Only adjusts rotation to face camera, doesn't move position on Start
-    /// </summary>
     private void InitializePosition()
     {
-        // Don't reposition on Start - only when player looks away (handled by repositioning logic)
-        
-        // Just set the rotation to face camera, keep position as-is
+        // Preserve editor position, only adjust rotation
         Vector3 forward = GetHorizontalForward(currentCamera.forward);
         float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(fixedXTilt, yRot, 0);
 
-        // Store current position as initial target (no movement on start)
         targetPosition = transform.position;
         targetRotation = transform.rotation;
-        
-        Debug.Log($"[HUD] ✓ Initialized at editor position: {transform.position}");
+
+        Debug.Log($"[HUD] ✓ Init at position: {transform.position}");
+    }
+
+    private void ContinuousFollow360()
+    {
+        Vector3 forward = GetHorizontalForward(currentCamera.forward);
+        float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+        Quaternion targetRot = Quaternion.Euler(fixedXTilt, yRot, 0);
+
+        Vector3 targetPos = currentCamera.position + forward * hudDistance;
+        targetPos.y = transform.position.y; // Maintain height
+
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, moveSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetPos, moveSpeed * Time.deltaTime);
     }
 
     private void StartRepositioning()
@@ -180,20 +265,18 @@ public class VRHUDRotationController : MonoBehaviour
 
         isRepositioning = true;
 
-        // Calculate new position in front of camera
         Vector3 forward = GetHorizontalForward(currentCamera.forward);
         targetPosition = currentCamera.position + forward * hudDistance;
-        targetPosition.y = currentCamera.position.y; // Keep same height
+        targetPosition.y = transform.position.y; // FIXED: Maintain original height
 
-        // Calculate rotation to face camera
         float yRot = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         targetRotation = Quaternion.Euler(fixedXTilt, yRot, 0);
 
         if (debugLogs)
         {
-            Debug.Log($"[HUD] Current Pos: {transform.position}");
-            Debug.Log($"[HUD] Target Pos: {targetPosition}");
-            Debug.Log($"[HUD] Distance to move: {Vector3.Distance(transform.position, targetPosition):F2}m");
+            Debug.Log($"[HUD] Current: {transform.position}");
+            Debug.Log($"[HUD] Target: {targetPosition}");
+            Debug.Log($"[HUD] Distance: {Vector3.Distance(transform.position, targetPosition):F2}m");
         }
     }
 
@@ -201,20 +284,16 @@ public class VRHUDRotationController : MonoBehaviour
     {
         if (smoothMovement)
         {
-            // Smoothly move position
             transform.position = Vector3.Lerp(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-            // Smoothly rotate
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, moveSpeed * Time.deltaTime);
 
-            // Check if close enough to finish
             if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
             {
                 transform.position = targetPosition;
                 transform.rotation = targetRotation;
                 isRepositioning = false;
                 outsideTimer = 0f;
-                Debug.Log("[HUD] ✅ Repositioning complete!");
+                Debug.Log("[HUD] ✅ Reposition complete!");
             }
         }
         else
@@ -223,7 +302,7 @@ public class VRHUDRotationController : MonoBehaviour
             transform.rotation = targetRotation;
             isRepositioning = false;
             outsideTimer = 0f;
-            Debug.Log("[HUD] ✅ Repositioning complete!");
+            Debug.Log("[HUD] ✅ Reposition complete!");
         }
     }
 }

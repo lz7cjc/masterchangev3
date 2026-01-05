@@ -153,8 +153,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -4.1075, y: 17.425}
-  m_SizeDelta: {x: 1860.7662, y: 495.58}
+  m_AnchoredPosition: {x: -4.1075, y: -35.384}
+  m_SizeDelta: {x: 1860.7662, y: 601.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &120044097
 MonoBehaviour:
@@ -177,7 +177,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 40a96d4ca7f4f4d47b4a1a0015915b66, type: 3}
+    m_Font: {fileID: 12800000, guid: 046d91bee9df60744aa23f2cdb74a414, type: 3}
     m_FontSize: 47
     m_FontStyle: 0
     m_BestFit: 0
@@ -191,15 +191,17 @@ MonoBehaviour:
     m_LineSpacing: 1
   m_Text: 'To experience MasterChange without a headset, you look around by dragging
     your finger on the screen to change the view. NB this is a straight substitution
-    for moving your head. The reticle pointer as described in the tutorial is how
-    you make a choice
+    for moving your head. You  choose an item by double tapping on it
 
 
-    You don''t choose an item by tapping on it
+    Consider
+    this a preview of the actual MasterChange experience; it won''t feel as immersive
+    but will help you decide if you want to invest the price of a cup of coffee in
+    a headset so you can get the full experience
 
 
-    Have
-    fun and let us know how we can improve your experience
+    Have fun and let us know what
+    else you would like to see in MasterChange
 
 
     feedback@masterchange.today'
@@ -603,7 +605,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33b52200e3959e64e9af3001390a18bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  vrOn: 0
 --- !u!4 &628177043
 Transform:
   m_ObjectHideFlags: 0
@@ -1168,7 +1169,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1248069439}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 197ab27b08732454a977161dde31d169, type: 3}
   m_Name: 
@@ -1416,6 +1417,8 @@ GameObject:
   - component: {fileID: 1731000671}
   - component: {fileID: 1731000670}
   - component: {fileID: 1731000669}
+  - component: {fileID: 1731000672}
+  - component: {fileID: 1731000673}
   m_Layer: 5
   m_Name: Launch Button
   m_TagString: Untagged
@@ -1487,10 +1490,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1248069443}
-        m_TargetAssemblyTypeName: ChangesceneInc, Assembly-CSharp
-        m_MethodName: ChangeSceneNow
-        m_Mode: 5
+      - m_Target: {fileID: 1731000672}
+        m_TargetAssemblyTypeName: toMasterChange, Assembly-CSharp
+        m_MethodName: MasterChange
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -1537,6 +1540,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1731000665}
   m_CullTransparentMesh: 0
+--- !u!114 &1731000672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1731000665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 166f169fe30e6b94087de91a1db1f220, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  launchmainvrToggle: 1
+--- !u!114 &1731000673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1731000665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf60fa140eecbf24a9f156520effd560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1807179768
 GameObject:
   m_ObjectHideFlags: 0

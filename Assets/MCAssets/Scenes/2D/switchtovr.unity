@@ -1658,6 +1658,7 @@ GameObject:
   - component: {fileID: 1731000670}
   - component: {fileID: 1731000669}
   - component: {fileID: 1731000668}
+  - component: {fileID: 1731000672}
   m_Layer: 5
   m_Name: Launch Button
   m_TagString: Untagged
@@ -1796,6 +1797,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1731000665}
   m_CullTransparentMesh: 0
+--- !u!114 &1731000672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1731000665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf60fa140eecbf24a9f156520effd560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1807179768
 GameObject:
   m_ObjectHideFlags: 0

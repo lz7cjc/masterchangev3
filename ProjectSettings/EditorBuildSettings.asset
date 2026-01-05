@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/pickformat.unity
     guid: c897cdd7ceddafa4983bb32a04e3abde
   - enabled: 1
@@ -14,46 +14,46 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MCAssets/Scenes/2D/everything.unity
     guid: bf26f159466b5c345a24ff7a4b4d6533
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/FirstVisit2d.unity
     guid: d4758ab2da95adb45bddea7723517f63
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/register.unity
     guid: fa3323ec5640a0a4683584f2be07a6f5
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/switchto360.unity
     guid: bfd68b82fbf8843469345749558d998c
   - enabled: 1
     path: Assets/MCAssets/Scenes/3D/mainVR.unity
     guid: da3d328a0d1203445bfea89ad1694bbf
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/3D/MCVideoPlayer.unity
     guid: 896af7e935da07f428af030d7361ab6b
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/FirstVisit.unity
     guid: 2de8395f704bb0b4c8bace67d3cb36d9
   - enabled: 0
     path: Assets/MCAssets/Scenes/2D/tutorial.unity
     guid: 137e1ce22891a454182c576061c301e4
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/logon.unity
     guid: 9e24f0d0372cf7c4d97d69899a73ed7a
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/earn riros.unity
     guid: b09eeae14b0014e49ba2dce95cdfb23e
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/MC360Video/360VideoApp.unity
     guid: 6985b655acdbc7e4ba810d08f9cef236
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/switchtovr.unity
     guid: 7d075f1906de6614da7f30a78abbcbe4
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/MC360Video/360VideoAppold.unity
     guid: e4dd21c736fb67242b545e46107da794
   - enabled: 0
     path: Assets/MCAssets/MC360Video/tips.unity
     guid: d5f29a4a0e875274db2ec796ae07805a
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Scenes/2D/settings.unity
     guid: ca6d1798658a47b46b3160eb3a2ab30a
   - enabled: 0

@@ -1,275 +1,298 @@
-﻿using UnityEngine;
-using System;
-using UnityEngine.SceneManagement;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.XR.Management;
 
+#if ADDRESSABLES_ENABLED
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
+
 /// <summary>
-/// FIXED: Removed LoadingManager.IsLoadingComplete() and GetLoadingProgress() calls
-/// These methods don't exist in LoadingManager - just wait for addressables differently
+/// OPTIMIZED StartUp - handles mainVR scene initialization
+/// - Faster VR/360 mode setup
+/// - Proper loading screen management
+/// - Addressables support (commented out, ready to enable)
 /// </summary>
 public class StartUp : MonoBehaviour
 {
     [Header("Player Reference")]
-    [SerializeField] private CharacterController player;
+    public GameObject Player;
 
     [Header("BCT Zone Targets")]
-    [SerializeField] private GameObject targetAlcohol;
-    [SerializeField] private GameObject targetSmoking;
-    [SerializeField] private GameObject targetMfn;
-    [SerializeField] private GameObject targetHeights;
+    public GameObject TargetAlcohol;
+    public GameObject TargetSmoking;
+    public GameObject TargetMfn;
+    public GameObject TargetHeights;
 
     [Header("Regular World Targets")]
-    [SerializeField] private GameObject targetTravel;
-    [SerializeField] private GameObject targetBeaches;
-    [SerializeField] private GameObject targetSport;
-    [SerializeField] private GameObject targetHome;
-
-    [Header("UI References")]
-    [SerializeField] private closeAllHuds closeAllHuds;
-    [SerializeField] private SetVrState setVrState;
-    [SerializeField] private togglingXR togglingXR;
-
-    [Header("Stage Management")]
-    private int stage;
-    private string currentZone;
-    private string lastKnownZone;
-    [SerializeField] private bool toggler;
+    public GameObject TargetTravel;
+    public GameObject TargetBeaches;
+    public GameObject TargetSport;
+    public GameObject TargetHome;
+    public GameObject Toggler;
 
     [Header("Alcohol Treatment")]
-    [SerializeField] private GameObject alcoholintro;
-    [SerializeField] private GameObject alcoholfollow;
-    [SerializeField] private GameObject alcoholsolution;
-    [SerializeField] private GameObject alcoholfinish;
+    public GameObject AlcoholIntro;
+    public GameObject AlcoholFollow;
+    public GameObject AlcoholSolution;
+    public GameObject AlcoholFinish;
 
     [Header("Smoking Treatment")]
-    [SerializeField] private GameObject welcomeSmoking;
-    [SerializeField] private GameObject InitialConsultation;
-    [SerializeField] private GameObject CTScanDelay;
-    [SerializeField] private GameObject CTresults;
-    [SerializeField] private GameObject smokingDone;
-    [SerializeField] private int stopFilm;
-    [SerializeField] private GameObject hud;
+    public GameObject WelcomeSmoking;
+    public GameObject InitialConsultation;
+    public GameObject CTScanDelay;
+    public GameObject CTResults;
+    public GameObject SmokingDone;
+    public GameObject StopFilm;
+    public GameObject Hud;
 
     [Header("Loading Configuration")]
-    public togglingXR togglingXRScript;
-    public GameObject loadingPanel;
-    [Tooltip("Enable if using Addressables system")]
+    public GameObject TogglingXRScript;
+    public GameObject LoadingPanel;
+
+    [Header("Addressables (Optional - Enable with scripting define)")]
     public bool useAddressables = false;
-    [Tooltip("Time to wait for addressables to load (seconds)")]
     public float addressablesTimeout = 5f;
 
     private VRLoadingManager loadingManager;
     private bool xrInitializedByUs = false;
-    private bool isInitializing = false;
+    private float sceneLoadStartTime;
 
     void Awake()
     {
+        sceneLoadStartTime = Time.realtimeSinceStartup;
+        
+        Debug.Log("[StartUp] ==========================================");
+        Debug.Log($"[StartUp] AWAKE - mainVR scene loaded at {sceneLoadStartTime:F3}s");
+        Debug.Log($"[StartUp] Frame: {Time.frameCount}");
+        Debug.Log("[StartUp] ==========================================");
+
+        // Find VRLoadingManager (should persist from Dashboard)
         loadingManager = VRLoadingManager.Instance;
 
         if (loadingManager == null)
         {
             Debug.LogWarning("[StartUp] VRLoadingManager not found! Loading screen won't work.");
         }
+        else
+        {
+            Debug.Log($"[StartUp] ✓ VRLoadingManager found: {loadingManager.gameObject.name}");
+            // Keep loading screen visible during initialization
+        }
     }
 
     void Start()
     {
-        // try to auto-assign togglingXRScript if inspector is empty
-        if (togglingXRScript == null)
+        Debug.Log($"[StartUp] === START BEGIN (Frame: {Time.frameCount}) ===");
+        
+        int toggleToVR = PlayerPrefs.GetInt("toggleToVR", 0);
+        string mode = toggleToVR == 1 ? "VR" : "360";
+        
+        Debug.Log($"[StartUp] Mode: {mode}");
+        Debug.Log($"[StartUp] Addressables: {(useAddressables ? "ENABLED" : "DISABLED")}");
+
+        if (toggleToVR == 1)
         {
-            togglingXRScript = FindObjectOfType<togglingXR>();
-            if (togglingXRScript == null)
-            {
-                Debug.LogWarning("[StartUp] togglingXRScript not assigned in inspector and not found in scene.");
-            }
-            else
-            {
-                Debug.Log("[StartUp] Assigned togglingXRScript from scene automatically.");
-            }
-        }
-
-        bool startInVR = PlayerPrefs.GetInt("toggleToVR", 0) == 1;
-
-        Debug.Log($"[StartUp] ========== SCENE START ==========");
-        Debug.Log($"[StartUp] User chose mode: {(startInVR ? "VR" : "360")}");
-        Debug.Log($"[StartUp] Addressables enabled: {useAddressables}");
-
-        if (startInVR)
-        {
-            ShowLoadingScreen("Initializing VR...");
             StartCoroutine(InitializeVRMode());
         }
         else
         {
-            ShowLoadingScreen("Loading...");
             StartCoroutine(Initialize360Mode());
         }
     }
 
+    /// <summary>
+    /// Initialize VR mode with XR system
+    /// </summary>
     IEnumerator InitializeVRMode()
     {
-        if (isInitializing)
+        Debug.Log("[StartUp] === VR MODE INITIALIZATION START ===");
+        
+        if (loadingManager != null)
         {
-            Debug.LogWarning("[StartUp] Already initializing - skipping duplicate call");
-            yield break;
+            loadingManager.UpdateStatus("Initializing VR...");
+            loadingManager.UpdateProgress(0.1f);
         }
 
-        isInitializing = true;
-        Debug.Log("[StartUp] === INITIALIZING VR MODE ===");
-        float progress = 0f;
+        yield return new WaitForEndOfFrame();
 
-        // Step 1: Wait for addressables if enabled (0-30%)
+        // ADDRESSABLES: Wait for assets to load (if enabled)
+#if ADDRESSABLES_ENABLED
         if (useAddressables)
         {
-            UpdateLoadingScreen(0f, "Loading assets...");
-            yield return WaitForAddressablesSimple();
-            progress = 0.3f;
+            yield return StartCoroutine(WaitForAddressables());
         }
-        else
-        {
-            UpdateLoadingScreen(0f, "Initializing...");
-            yield return new WaitForSeconds(0.2f);
-            progress = 0.3f;
-        }
-
-        // Step 2: Initialize XR if needed (30-50%)
-        bool needsXRInit = !IsXRAlreadyInitialized();
-        if (needsXRInit)
-        {
-            UpdateLoadingScreen(progress, "Initializing XR...");
-            yield return InitializeXRSystem();
-            progress = 0.5f;
-        }
-        else
-        {
-            Debug.Log("[StartUp] XR already initialized");
-            progress = 0.5f;
-        }
-
-        // Step 3: Start XR subsystems (50-65%)
-        UpdateLoadingScreen(progress, "Starting VR...");
-        if (togglingXRScript != null)
-        {
-            yield return togglingXRScript.StartXR();
-        }
-        else
-        {
-            Debug.LogWarning("[StartUp] togglingXRScript is null - skipping StartXR()");
-        }
-        progress = 0.65f;
-
-        // Step 4: Wait for VR camera to be ready (65-75%)
-        UpdateLoadingScreen(progress, "Preparing VR camera...");
-        yield return WaitForVRCameraReady();
-        progress = 0.75f;
-
-        // Step 5: Setup scene configuration (75-90%)
-        UpdateLoadingScreen(progress, "Configuring scene...");
-        ResetScene();
-        yield return new WaitForEndOfFrame();
-        progress = 0.9f;
-
-        // Step 6: Final checks (90-100%)
-        UpdateLoadingScreen(progress, "Almost ready...");
-        yield return new WaitForSeconds(0.3f);
-        UpdateLoadingScreen(1f, "Ready!");
-
-        // Step 7: Hide loading screen
-        yield return new WaitForSeconds(0.2f);
-        HideLoadingScreen();
-
-        isInitializing = false;
-        Debug.Log("[StartUp] === VR MODE INITIALIZATION COMPLETE ===");
-    }
-
-    IEnumerator Initialize360Mode()
-    {
-        if (isInitializing)
-        {
-            Debug.LogWarning("[StartUp] Already initializing - skipping duplicate call");
-            yield break;
-        }
-
-        isInitializing = true;
-        Debug.Log("[StartUp] === INITIALIZING 360 MODE ===");
-        float progress = 0f;
-
-        // Step 1: Wait for addressables if enabled (0-50%)
+#else
         if (useAddressables)
         {
-            UpdateLoadingScreen(0f, "Loading assets...");
-            yield return WaitForAddressablesSimple();
-            progress = 0.5f;
+            Debug.LogWarning("[StartUp] Addressables enabled but ADDRESSABLES_ENABLED not defined!");
+            Debug.LogWarning("[StartUp] Add 'ADDRESSABLES_ENABLED' to Scripting Define Symbols");
         }
-        else
+#endif
+
+        if (loadingManager != null)
         {
-            UpdateLoadingScreen(0f, "Initializing...");
-            yield return new WaitForSeconds(0.2f);
-            progress = 0.5f;
+            loadingManager.UpdateStatus("Starting XR...");
+            loadingManager.UpdateProgress(0.3f);
         }
 
-        // Step 2: Setup 360 mode (50-70%)
-        UpdateLoadingScreen(progress, "Setting up 360 mode...");
-        if (togglingXRScript != null)
+        // Initialize XR if needed
+        if (!IsXRAlreadyInitialized())
         {
-            togglingXRScript.SetVRMode(false);
+            yield return StartCoroutine(InitializeXRSystem());
         }
-        else
-        {
-            Debug.LogWarning("[StartUp] togglingXRScript is null - skipping SetVRMode(false)");
-        }
-        yield return new WaitForEndOfFrame();
-        progress = 0.7f;
 
-        // Step 3: Setup scene configuration (70-90%)
-        UpdateLoadingScreen(progress, "Configuring scene...");
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateStatus("Setting up VR camera...");
+            loadingManager.UpdateProgress(0.6f);
+        }
+
+        // Wait for VR camera to be ready
+        yield return StartCoroutine(WaitForVRCameraReady());
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateStatus("Finalizing...");
+            loadingManager.UpdateProgress(0.8f);
+        }
+
+        // Activate toggling script
+        if (TogglingXRScript != null)
+        {
+            TogglingXRScript.SetActive(true);
+        }
+
+        // Position player and setup scene
         ResetScene();
-        yield return new WaitForEndOfFrame();
-        progress = 0.9f;
 
-        // Step 4: Final checks (90-100%)
-        UpdateLoadingScreen(progress, "Almost ready...");
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            loadingManager.UpdateStatus("Ready!");
+        }
+
         yield return new WaitForSeconds(0.3f);
-        UpdateLoadingScreen(1f, "Ready!");
 
-        // Step 5: Hide loading screen
-        yield return new WaitForSeconds(0.2f);
+        // HIDE LOADING SCREEN
         HideLoadingScreen();
 
-        isInitializing = false;
-        Debug.Log("[StartUp] === 360 MODE INITIALIZATION COMPLETE ===");
+        float totalTime = Time.realtimeSinceStartup - sceneLoadStartTime;
+        Debug.Log("[StartUp] ==========================================");
+        Debug.Log($"[StartUp] VR MODE READY - Total time: {totalTime:F2}s");
+        Debug.Log("[StartUp] ==========================================");
     }
 
     /// <summary>
-    /// FIXED: Simple wait for addressables without calling non-existent methods
+    /// Initialize 360 mode (no XR)
     /// </summary>
-    IEnumerator WaitForAddressablesSimple()
+    IEnumerator Initialize360Mode()
     {
-        if (!useAddressables)
+        Debug.Log("[StartUp] === 360 MODE INITIALIZATION START ===");
+
+        if (loadingManager != null)
         {
-            Debug.Log("[StartUp] Addressables disabled - skipping");
-            yield break;
+            loadingManager.UpdateStatus("Initializing 360°...");
+            loadingManager.UpdateProgress(0.2f);
         }
 
-        // replaced unsupported API with supported one
-        LoadingManager addressablesLoader = FindObjectOfType<LoadingManager>();
+        yield return new WaitForEndOfFrame();
 
-        if (addressablesLoader == null)
+        // ADDRESSABLES: Wait for assets to load (if enabled)
+#if ADDRESSABLES_ENABLED
+        if (useAddressables)
         {
-            Debug.Log("[StartUp] No LoadingManager found - skipping addressables wait");
-            yield break;
+            yield return StartCoroutine(WaitForAddressables());
+        }
+#endif
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateStatus("Setting up scene...");
+            loadingManager.UpdateProgress(0.6f);
         }
 
-        Debug.Log("[StartUp] Waiting for addressables...");
+        // Activate toggling script
+        if (TogglingXRScript != null)
+        {
+            TogglingXRScript.SetActive(true);
+        }
 
-        // Just wait for the timeout period
-        // If LoadingManager has its own loading logic, it will complete during this time
-        yield return new WaitForSeconds(addressablesTimeout);
+        // Position player and setup scene
+        ResetScene();
 
-        Debug.Log("[StartUp] ✓ Addressables wait complete");
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateProgress(1f);
+            loadingManager.UpdateStatus("Ready!");
+        }
+
+        yield return new WaitForSeconds(0.3f);
+
+        // HIDE LOADING SCREEN
+        HideLoadingScreen();
+
+        float totalTime = Time.realtimeSinceStartup - sceneLoadStartTime;
+        Debug.Log("[StartUp] ==========================================");
+        Debug.Log($"[StartUp] 360 MODE READY - Total time: {totalTime:F2}s");
+        Debug.Log("[StartUp] ==========================================");
     }
 
+#if ADDRESSABLES_ENABLED
+    // ==========================================
+    // ADDRESSABLES SUPPORT
+    // ==========================================
+
+    /// <summary>
+    /// Wait for addressables to download/load
+    /// Shows detailed progress with asset count and size
+    /// </summary>
+    IEnumerator WaitForAddressables()
+    {
+        Debug.Log("[StartUp] === ADDRESSABLES LOADING START ===");
+
+        if (loadingManager != null)
+        {
+            loadingManager.UpdateStatus("Loading assets...");
+        }
+
+        // Example: Load a label or specific assets
+        // Replace "MainSceneAssets" with your actual addressables label
+        AsyncOperationHandle<IList<GameObject>> handle = 
+            Addressables.LoadAssetsAsync<GameObject>("MainSceneAssets", null);
+
+        if (loadingManager != null)
+        {
+            loadingManager.TrackAddressablesLoad(handle, "Scene Assets");
+        }
+
+        // Wait for completion
+        yield return handle;
+
+        if (handle.Status == AsyncOperationStatus.Succeeded)
+        {
+            Debug.Log($"[StartUp] ✓ Addressables loaded: {handle.Result.Count} assets");
+        }
+        else
+        {
+            Debug.LogError("[StartUp] Addressables load failed!");
+        }
+
+        Debug.Log("[StartUp] === ADDRESSABLES LOADING COMPLETE ===");
+    }
+#else
+    // Fallback when addressables not enabled
+    IEnumerator WaitForAddressables()
+    {
+        Debug.LogWarning("[StartUp] Addressables requested but not enabled - skipping");
+        yield return null;
+    }
+#endif
+
+    /// <summary>
+    /// Check if XR is already initialized
+    /// </summary>
     bool IsXRAlreadyInitialized()
     {
         if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
@@ -282,6 +305,9 @@ public class StartUp : MonoBehaviour
         return hasActiveLoader;
     }
 
+    /// <summary>
+    /// Initialize XR system
+    /// </summary>
     IEnumerator InitializeXRSystem()
     {
         if (XRGeneralSettings.Instance == null || XRGeneralSettings.Instance.Manager == null)
@@ -304,36 +330,47 @@ public class StartUp : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Wait for VR camera to be ready (stereo mode enabled)
+    /// </summary>
     IEnumerator WaitForVRCameraReady()
     {
-        Camera mainCam = Camera.main;
-        if (mainCam == null)
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
         {
-            Debug.LogWarning("[StartUp] Main camera not found!");
+            Debug.LogWarning("[StartUp] No main camera found");
             yield break;
         }
 
-        yield return new WaitForSeconds(0.3f);
-
-        if (mainCam.stereoEnabled)
+        int waitFrames = 0;
+        while (!mainCamera.stereoEnabled && waitFrames < 60)
         {
-            Debug.Log("[StartUp] ✓ VR camera ready (stereo enabled)");
+            waitFrames++;
+            yield return null;
+        }
+
+        if (mainCamera.stereoEnabled)
+        {
+            Debug.Log($"[StartUp] ✓ VR camera ready (waited {waitFrames} frames)");
         }
         else
         {
-            Debug.LogWarning("[StartUp] Main camera not in stereo mode");
+            Debug.LogWarning("[StartUp] Main camera not in stereo mode after 60 frames");
         }
     }
 
+    /// <summary>
+    /// PUBLIC: Reset scene to current zone/stage
+    /// Called by other scripts (PickBCT.cs, drinkoutcome.cs, etc.)
+    /// </summary>
     public void ResetScene()
     {
         Debug.Log("[StartUp] === RESET SCENE START ===");
 
-        stage = PlayerPrefs.GetInt("stage", 0);
-        lastKnownZone = PlayerPrefs.GetString("lastknownzone", "Home");
-        currentZone = lastKnownZone;
+        string currentZone = PlayerPrefs.GetString("currentZone", "Home");
+        int currentStage = PlayerPrefs.GetInt("currentStage", 0);
 
-        Debug.Log($"[StartUp] Zone: {currentZone}, Stage: {stage}");
+        Debug.Log($"[StartUp] Zone: {currentZone}, Stage: {currentStage}");
 
         InitializeScene();
         HandleZoneNavigation();
@@ -341,219 +378,186 @@ public class StartUp : MonoBehaviour
         Debug.Log("[StartUp] === RESET SCENE COMPLETE ===");
     }
 
-    private void InitializeScene()
+    /// <summary>
+    /// Initialize scene objects
+    /// </summary>
+    void InitializeScene()
     {
-        Debug.Log("[StartUp] InitializeScene");
-
-        if (closeAllHuds != null)
+        if (Hud != null)
         {
-            closeAllHuds.CloseTheHuds();
+            Hud.SetActive(true);
         }
 
-        toggler = false;
         MovePlayerToCurrentZone();
     }
 
-    private void HandleZoneNavigation()
+    /// <summary>
+    /// Navigate to appropriate zone based on PlayerPrefs
+    /// </summary>
+    void HandleZoneNavigation()
     {
-        if (IsBCTZone(currentZone))
+        string currentZone = PlayerPrefs.GetString("currentZone", "Home");
+        int currentStage = PlayerPrefs.GetInt("currentStage", 0);
+
+        if (currentZone == "Alcohol")
         {
-            NavigateToBCTZone();
+            NavigateToAlcoholZone(currentStage);
+        }
+        else if (currentZone == "Smoking")
+        {
+            NavigateToSmokingZone(currentStage);
         }
         else
         {
-            NavigateToRegularZone();
+            NavigateToRegularZone(currentZone);
         }
     }
 
-    private bool IsBCTZone(string zone)
+    /// <summary>
+    /// Teleport player to target position
+    /// </summary>
+    void SetPlayerToTarget(GameObject target)
     {
-        return zone switch
+        if (target == null)
         {
-            "Smoking" or "Alcohol" or "Mindfulness" => true,
-            _ => false
-        };
-    }
-
-    private void SetPlayerToTarget(GameObject target)
-    {
-        if (target != null && player != null)
-        {
-            Debug.Log($"[StartUp] Teleporting player to: {target.name}");
-
-            player.enabled = false;
-
-            player.transform.SetParent(null);
-            player.transform.position = Vector3.zero;
-            player.transform.rotation = Quaternion.identity;
-
-            player.transform.SetParent(target.transform);
-            player.transform.localPosition = Vector3.zero;
-            player.transform.localRotation = Quaternion.identity;
-            player.transform.localScale = Vector3.one;
-
-            player.enabled = true;
-
-            Debug.Log($"[StartUp] ✓ Player positioned at: {player.transform.position}");
-        }
-        else
-        {
-            Debug.LogError($"[StartUp] Cannot position player - Target: {target}, Player: {player}");
-        }
-    }
-
-    private GameObject GetTargetForZone(string zoneName)
-    {
-        return zoneName switch
-        {
-            "Alcohol" => targetAlcohol,
-            "Smoking" => targetSmoking,
-            "Mindfulness" => targetMfn,
-            "Travel" => targetTravel,
-            "Beaches" => targetBeaches,
-            "Sport" => targetSport,
-            "Heights" => targetHeights,
-            _ => targetHome
-        };
-    }
-
-    private void MovePlayerToCurrentZone()
-    {
-        Debug.Log($"[StartUp] Moving player to zone: {currentZone}");
-
-        // replaced unsupported API with supported one
-        ZoneManager zoneManager = FindObjectOfType<ZoneManager>();
-        GameObject targetObject = GetTargetForZone(currentZone);
-
-        if (targetObject == null)
-        {
-            Debug.LogWarning($"[StartUp] No target found for zone: {currentZone}");
+            Debug.LogWarning("[StartUp] Target is null!");
             return;
         }
 
-        if (zoneManager != null)
+        Debug.Log($"[StartUp] Teleporting player to: {target.name}");
+
+        if (Player != null)
         {
-            Debug.Log($"[StartUp] Using ZoneManager with target: {targetObject.name}");
-            zoneManager.MoveToZoneByGameObject(targetObject);
+            Player.transform.position = target.transform.position;
+            Player.transform.rotation = target.transform.rotation;
+            Debug.Log($"[StartUp] ✓ Player at: {target.transform.position}");
         }
         else
         {
-            Debug.Log("[StartUp] ZoneManager not found, using direct positioning");
-            SetPlayerToTarget(targetObject);
+            Debug.LogWarning("[StartUp] Player reference is null!");
         }
     }
 
-    private void NavigateToBCTZone()
+    /// <summary>
+    /// Navigate to alcohol treatment stage
+    /// </summary>
+    void NavigateToAlcoholZone(int stage)
     {
-        Debug.Log($"[StartUp] Navigating to BCT zone: {currentZone}");
-
-        switch (currentZone)
-        {
-            case "Alcohol":
-                HandleAlcoholTreatment();
-                break;
-
-            case "Smoking":
-                HandleSmokingTreatment();
-                break;
-
-            case "Mindfulness":
-                SetPlayerToTarget(targetMfn);
-                break;
-
-            default:
-                Debug.LogError($"[StartUp] Unhandled BCT zone: {currentZone}");
-                NavigateToRegularZone();
-                break;
-        }
-    }
-
-    private void NavigateToRegularZone()
-    {
-        GameObject targetObject = GetTargetForZone(currentZone);
-        SetPlayerToTarget(targetObject);
-    }
-
-    private void HandleAlcoholTreatment()
-    {
-        SetPlayerToTarget(targetAlcohol);
-        stage = PlayerPrefs.GetInt("stageAlcohol");
-
-        alcoholintro.SetActive(stage == 0);
-        alcoholfollow.SetActive(stage == 1);
-        alcoholsolution.SetActive(stage == 2);
-        alcoholfinish.SetActive(stage == 3);
-    }
-
-    private void HandleSmokingTreatment()
-    {
-        SetPlayerToTarget(targetSmoking);
-        stage = PlayerPrefs.GetInt("stageSmoking");
-
-        welcomeSmoking.SetActive(false);
-        InitialConsultation.SetActive(false);
-        CTScanDelay.SetActive(false);
-        CTresults.SetActive(false);
-        smokingDone.SetActive(false);
-
         switch (stage)
         {
-            case 1: welcomeSmoking.SetActive(true); break;
-            case 2: InitialConsultation.SetActive(true); break;
-            case 3:
-                PlayerPrefs.DeleteKey("CTstartpoint");
-                PlayerPrefs.DeleteKey("delaynotification");
-                break;
-            case 4: CTresults.SetActive(true); break;
-            case 5: InitialConsultation.SetActive(true); break;
-            default: SetPlayerToTarget(targetHome); break;
-        }
-
-        player.transform.localPosition = Vector3.zero;
-    }
-
-    private void ShowLoadingScreen(string message)
-    {
-        if (loadingManager != null)
-        {
-            loadingManager.ShowLoading(message, 0f);
-        }
-        else if (loadingPanel != null)
-        {
-            loadingPanel.SetActive(true);
-        }
-        else
-        {
-            Debug.LogWarning("[StartUp] No loading screen available!");
+            case 0: SetPlayerToTarget(AlcoholIntro); break;
+            case 1: SetPlayerToTarget(AlcoholFollow); break;
+            case 2: SetPlayerToTarget(AlcoholSolution); break;
+            case 3: SetPlayerToTarget(AlcoholFinish); break;
+            default: SetPlayerToTarget(TargetAlcohol); break;
         }
     }
 
-    private void UpdateLoadingScreen(float progress, string message)
+    /// <summary>
+    /// Navigate to smoking treatment stage
+    /// </summary>
+    void NavigateToSmokingZone(int stage)
     {
-        if (loadingManager != null)
+        switch (stage)
         {
-            loadingManager.UpdateProgress(progress);
-            loadingManager.UpdateStatus(message);
+            case 0: SetPlayerToTarget(WelcomeSmoking); break;
+            case 1: SetPlayerToTarget(InitialConsultation); break;
+            case 2: SetPlayerToTarget(CTScanDelay); break;
+            case 3: SetPlayerToTarget(CTResults); break;
+            case 4: SetPlayerToTarget(SmokingDone); break;
+            default: SetPlayerToTarget(TargetSmoking); break;
         }
     }
 
-    private void HideLoadingScreen()
+    /// <summary>
+    /// Navigate to regular world zone
+    /// </summary>
+    void NavigateToRegularZone(string zoneName)
     {
+        GameObject target = GetZoneTarget(zoneName);
+        if (target != null)
+        {
+            SetPlayerToTarget(target);
+        }
+    }
+
+    /// <summary>
+    /// Move player using ZoneManager if available, otherwise direct positioning
+    /// </summary>
+    void MovePlayerToCurrentZone()
+    {
+        string currentZone = PlayerPrefs.GetString("currentZone", "Home");
+        GameObject targetZone = GetZoneTarget(currentZone);
+
+        if (targetZone != null)
+        {
+            Debug.Log($"[StartUp] Moving player to zone: {currentZone}");
+            
+            ZoneManager zoneManager = FindObjectOfType<ZoneManager>();
+            if (zoneManager != null)
+            {
+                Debug.Log($"[StartUp] Using ZoneManager with target: {targetZone.name}");
+                zoneManager.MoveToZoneByGameObject(targetZone);
+            }
+            else
+            {
+                Debug.Log("[StartUp] No ZoneManager - using direct positioning");
+                SetPlayerToTarget(targetZone);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get zone target GameObject by name
+    /// </summary>
+    GameObject GetZoneTarget(string zoneName)
+    {
+        switch (zoneName)
+        {
+            case "Alcohol": return TargetAlcohol;
+            case "Smoking": return TargetSmoking;
+            case "MFN": return TargetMfn;
+            case "Heights": return TargetHeights;
+            case "Travel": return TargetTravel;
+            case "Beaches": return TargetBeaches;
+            case "Sport": return TargetSport;
+            case "Home": return TargetHome;
+            default: return TargetHome;
+        }
+    }
+
+    /// <summary>
+    /// Hide loading screen (called after initialization complete)
+    /// </summary>
+    void HideLoadingScreen()
+    {
+        Debug.Log("[StartUp] Hiding loading screen...");
+
         if (loadingManager != null)
         {
             loadingManager.HideLoading();
+            Debug.Log("[StartUp] ✓ VRLoadingManager hidden");
         }
-        else if (loadingPanel != null)
+        else if (LoadingPanel != null)
         {
-            loadingPanel.SetActive(false);
+            LoadingPanel.SetActive(false);
+            Debug.Log("[StartUp] ✓ Local loading panel hidden");
+        }
+        else
+        {
+            Debug.LogWarning("[StartUp] No loading screen to hide!");
         }
     }
 
-    private void OnDestroy()
+    /// <summary>
+    /// Cleanup on destroy
+    /// </summary>
+    void OnDestroy()
     {
-        if (xrInitializedByUs && XRGeneralSettings.Instance?.Manager != null)
+        if (xrInitializedByUs && XRGeneralSettings.Instance != null && XRGeneralSettings.Instance.Manager != null)
         {
-            Debug.Log("[StartUp] Cleaning up XR initialization");
+            Debug.Log("[StartUp] Deinitializing XR on destroy");
+            XRGeneralSettings.Instance.Manager.DeinitializeLoader();
         }
     }
 }

@@ -71,6 +71,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\simplestchangescene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\TipButton.cs" />
@@ -89,8 +90,9 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\VRViewToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\MoveCameraNoToggleIcons.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\tutorialPages.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\SelectiveMigrationTool.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ComprehensiveSceneDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\LoadingScreenAutoSetup.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\SelectiveMigrationTool.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\HudNearClipFix.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitsinsert.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\MouseLook.cs" />
@@ -117,6 +119,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTrigger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\DockGenerator.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDToggleButton.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\2d\VRLoadingManager.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\FlapboardControl.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\VRSceneManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\globalvariables.cs" />
@@ -130,13 +133,13 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\HomeButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SportsMarinaGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\SpeedController.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\MonoBehaviourProfiler.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\addressables\archive\MinimalLoadingIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\VRLoadingManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHUDController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
@@ -194,6 +197,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\TestInterfaceButtons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoStreamDebugOverlay.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\BuyInventoryItem.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\SceneLoadDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicLoadVideo1.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ToggleActiveIconsHUD.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\AnimPlayer.cs" />
@@ -239,6 +243,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\StartStopController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTriggerTemplate.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\LoadingManagerInspector.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\V6\HUDHorizontalFollower.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDCurveLayout.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\AIConfig.cs" />
@@ -253,6 +258,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
+    <Compile Include="Assets\MCAssets\Scripts\3d\MainVREntryMonitor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\TennisCourtGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideLocations.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />

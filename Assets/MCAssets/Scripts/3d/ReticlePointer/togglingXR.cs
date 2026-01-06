@@ -2,6 +2,8 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 /// <summary>
 /// Universal XR mode manager - works across ALL scenes
@@ -203,13 +205,30 @@ public class togglingXR : MonoBehaviour
     /// </summary>
     private void Setup360Mode()
     {
-        if (mainCameraVR != null) mainCameraVR.SetActive(false);
-        if (mainCamera360 != null) mainCamera360.SetActive(true);
+        if (enableDebugLogging) Debug.Log("[togglingXR] Setup360Mode called");
+
+        if (mainCameraVR != null) 
+        {
+            mainCameraVR.SetActive(false);
+            if (enableDebugLogging) Debug.Log("[togglingXR] VR camera deactivated");
+        }
+        
+        if (mainCamera360 != null) 
+        {
+            mainCamera360.SetActive(true);
+            if (enableDebugLogging) Debug.Log("[togglingXR] 360 camera activated");
+        }
 
         // Set reticle pointer mode
         if (reticlePointer360 != null)
         {
+            if (enableDebugLogging) Debug.Log($"[togglingXR] Setting reticle pointer to Mode360, current mode: {reticlePointer360.currentMode}");
             reticlePointer360.SetMode(GazeReticlePointer.ViewMode.Mode360);
+            if (enableDebugLogging) Debug.Log($"[togglingXR] Reticle pointer mode set, new mode: {reticlePointer360.currentMode}");
+        }
+        else
+        {
+            if (enableDebugLogging) Debug.LogWarning("[togglingXR] reticlePointer360 is NULL! Cannot set mode.");
         }
 
         // Update canvas camera (optional - only if canvas exists)
@@ -217,6 +236,9 @@ public class togglingXR : MonoBehaviour
         {
             UpdateCanvasCamera(mainCamera360);
         }
+
+        // CRITICAL: Update InputSystemUIInputModule for 360 mode
+        UpdateInputModuleFor360Mode();
 
         if (enableDebugLogging) Debug.Log("[togglingXR] 360 mode active");
     }
@@ -251,6 +273,46 @@ public class togglingXR : MonoBehaviour
     public bool Is360Mode()
     {
         return mainCamera360 != null && mainCamera360.activeSelf;
+    }
+
+    /// <summary>
+    /// Update InputSystemUIInputModule for 360 mode (mouse/touch controls)
+    /// This is critical for making 360 mode work at startup
+    /// </summary>
+    private void UpdateInputModuleFor360Mode()
+    {
+        // Find the EventSystem in the scene
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null)
+        {
+            if (enableDebugLogging) Debug.LogWarning("[togglingXR] No EventSystem found in scene");
+            return;
+        }
+
+        // Get the InputSystemUIInputModule
+        InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+        if (inputModule == null)
+        {
+            if (enableDebugLogging) Debug.LogWarning("[togglingXR] No InputSystemUIInputModule found on EventSystem");
+            return;
+        }
+
+        // Enable mouse and touch controls for 360 mode
+        // The pointer behavior should be "Single Mouse Or Pen But Multi Touch"
+        if (enableDebugLogging) 
+        {
+            Debug.Log("[togglingXR] Configuring InputSystemUIInputModule for 360 mode (mouse/touch)");
+        }
+
+        // The InputSystemUIInputModule should already be configured correctly by your PlayerControls.inputactions
+        // But we need to make sure it's enabled and active
+        inputModule.enabled = false; // Force refresh
+        inputModule.enabled = true;
+
+        if (enableDebugLogging)
+        {
+            Debug.Log($"[togglingXR] Input module refreshed - Pointer Behavior: {inputModule.pointerBehavior}");
+        }
     }
 
     /// <summary>

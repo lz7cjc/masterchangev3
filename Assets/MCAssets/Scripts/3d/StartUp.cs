@@ -158,10 +158,21 @@ public class StartUp : MonoBehaviour
             loadingManager.UpdateProgress(0.8f);
         }
 
-        // Activate toggling script
+        // Activate toggling script and set VR mode
+        togglingXR xrController = null;
         if (TogglingXRScript != null)
         {
             TogglingXRScript.SetActive(true);
+            xrController = TogglingXRScript.GetComponent<togglingXR>();
+            if (xrController != null)
+            {
+                Debug.Log("[StartUp] Calling togglingXR.SetVRMode(true)");
+                xrController.SetVRMode(true);
+            }
+            else
+            {
+                Debug.LogError("[StartUp] togglingXR component not found on TogglingXRScript GameObject!");
+            }
         }
 
         // Position player and setup scene
@@ -213,10 +224,21 @@ public class StartUp : MonoBehaviour
             loadingManager.UpdateProgress(0.6f);
         }
 
-        // Activate toggling script
+        // Activate toggling script and set 360 mode
+        togglingXR xrController = null;
         if (TogglingXRScript != null)
         {
             TogglingXRScript.SetActive(true);
+            xrController = TogglingXRScript.GetComponent<togglingXR>();
+            if (xrController != null)
+            {
+                Debug.Log("[StartUp] Calling togglingXR.SetVRMode(false) for 360 mode");
+                xrController.SetVRMode(false);
+            }
+            else
+            {
+                Debug.LogError("[StartUp] togglingXR component not found on TogglingXRScript GameObject!");
+            }
         }
 
         // Position player and setup scene

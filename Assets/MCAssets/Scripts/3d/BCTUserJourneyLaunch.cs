@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 public class BCTUserJourneyLaunch : MonoBehaviour
 {
-    [SerializeField] private Rigidbody player;
+    [SerializeField] private CharacterController player;
     [SerializeField] private GameObject returnToZone_tgt;
     [SerializeField] private bool mousehover = false;
     [SerializeField] private float counter = 0;
@@ -146,7 +146,7 @@ public class BCTUserJourneyLaunch : MonoBehaviour
             return;
         }
 
-        player.useGravity = gravity;
+     //   player.useGravity = gravity;
         closeAllHuds = FindFirstObjectByType<closeAllHuds>();
         closeAllHuds.CloseTheHuds();
         player.transform.position = target.transform.position;

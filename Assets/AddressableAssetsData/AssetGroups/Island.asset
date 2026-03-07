@@ -14,13 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Island
   m_GUID: 50df312dcc4b8f84bbc5101a2c925666
-  m_SerializeEntries:
-  - m_GUID: 714478c991dd4734fb5bbd6da837669d
-    m_Address: Assets/MCAssets/Prefabs/Addressables/Island(Beaches.prefab
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Island
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: a4be1be2add51c74d9196be2a6128299, type: 2}
   m_SchemaSet:

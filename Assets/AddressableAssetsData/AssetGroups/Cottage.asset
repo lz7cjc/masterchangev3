@@ -14,13 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Cottage
   m_GUID: da52179898d85c04fb3821e8ff6ed26d
-  m_SerializeEntries:
-  - m_GUID: 7d2af00759c6eaa4190c3c7beefea995
-    m_Address: Assets/MCAssets/Prefabs/Addressables/CottagePrefab (1).prefab
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Cottage
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: a4be1be2add51c74d9196be2a6128299, type: 2}
   m_SchemaSet:

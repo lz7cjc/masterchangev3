@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -83,7 +83,7 @@ public class GazeReticlePointer : MonoBehaviour
 
     [Header("Reticle Display Mode")]
     [SerializeField] private bool showBothDotAndRing = false;
-    
+
     [Header("NEW - Mode Display Settings")]
     [SerializeField] private bool hideReticleIn360Mode = false;
     [Tooltip("If true, reticle visual is hidden in 360 mode (raycasting already disabled)")]
@@ -209,12 +209,12 @@ public class GazeReticlePointer : MonoBehaviour
     {
         // In VR mode: Use RIGHT-click (for head movement simulation)
         // In 360 mode: Use LEFT-click (for camera drag - more intuitive)
-        
+
         bool isVRMode = (currentMode == ViewMode.ModeVR);
         bool useRightClick = isVRMode; // VR uses right-click, 360 uses left-click
-        
+
         bool mousePressed = false;
-        
+
         if (Mouse.current != null)
         {
             if (useRightClick)
@@ -228,7 +228,7 @@ public class GazeReticlePointer : MonoBehaviour
                 mousePressed = Mouse.current.leftButton.isPressed;
             }
         }
-        
+
         if (mousePressed)
         {
             if (!rightMouseHeld)
@@ -338,25 +338,14 @@ public class GazeReticlePointer : MonoBehaviour
     }
 
     /// <summary>
-    /// UPDATED v1.7.0: Mode-aware raycasting
-    /// VR Mode: Full gaze interaction with countdown
-    /// 360 Mode: Raycasting disabled (touch interactions handled by GazeHoverTrigger.OnMouseDown)
+    /// UPDATED v1.7.1: Raycasting enabled in both modes.
+    /// VR Mode:  gaze-based (gyro/mouse right-click rotates camera → reticle hits orb)
+    /// 360 Mode: finger-drag rotates camera → same reticle raycast fires → orbs respond.
+    ///           Tap/click also works because camera is already aimed at the orb.
     /// </summary>
     private void PerformGazeRaycast()
     {
-        // NEW: Skip raycasting in 360 mode - touch interactions handled separately
-        if (currentMode == ViewMode.Mode360)
-        {
-            // Clean up any active hover state when switching to 360 mode
-            if (currentHoverTarget != null)
-            {
-                ExitCurrentTarget();
-            }
-            isHovering = false;
-            return;
-        }
-
-        // VR MODE: Original gaze raycast behavior (unchanged)
+        // Both modes raycast — input method differs but orb interaction is identical.
         Ray ray = new Ray(attachedCamera.transform.position, attachedCamera.transform.forward);
 
         if (showDebugRay)
@@ -366,7 +355,8 @@ public class GazeReticlePointer : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, interactableLayers))
         {
-            currentReticleDistance = Mathf.Min(hit.distance, reticleDistance);
+            // Pull reticle 0.05 units in front of the hit surface so it never clips inside the orb
+            currentReticleDistance = Mathf.Max(hit.distance - 0.05f, 0.1f);
 
             GameObject hitObject = hit.collider.gameObject;
             GazeHoverTrigger hitTrigger = hitObject.GetComponent<GazeHoverTrigger>();
@@ -739,7 +729,7 @@ public class GazeReticlePointer : MonoBehaviour
         {
             EnableGyroscope();
         }
-        
+
         Debug.Log($"[GazeReticlePointer] Mode set to: {mode}");
     }
 

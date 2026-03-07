@@ -84,6 +84,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\AssetPackConfigSerializer.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuiltInPadHelper.cs" />
     <Compile Include="Assets\Editor\Scripts\FilmZoneEditorWindow.cs" />
+    <Compile Include="Assets\Editor\SessionScanner.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AndroidManifest\IAssetPackManifestTransformer.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\Config\SerializableAssetBundle.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\AndroidBuildOptions.cs" />

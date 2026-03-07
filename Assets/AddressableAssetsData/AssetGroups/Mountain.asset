@@ -14,13 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Mountain
   m_GUID: 8816ba457eca1f844a8e1d0aa0515bdf
-  m_SerializeEntries:
-  - m_GUID: a211fc9fb0fb95e4ba032b7d011b7e58
-    m_Address: Assets/MCAssets/Prefabs/Addressables/mountain_terrain_01 1.prefab
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Mountain
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: a4be1be2add51c74d9196be2a6128299, type: 2}
   m_SchemaSet:

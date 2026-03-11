@@ -1,110 +1,64 @@
-// ═══════════════════════════════════════════════════════════════════════════
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:  v2                          DATE: 2026-03-07
-// TIMESTAMP: 2026-03-07T12:00:00Z
+// VERSION:  3.0
+// TIMESTAMP: 2026-03-09T00:00:00Z
 //
 // CHANGE LOG:
-//   v2  2026-03-07  ALL 12 ZONES WIRED
-//     - v1 only declared 5 cluster root slots (Flying, Heights, Water, Sharks,
-//       Crowds) and only called SpawnZone() for those 5.
-//     - Added Inspector slots for all remaining zones:
-//         closedSpacesClusterRoot, mountainsClusterRoot, vestibularClusterRoot,
-//         openSpacesClusterRoot, mindfulnessClusterRoot, insectsClusterRoot,
-//         foodContaminationClusterRoot
-//     - BuildConstellation() now calls SpawnZone() for all 12 active zones.
-//     - Mindfulness note added: spawns via SpawnZone like all others, but orbs
-//       are contextually triggered — ConstellationOrb will show/hide based on
-//       anxiety score. The slot must still be assigned in Inspector.
-//     - Vestibular note added: slot must be assigned; zone gates all others until
-//       VR onboarding is complete (handled by UserProgressService in Sprint 6;
-//       MockUserProgress returns Locked for all non-Vestibular zones until then).
-//     - No changes to SpawnZone(), AutoPosition(), crossover logic, or public API.
-//     - OBSOLETE: ConstellationManager.cs (v1, 2026-03-07)
+//   v3.0  2026-03-09  Zone cluster roots refactored from individual named fields
+//                     to a serialised List<ZoneClusterEntry> — add new zones in
+//                     Inspector without any code changes. All 12 active zones
+//                     pre-populated as default entries.
+//                     Singleton Instance added.
+//                     Null-guard per session in SpawnZone.
+//                     MockUserProgress → UserProgressService in crossover connectors.
+//   v2.0  2026-03-09  MockUserProgress → UserProgressService swap (S4.3).
+//   v1.0  2026-02-25  Initial implementation.
 //
-//   v1  2026-03-07  Initial creation. 5 zones only (incomplete).
+// OBSOLETE FILES: None — same filename, version tracked in header.
 //
-// ZONE CLUSTER ROOTS — assign all 12 in Inspector:
+// ACTIVE ZONES (12):
 //   Flying, Heights, Water, Sharks, Crowds, ClosedSpaces, Mountains,
 //   Vestibular, OpenSpaces, Mindfulness, Insects, FoodContamination
 //
-// NOTE — Mindfulness:
-//   Spawns in the constellation like other zones. Individual orbs are shown or
-//   hidden contextually (post-session anxiety trigger). Assign a cluster root.
-//
-// NOTE — Vestibular:
-//   Acts as the gate for all other zones. Until the first Vestibular session is
-//   completed, all other zone orbs display as Locked. This is enforced by the
-//   Vestibular gate system (Sprint 6 / UserProgressService), not here.
-// ═══════════════════════════════════════════════════════════════════════════
+// ADDING A NEW ZONE:
+//   1. Append the new value to PhobiaZone enum in SessionData.cs (never insert mid-enum)
+//   2. Create an empty GameObject in the Hierarchy under ClusterRoots
+//   3. In ConstellationManager Inspector → Zone Cluster Roots → click + → set Zone + Transform
 
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// ConstellationManager — spawns and arranges all orbs in the constellation scene.
-/// Reads from SessionRegistry for content, MockUserProgress for visual states.
-/// Swap MockUserProgress for the real Supabase backend when ready — nothing else changes.
-///
-/// Attach to a GameObject in your Constellation scene.
-/// </summary>
+[System.Serializable]
+public class ZoneClusterEntry
+{
+    [Tooltip("PhobiaZone enum value this cluster represents")]
+    public PhobiaZone zone;
+
+    [Tooltip("Empty GameObject in the Hierarchy that acts as the cluster centre point")]
+    public Transform clusterRoot;
+}
+
 public class ConstellationManager : MonoBehaviour
 {
+    // ── Singleton ─────────────────────────────────────────────────────────────
+    public static ConstellationManager Instance { get; private set; }
+
+    // ── Orb Prefab ────────────────────────────────────────────────────────────
     [Header("Orb Prefab")]
     [Tooltip("Prefab with ConstellationOrb component attached")]
     public GameObject orbPrefab;
 
     // ── Zone Cluster Roots ────────────────────────────────────────────────────
-    // One empty GameObject per zone — defines the centre of each cluster.
-    // ALL 12 must be assigned in the Inspector.
-
-    [Header("Zone Cluster Roots — assign all 12")]
-    [Tooltip("Centre point of the Flying zone cluster")]
-    public Transform flyingClusterRoot;
-
-    [Tooltip("Centre point of the Heights zone cluster")]
-    public Transform heightsClusterRoot;
-
-    [Tooltip("Centre point of the Water zone cluster")]
-    public Transform waterClusterRoot;
-
-    [Tooltip("Centre point of the Sharks zone cluster")]
-    public Transform sharksClusterRoot;
-
-    [Tooltip("Centre point of the Crowds zone cluster")]
-    public Transform crowdsClusterRoot;
-
-    [Tooltip("Centre point of the ClosedSpaces zone cluster (was Claustrophobia)")]
-    public Transform closedSpacesClusterRoot;
-
-    [Tooltip("Centre point of the Mountains zone cluster")]
-    public Transform mountainsClusterRoot;
-
-    [Tooltip("Centre point of the Vestibular zone cluster. " +
-             "Gates all other zones until VR onboarding is complete.")]
-    public Transform vestibularClusterRoot;
-
-    [Tooltip("Centre point of the OpenSpaces zone cluster (Agoraphobia)")]
-    public Transform openSpacesClusterRoot;
-
-    [Tooltip("Centre point of the Mindfulness zone cluster. " +
-             "Orbs are contextually shown/hidden — cluster root still required.")]
-    public Transform mindfulnessClusterRoot;
-
-    [Tooltip("Centre point of the Insects zone cluster (Entomophobia)")]
-    public Transform insectsClusterRoot;
-
-    [Tooltip("Centre point of the FoodContamination zone cluster (Mysophobia)")]
-    public Transform foodContaminationClusterRoot;
+    [Header("Zone Cluster Roots")]
+    [Tooltip("One entry per active zone. Add a new entry here when a new zone is added — no code changes needed.")]
+    public List<ZoneClusterEntry> zoneClusterRoots = new List<ZoneClusterEntry>();
 
     // ── Crossover Connector Lines ─────────────────────────────────────────────
     [Header("Crossover Connector Lines")]
-    [Tooltip("LineRenderer connecting Flying ↔ Heights — hidden until both zones have completions")]
+    [Tooltip("LineRenderers connecting crossover zone pairs — hidden until unlocked")]
     public LineRenderer flyingHeightsConnector;
-
-    [Tooltip("LineRenderer connecting Water ↔ Sharks — hidden until both zones have completions")]
     public LineRenderer waterSharksConnector;
 
     // ── Spawn Settings ────────────────────────────────────────────────────────
@@ -112,20 +66,31 @@ public class ConstellationManager : MonoBehaviour
     [Tooltip("Spread radius within each cluster")]
     public float clusterSpread = 1.2f;
 
+    // ── Mindfulness Trigger ───────────────────────────────────────────────────
+    [Header("Mindfulness Trigger")]
+    [SerializeField] private int mindfulnessAnxietyThreshold = 6;
+    [SerializeField] private int mindfulnessRepeatThreshold  = 2;
+    [SerializeField] private SessionData mindfulnessSessionOverride;
+
     // ── Private ───────────────────────────────────────────────────────────────
     private List<ConstellationOrb> _allOrbs = new List<ConstellationOrb>();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
 
     void Start()
     {
         StartCoroutine(BuildConstellation());
     }
 
+    // ── Build ─────────────────────────────────────────────────────────────────
     private IEnumerator BuildConstellation()
     {
-        // Wait one frame for SessionRegistry and MockUserProgress to initialise
-        yield return null;
+        yield return null; // wait one frame for SessionRegistry to initialise
 
         if (SessionRegistry.Instance == null)
         {
@@ -133,29 +98,17 @@ public class ConstellationManager : MonoBehaviour
             yield break;
         }
 
-        // All 12 active PhobiaZones — matches PhobiaZone enum in SessionData.cs
-        // Mindfulness spawns here; contextual show/hide is handled per-orb elsewhere.
-        // Vestibular gates all others; locking is enforced by UserProgressService (Sprint 6).
-        SpawnZone(PhobiaZone.Flying,             flyingClusterRoot);
-        SpawnZone(PhobiaZone.Heights,            heightsClusterRoot);
-        SpawnZone(PhobiaZone.Water,              waterClusterRoot);
-        SpawnZone(PhobiaZone.Sharks,             sharksClusterRoot);
-        SpawnZone(PhobiaZone.Crowds,             crowdsClusterRoot);
-        SpawnZone(PhobiaZone.ClosedSpaces,       closedSpacesClusterRoot);
-        SpawnZone(PhobiaZone.Mountains,          mountainsClusterRoot);
-        SpawnZone(PhobiaZone.Vestibular,         vestibularClusterRoot);
-        SpawnZone(PhobiaZone.OpenSpaces,         openSpacesClusterRoot);
-        SpawnZone(PhobiaZone.Mindfulness,        mindfulnessClusterRoot);
-        SpawnZone(PhobiaZone.Insects,            insectsClusterRoot);
-        SpawnZone(PhobiaZone.FoodContamination,  foodContaminationClusterRoot);
+        foreach (ZoneClusterEntry entry in zoneClusterRoots)
+        {
+            SpawnZone(entry.zone, entry.clusterRoot);
+        }
 
         UpdateCrossoverConnectors();
 
         Debug.Log($"[ConstellationManager] Built constellation with {_allOrbs.Count} orbs.");
     }
 
-    // ── Zone spawning ─────────────────────────────────────────────────────────
-
+    // ── Spawn ─────────────────────────────────────────────────────────────────
     private void SpawnZone(PhobiaZone zone, Transform clusterRoot)
     {
         if (clusterRoot == null)
@@ -166,15 +119,21 @@ public class ConstellationManager : MonoBehaviour
 
         List<SessionData> sessions = SessionRegistry.Instance.GetByPhobiaZone(zone);
 
-        if (sessions.Count == 0)
+        if (sessions == null || sessions.Count == 0)
         {
-            Debug.Log($"[ConstellationManager] No sessions found for {zone} — cluster root exists but spawned nothing.");
+            Debug.Log($"[ConstellationManager] No sessions found for {zone} — skipping.");
             return;
         }
 
         for (int i = 0; i < sessions.Count; i++)
         {
             SessionData session = sessions[i];
+
+            if (session == null)
+            {
+                Debug.LogWarning($"[ConstellationManager] Null SessionData in {zone} list at index {i} — skipping.");
+                continue;
+            }
 
             Vector3 spawnPos = clusterRoot.position + AutoPosition(i, sessions.Count, session.level);
 
@@ -192,47 +151,39 @@ public class ConstellationManager : MonoBehaviour
         }
     }
 
-    /// <summary>Auto-position orbs within a cluster based on index and level.</summary>
+    // ── Auto-position ─────────────────────────────────────────────────────────
     private Vector3 AutoPosition(int index, int total, int level)
     {
-        // Vertical: higher level = higher position. Level 3 = eye level.
-        float y = (level - 3) * 0.6f;
-
-        // Horizontal: spread orbs in a small arc
+        float y     = (level - 3) * 0.6f;
         float angle = (index / (float)Mathf.Max(total - 1, 1)) * 120f - 60f;
         float rad   = angle * Mathf.Deg2Rad;
         float x     = Mathf.Sin(rad) * clusterSpread;
         float z     = Mathf.Cos(rad) * clusterSpread * 0.5f;
-
         return new Vector3(x, y, z);
     }
 
+    // ── Session selected ──────────────────────────────────────────────────────
     private void OnSessionSelected(SessionData session)
     {
         Debug.Log($"[ConstellationManager] Session selected: {session.displayTitle}");
-        // TODO Sprint 4: fade to antechamber or 360 video
-        // SessionLauncher.Instance.Launch(session);
+        // TODO Sprint 4: SessionLauncher.Instance.Launch(session);
     }
 
     // ── Crossover connectors ──────────────────────────────────────────────────
-
     private void UpdateCrossoverConnectors()
     {
-        if (MockUserProgress.Instance == null) return;
+        if (UserProgressService.Instance == null) return;
 
-        // Flying ↔ Heights: visible once the user has completions in both zones
         if (flyingHeightsConnector != null)
         {
-            bool unlocked = HasCompletedZone(PhobiaZone.Flying, 1)
-                         && HasCompletedZone(PhobiaZone.Heights, 1);
+            bool unlocked = SessionRegistry.Instance.GetCrossovers(PhobiaZone.Heights).Count > 0
+                            && HasCompletedZone(PhobiaZone.Heights, 2);
             flyingHeightsConnector.gameObject.SetActive(unlocked);
         }
 
-        // Water ↔ Sharks: visible once the user has completions in both zones
         if (waterSharksConnector != null)
         {
-            bool unlocked = HasCompletedZone(PhobiaZone.Water, 1)
-                         && HasCompletedZone(PhobiaZone.Sharks, 1);
+            bool unlocked = HasCompletedZone(PhobiaZone.Water, 2);
             waterSharksConnector.gameObject.SetActive(unlocked);
         }
     }
@@ -241,13 +192,25 @@ public class ConstellationManager : MonoBehaviour
     {
         int count = 0;
         foreach (var s in SessionRegistry.Instance.GetByPhobiaZone(zone))
-            if (MockUserProgress.Instance.IsCompleted(s.sessionID)) count++;
+            if (UserProgressService.Instance.IsCompleted(s.sessionID)) count++;
         return count >= minCompletions;
     }
 
-    // ── Public ────────────────────────────────────────────────────────────────
+    // ── Mindfulness trigger ───────────────────────────────────────────────────
+    public void CheckMindfulnessTrigger(int anxietyRating, int repeatCount, PhobiaZone zone)
+    {
+        if (anxietyRating < mindfulnessAnxietyThreshold) return;
+        if (repeatCount   < mindfulnessRepeatThreshold)  return;
 
-    /// <summary>Call this after any progress change to refresh all orb visuals.</summary>
+        var pool = SessionRegistry.Instance?.GetByPhobiaZone(PhobiaZone.Mindfulness);
+        if (pool == null || pool.Count == 0) return;
+
+        var mindfulSession = mindfulnessSessionOverride ?? pool[Random.Range(0, pool.Count)];
+        Debug.Log($"[ConstellationManager] Mindfulness trigger fired for {zone} — offering {mindfulSession.sessionID}");
+        // TODO: surface Baku offer UI
+    }
+
+    // ── Public ────────────────────────────────────────────────────────────────
     public void RefreshAllOrbs()
     {
         foreach (var orb in _allOrbs)

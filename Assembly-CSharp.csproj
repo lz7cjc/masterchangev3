@@ -138,6 +138,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\RirosManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHUDController.cs" />
@@ -158,6 +159,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\switchformatreload.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDLockRotation.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\userBehaviours.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\RatingButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\SpriteBasedFocusIndicator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\displayFormValues.cs" />
@@ -168,6 +170,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits1.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\Clock_Analogue.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionLifecycleTracker.cs" />
     <Compile Include="Assets\Island\Scripts\FixedTiling.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GazeMovement.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\ToggleShowHideVideo.cs" />
@@ -178,6 +181,7 @@
     <Compile Include="Assets\MCAssets\Migration\Scripts\SessionRegistry.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\RingDisplayManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraLock.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\ScreenFader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\isloggedon.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ToggleActiveIcons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\PickBCT.cs" />
@@ -197,6 +201,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\V6\FilmHUDButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\TestInterfaceButtons.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoStreamDebugOverlay.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionEventWriter.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\BuyInventoryItem.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\SceneLoadDiagnostics.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DynamicLoadVideo1.cs" />
@@ -257,9 +262,11 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ResetCameraPosition.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\PlayerMovement.cs" />
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\Flapboard.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionLauncher.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Toggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\dashboardTips.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\drinkoutcome.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\ZoneConfig.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\hudCountdown.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\MainVREntryMonitor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\TennisCourtGenerator.cs" />
@@ -279,6 +286,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetRiros.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\GoIconTrigger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\OptimizedToggleVR.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SupabaseManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\SwimmingPoolGenerator.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VRGazeHelper.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\justSetGetRiros.cs" />
@@ -313,6 +321,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\SetPanelHealthCheck.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\BCTUserJourneyLaunch.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\smokinghabitsdone.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\UnlockEngine.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRUIToggleButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\rotateCamera.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toMasterChange.cs" />
@@ -342,7 +351,9 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\IGazeClickable.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\OrientationHelper.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\VRHUDRotationSystem.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\UserProgressService.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\PurchaseButton.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\RirosSpendUI.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\PlayerControlsBridge.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\Billboard.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\toggleContent.cs" />
@@ -366,7 +377,9 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateRiros.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\HeadsetMonitor.cs" />
     <Compile Include="Assets\SpaceSkies Free\Demo\Scripts\SkyboxChanger.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\AnteChamberController.cs" />
     <Compile Include="Assets\MCAssets\InputManager\UIInputController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BeachTennisCourtGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadManager.cs" />
@@ -384,62 +397,122 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSphere360Setup.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\PostSessionController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\SessionData.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Packages\realtime-csharp.6.0.4\lib\netstandard2.0\Supabase.Realtime.xml" />
+    <None Include="Assets\Packages\System.Security.Cryptography.Cng.4.5.0\useSharedDesignerContext.txt" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\lib\netstandard2.1\System.Threading.Channels.dll" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\THIRD-PARTY-NOTICES.TXT" />
     <None Include="Assets\3rdPartyAssets\TerrainSampleAssets\ThirdPartyNotices.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
+    <None Include="Assets\Packages\gotrue-csharp.4.2.7\lib\netstandard2.0\Supabase.Gotrue.dll" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\THIRD-PARTY-NOTICES.TXT" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\lib\netstandard2.0\System.Text.Json.xml" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\LICENSE.TXT" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Lighting.hlsl" />
+    <None Include="Assets\Packages\System.Security.Cryptography.Cng.4.5.0\THIRD-PARTY-NOTICES.TXT" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Features.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile-2-Pass.shader" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Reflections.hlsl" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.xml" />
+    <None Include="Assets\Packages\Websocket.Client.4.6.1\lib\netstandard2.1\Websocket.Client.dll" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Abstractions.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Abstractions.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
+    <None Include="Assets\Packages\MimeMapping.2.0.0\lib\netstandard2.0\MimeMapping.dll" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Tokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Tokens.dll" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Logging.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Logging.dll" />
+    <None Include="Assets\Packages\System.Security.Cryptography.Cng.4.5.0\LICENSE.TXT" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\version.txt" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Displacement.hlsl" />
+    <None Include="Assets\Packages\System.Security.Cryptography.Cng.4.5.0\lib\netstandard2.0\System.Security.Cryptography.Cng.dll" />
+    <None Include="Assets\Packages\functions-csharp.1.3.2\lib\netstandard2.0\Supabase.Functions.dll" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.JsonWebTokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.JsonWebTokens.dll" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\ForwardPass.hlsl" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Tesselation.hlsl" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Common.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\version.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\3rdPartyAssets\Toby Fredson\Rocky Hills Environment - Light Pack\Legacy Project\Legacy Project_Read Me!.txt" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Fog.hlsl" />
+    <None Include="Assets\Packages\supabase-csharp.0.16.2\lib\netstandard2.0\Supabase.dll" />
+    <None Include="Assets\Packages\System.IdentityModel.Tokens.Jwt.7.0.3\lib\netstandard2.0\System.IdentityModel.Tokens.Jwt.dll" />
     <None Include="Assets\MCAssets\InputManager\info.txt" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\useSharedDesignerContext.txt" />
     <None Include="Assets\MCAssets\Images\2023UI\fonts\LICENSE.txt" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\LICENSE.TXT" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\LICENSE.TXT" />
+    <None Include="Assets\Packages\supabase-core.0.0.3\lib\netstandard2.0\Supabase.Core.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\lib\netstandard2.1\System.Threading.Channels.xml" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\version.txt" />
+    <None Include="Assets\Packages\MimeMapping.2.0.0\lib\netstandard2.0\MimeMapping.xml" />
     <None Include="Assets\StylizedWater2\Shaders\WaterCutoutMask.shader" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\useSharedDesignerContext.txt" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\useSharedDesignerContext.txt" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\THIRD-PARTY-NOTICES.TXT" />
     <None Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\readme.txt" />
+    <None Include="Assets\Packages\gotrue-csharp.4.2.7\lib\netstandard2.0\Supabase.Gotrue.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
     <None Include="Assets\MCAssets\php_scripts\htaccess.txt" />
+    <None Include="Assets\Packages\System.Text.Json.4.7.2\lib\netstandard2.0\System.Text.Json.dll" />
     <None Include="Assets\MCAssets\MC360Video\Shaders\Flip.shader" />
+    <None Include="Assets\Packages\supabase-storage-csharp.1.4.0\lib\netstandard2.0\Supabase.Storage.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Caustics.hlsl" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Input.hlsl" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Tokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Tokens.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF.shader" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Abstractions.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Abstractions.xml" />
+    <None Include="Assets\Packages\System.IdentityModel.Tokens.Jwt.7.0.3\lib\netstandard2.0\System.IdentityModel.Tokens.Jwt.xml" />
     <None Include="Assets\MCAssets\Materials\videoplayer\InsideSphere360.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile SSD.shader" />
+    <None Include="Assets\Packages\functions-csharp.1.3.2\lib\netstandard2.0\Supabase.Functions.xml" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
+    <None Include="Assets\Packages\postgrest-csharp.3.5.1\lib\netstandard2.0\Supabase.Postgrest.xml" />
+    <None Include="Assets\Packages\System.Security.Cryptography.Cng.4.5.0\version.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Vertex.hlsl" />
     <None Include="Assets\MCAssets\Materials\videoplayer\InsideSpere.shader" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\useSharedDesignerContext.txt" />
     <None Include="Assets\MCAssets\Materials\SpriteFadeOut.shader" />
     <None Include="Assets\PlayerPrefsEditor\README.txt" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\THIRD-PARTY-NOTICES.TXT" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\Packages\Websocket.Client.4.6.1\lib\netstandard2.1\Websocket.Client.xml" />
     <None Include="Assets\StylizedWater2\Shaders\SubGraphs\Readme.txt" />
+    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <None Include="Assets\Packages\supabase-storage-csharp.1.4.0\lib\netstandard2.0\Supabase.Storage.dll" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.Logging.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Logging.xml" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\LICENSE.TXT" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets\Packages\System.Threading.Channels.5.0.0\version.txt" />
     <None Include="Assets\MCAssets\Materials\Material_Assignment_Guide.txt" />
+    <None Include="Assets\Packages\supabase-csharp.0.16.2\lib\netstandard2.0\Supabase.xml" />
     <None Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\install_RP_Versions.txt" />
+    <None Include="Assets\Packages\realtime-csharp.6.0.4\lib\netstandard2.0\Supabase.Realtime.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
+    <None Include="Assets\Packages\Microsoft.IdentityModel.JsonWebTokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.JsonWebTokens.xml" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Waves.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
+    <None Include="Assets\Packages\System.Reactive.5.0.0\lib\netstandard2.0\System.Reactive.dll" />
+    <None Include="Assets\Packages\supabase-core.0.0.3\lib\netstandard2.0\Supabase.Core.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\lib\netstandard2.1\System.Text.Encodings.Web.dll" />
     <None Include="Assets\3rdPartyAssets\TerrainSampleAssets\ShaderGraphs\CustomFunctions\CustomLighting.hlsl" />
+    <None Include="Assets\Packages\postgrest-csharp.3.5.1\lib\netstandard2.0\Supabase.Postgrest.dll" />
+    <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\lib\netstandard2.1\System.Text.Encodings.Web.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Sprite.shader" />
+    <None Include="Assets\Packages\System.Reactive.5.0.0\lib\netstandard2.0\System.Reactive.xml" />
     <None Include="Assets\3rdPartyAssets\Chair\Read Me.txt" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\URP.hlsl" />
   </ItemGroup>
@@ -920,16 +993,76 @@
       <HintPath>D:\Program Files\6000.2.8f1\Editor\Data\Managed\UnityEngine\UnityEditor.XRModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Threading.Channels">
+      <HintPath>Assets\Packages\System.Threading.Channels.5.0.0\lib\netstandard2.1\System.Threading.Channels.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Gotrue">
+      <HintPath>Assets\Packages\gotrue-csharp.4.2.7\lib\netstandard2.0\Supabase.Gotrue.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Collections.LowLevel.ILSupport">
       <HintPath>Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.LowLevel.ILSupport\Unity.Collections.LowLevel.ILSupport.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Websocket.Client">
+      <HintPath>Assets\Packages\Websocket.Client.4.6.1\lib\netstandard2.1\Websocket.Client.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>Library\PackageCache\com.unity.ext.nunit@031a54704bff\net40\unity-custom\nunit.framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Microsoft.IdentityModel.Abstractions">
+      <HintPath>Assets\Packages\Microsoft.IdentityModel.Abstractions.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Abstractions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MimeMapping">
+      <HintPath>Assets\Packages\MimeMapping.2.0.0\lib\netstandard2.0\MimeMapping.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Tokens">
+      <HintPath>Assets\Packages\Microsoft.IdentityModel.Tokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Tokens.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Logging">
+      <HintPath>Assets\Packages\Microsoft.IdentityModel.Logging.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Logging.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Cng">
+      <HintPath>Assets\Packages\System.Security.Cryptography.Cng.4.5.0\lib\netstandard2.0\System.Security.Cryptography.Cng.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Functions">
+      <HintPath>Assets\Packages\functions-csharp.1.3.2\lib\netstandard2.0\Supabase.Functions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.JsonWebTokens">
+      <HintPath>Assets\Packages\Microsoft.IdentityModel.JsonWebTokens.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.JsonWebTokens.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase">
+      <HintPath>Assets\Packages\supabase-csharp.0.16.2\lib\netstandard2.0\Supabase.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IdentityModel.Tokens.Jwt">
+      <HintPath>Assets\Packages\System.IdentityModel.Tokens.Jwt.7.0.3\lib\netstandard2.0\System.IdentityModel.Tokens.Jwt.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>Assets\Packages\System.Text.Json.4.7.2\lib\netstandard2.0\System.Text.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.IO.Hashing">
       <HintPath>Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.IO.Hashing\System.IO.Hashing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Storage">
+      <HintPath>Assets\Packages\supabase-storage-csharp.1.4.0\lib\netstandard2.0\Supabase.Storage.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UDP">
@@ -937,7 +1070,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime\Newtonsoft.Json.dll</HintPath>
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil">
@@ -946,6 +1079,26 @@
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.Runtime.CompilerServices.Unsafe\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Realtime">
+      <HintPath>Assets\Packages\realtime-csharp.6.0.4\lib\netstandard2.0\Supabase.Realtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reactive">
+      <HintPath>Assets\Packages\System.Reactive.5.0.0\lib\netstandard2.0\System.Reactive.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Core">
+      <HintPath>Assets\Packages\supabase-core.0.0.3\lib\netstandard2.0\Supabase.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>Assets\Packages\System.Text.Encodings.Web.4.7.2\lib\netstandard2.1\System.Text.Encodings.Web.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Supabase.Postgrest">
+      <HintPath>Assets\Packages\postgrest-csharp.3.5.1\lib\netstandard2.0\Supabase.Postgrest.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEditor.iOS.Extensions.Xcode">

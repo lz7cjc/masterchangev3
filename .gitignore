@@ -76,4 +76,5 @@ g i t - f i l t e r - r e p o
 Assets/MCAssets/AImodels/
 **/configuration.php
 
-**/dbconnect.php
+Assets\MCAssets\Migration\Prefabs\Planets\
+**

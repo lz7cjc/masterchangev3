@@ -14,22 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Environment
   m_GUID: 39f29a3a5cca743469f1cc1dc40670de
-  m_SerializeEntries:
-  - m_GUID: 42f8049b0aa7e56428eacc14875ba421
-    m_Address: Assets/3rdPartyAssets/Mountain Terrain rocks and tree/Materials/Terrain/mountain_terrain_01/mountain_terrain_01.mat
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8535ee83d7d2e124a8c7b55c21b3a1ba
-    m_Address: Assets/StylizedWater2/_Demo/DemoAssets/Materials/StylizedWater2_RiverDemo.mat
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9e73dc93ef929ba46ae79f13b165b3dc
-    m_Address: Assets/StylizedWater2/Materials/StylizedWater2_Mobile.mat
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: a4be1be2add51c74d9196be2a6128299, type: 2}
   m_SchemaSet:

@@ -1,14 +1,20 @@
 // CrossoverConnector.cs
-// MasterChange VR — Sprint 3 (S3.5)
-// Version   : v1
-// Created   : 2026-03-07
-// Location  : Assets/MCAssets/Migration/Scripts/CrossoverConnector.cs
-//             (attach to a CrossoverConnectors child of ConstellationManager)
+// Assets/MCAssets/Migration/Scripts/CrossoverConnector.cs
+//
+// VERSION:  2.0
+// TIMESTAMP: 2026-03-09T00:00:00Z
+//
+// CHANGE LOG:
+//   v2.0  2026-03-09  S4.3 swap — MockUserProgress.Instance references replaced
+//                     with UserProgressService.Instance. Requires/comment updated.
+//   v1.0  2026-03-07  Initial creation — Sprint 3 (S3.5). Two pairs: Flying-Heights,
+//                     Water-Sharks.
+//
+// OBSOLETE: CrossoverConnector.cs v1.0
 //
 // Purpose   : Draws thin LineRenderer lines between paired crossover zones.
 //             A connector is hidden until the user has at least one completion in
-//             BOTH zones of the pair. This rewards exploration rather than making
-//             the relationship visible from the start.
+//             BOTH zones of the pair.
 //
 //             Crossover pairs:
 //               Flying  ↔  Heights
@@ -18,11 +24,7 @@
 //             RefreshVisibility() is called by ConstellationManager.RefreshAllOrbs()
 //             so connectors update whenever progress changes.
 //
-// Requires  : MockUserProgress (pre-S4) → swapped for UserProgressService in S4.
-//             ConstellationManager must assign cluster root Transforms.
-//
-// Change log:
-//   v1  2026-03-07  Initial creation. Two pairs: Flying-Heights, Water-Sharks.
+// Requires  : UserProgressService (S4+). ConstellationManager must assign cluster root Transforms.
 // ─────────────────────────────────────────────────────────────────────────────────
 
 using System.Collections;
@@ -56,7 +58,7 @@ public class CrossoverConnector : MonoBehaviour
         public Color lineColour = new Color(1f, 1f, 1f, 0.3f);
 
         [HideInInspector] public LineRenderer lineRenderer;
-        [HideInInspector] public float        currentAlpha;
+        [HideInInspector] public float currentAlpha;
     }
 
     [Header("Connector Pairs")]
@@ -103,7 +105,7 @@ public class CrossoverConnector : MonoBehaviour
         lr.SetPosition(0, pair.zoneARoot.position);
         lr.SetPosition(1, pair.zoneBRoot.position);
         lr.startWidth = _lineWidth;
-        lr.endWidth   = _lineWidth;
+        lr.endWidth = _lineWidth;
         lr.useWorldSpace = true;
 
         if (_lineMaterial != null)
@@ -112,10 +114,10 @@ public class CrossoverConnector : MonoBehaviour
         Color c = pair.lineColour;
         c.a = 0f;
         lr.startColor = c;
-        lr.endColor   = c;
+        lr.endColor = c;
 
-        pair.lineRenderer  = lr;
-        pair.currentAlpha  = 0f;
+        pair.lineRenderer = lr;
+        pair.currentAlpha = 0f;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -129,7 +131,7 @@ public class CrossoverConnector : MonoBehaviour
         foreach (var pair in pairs)
         {
             bool shouldBeVisible = BothZonesHaveCompletion(pair.zoneA, pair.zoneB);
-            float targetAlpha    = shouldBeVisible ? _visibleAlpha : 0f;
+            float targetAlpha = shouldBeVisible ? _visibleAlpha : 0f;
 
             if (!Mathf.Approximately(pair.currentAlpha, targetAlpha))
                 StartCoroutine(FadePair(pair, targetAlpha));
@@ -140,9 +142,8 @@ public class CrossoverConnector : MonoBehaviour
 
     private bool BothZonesHaveCompletion(PhobiaZone zoneA, PhobiaZone zoneB)
     {
-        // Pre-S4: uses MockUserProgress
-        // S4+: swap MockUserProgress.Instance for UserProgressService.Instance
-        if (MockUserProgress.Instance == null || SessionRegistry.Instance == null)
+        // S4+: UserProgressService replaces MockUserProgress
+        if (UserProgressService.Instance == null || SessionRegistry.Instance == null)
             return false;
 
         return HasAnyCompletion(zoneA) && HasAnyCompletion(zoneB);
@@ -152,7 +153,7 @@ public class CrossoverConnector : MonoBehaviour
     {
         foreach (var session in SessionRegistry.Instance.GetByPhobiaZone(zone))
         {
-            if (MockUserProgress.Instance.IsCompleted(session.sessionID))
+            if (UserProgressService.Instance.IsCompleted(session.sessionID))
                 return true;
         }
         return false;
@@ -165,7 +166,7 @@ public class CrossoverConnector : MonoBehaviour
         if (pair.lineRenderer == null) yield break;
 
         float startAlpha = pair.currentAlpha;
-        float elapsed    = 0f;
+        float elapsed = 0f;
 
         while (elapsed < _fadeDuration)
         {
@@ -177,7 +178,7 @@ public class CrossoverConnector : MonoBehaviour
             Color c = pair.lineColour;
             c.a = pair.currentAlpha;
             pair.lineRenderer.startColor = c;
-            pair.lineRenderer.endColor   = c;
+            pair.lineRenderer.endColor = c;
 
             yield return null;
         }
@@ -186,6 +187,6 @@ public class CrossoverConnector : MonoBehaviour
         Color final = pair.lineColour;
         final.a = targetAlpha;
         pair.lineRenderer.startColor = final;
-        pair.lineRenderer.endColor   = final;
+        pair.lineRenderer.endColor = final;
     }
 }

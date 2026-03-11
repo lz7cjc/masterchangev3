@@ -1,9 +1,23 @@
+// ConstellationOrb.cs
+// Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
+//
+// VERSION:  3.0
+// TIMESTAMP: 2026-03-09T00:00:00Z
+//
+// CHANGE LOG:
+//   v3.0  2026-03-09  S4.3 swap — all MockUserProgress.Instance and
+//                     MockUserProgress.OrbState references replaced with
+//                     UserProgressService.Instance and UserProgressService.OrbState.
+//   v2.0  2026-03-07  Three visible states, GazeHoverTrigger wiring, dwell scale.
+//
+// OBSOLETE: ConstellationOrb.cs v2.0
+
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// ConstellationOrb v2 — three visible states per orb:
+/// ConstellationOrb v3 — three visible states per orb:
 ///   DEFAULT   — colour set by OrbState (Available/Recommended/Completed/Locked)
 ///   HOVER     — overrides to hoverColor while reticle is on the orb, scale grows with dwell
 ///   SELECTED  — overrides to selectedColor, fires onSessionSelected event
@@ -58,7 +72,7 @@ public class ConstellationOrb : MonoBehaviour
     private Renderer _rend;
     private Material _defaultMaterial;   // Set by OrbState — restored on gaze exit
     private Material _hoverMaterialInst; // Instance so we can tint without affecting asset
-    private MockUserProgress.OrbState _currentState;
+    private UserProgressService.OrbState _currentState;
 
     private bool _isGazed;
     private float _gazeTimer;
@@ -102,7 +116,7 @@ public class ConstellationOrb : MonoBehaviour
     void Update()
     {
         if (_selected) return;
-        if (_currentState == MockUserProgress.OrbState.Locked) return;
+        if (_currentState == UserProgressService.OrbState.Locked) return;
         if (!_isGazed) return;
 
         _gazeTimer += Time.deltaTime;
@@ -119,7 +133,7 @@ public class ConstellationOrb : MonoBehaviour
 
     public void OnGazeEnter()
     {
-        if (_selected || _currentState == MockUserProgress.OrbState.Locked) return;
+        if (_selected || _currentState == UserProgressService.OrbState.Locked) return;
 
         _isGazed = true;
         _gazeTimer = 0f;
@@ -146,7 +160,7 @@ public class ConstellationOrb : MonoBehaviour
             _rend.material = _defaultMaterial;
 
         // Restart pulse if Recommended
-        if (_currentState == MockUserProgress.OrbState.Recommended && _pulseCoroutine == null)
+        if (_currentState == UserProgressService.OrbState.Recommended && _pulseCoroutine == null)
             _pulseCoroutine = StartCoroutine(PulseLoop());
 
         if (debugLogging) Debug.Log($"[Orb] Gaze exit: {session?.sessionID}");
@@ -157,30 +171,30 @@ public class ConstellationOrb : MonoBehaviour
     /// <summary>Call after any progress change to update orb visuals.</summary>
     public void RefreshState()
     {
-        if (session == null || MockUserProgress.Instance == null) return;
+        if (session == null || UserProgressService.Instance == null) return;
 
-        _currentState = MockUserProgress.Instance.GetOrbState(session.sessionID);
+        _currentState = UserProgressService.Instance.GetOrbState(session.sessionID);
         ApplyDefaultMaterial(_currentState);
     }
 
-    private void ApplyDefaultMaterial(MockUserProgress.OrbState state)
+    private void ApplyDefaultMaterial(UserProgressService.OrbState state)
     {
         if (_pulseCoroutine != null) { StopCoroutine(_pulseCoroutine); _pulseCoroutine = null; }
 
         switch (state)
         {
-            case MockUserProgress.OrbState.Available:
+            case UserProgressService.OrbState.Available:
                 _defaultMaterial = matAvailable;
                 break;
-            case MockUserProgress.OrbState.Recommended:
+            case UserProgressService.OrbState.Recommended:
                 _defaultMaterial = matRecommended;
                 _pulseCoroutine = StartCoroutine(PulseLoop());
                 break;
-            case MockUserProgress.OrbState.Completed:
+            case UserProgressService.OrbState.Completed:
                 _defaultMaterial = matCompleted;
                 transform.localScale = _baseScale * 0.85f;
                 break;
-            case MockUserProgress.OrbState.Locked:
+            case UserProgressService.OrbState.Locked:
                 _defaultMaterial = matLocked;
                 break;
         }

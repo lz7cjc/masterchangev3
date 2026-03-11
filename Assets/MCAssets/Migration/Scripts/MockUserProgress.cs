@@ -1,59 +1,57 @@
-// ═══════════════════════════════════════════════════════════════════════════
 // MockUserProgress.cs
 // Assets/MCAssets/Migration/Scripts/MockUserProgress.cs
 //
-// VERSION:  v2                          DATE: 2026-03-07
-// TIMESTAMP: 2026-03-07T12:00:00Z
+// VERSION:  4.0
+// TIMESTAMP: 2026-03-09T00:00:00Z
 //
 // CHANGE LOG:
-//   v2  2026-03-07  BUG FIXES — stale pre-v2 field references removed
-//     - EvaluateUnlocks(): removed stale string.IsNullOrEmpty(unlockCondition)
-//       and string.Split() pattern. unlockCondition is an int (since SessionData v2).
-//       Replaced with: unlock if unlockCondition > 0 AND the previous session
-//       in the same zone (by level order) is completed. This mirrors the intent
-//       of the original string logic and matches what the real UnlockEngine will do.
-//     - CompleteAll(): removed s.rirosReward reference (field does not exist —
-//       removed from SessionData in v2). Replaced with MarkCompleted(s.sessionID)
-//       which uses the default rirosEarned = 10.
-//     - No other logic changes. All public API preserved.
-//     - OBSOLETE: MockUserProgress.cs (v1, 2026-03-07)
+//   v4.0  2026-03-09  ZonePrefix() switch statement removed — replaced with
+//                     ZoneConfig.GetPrefix() lookup. No zone metadata hardcoded
+//                     in this script. ZoneConfig asset reference added.
+//   v3.0  2026-03-07  All 12 zones added to ZonePrefix() switch. Vestibular gate,
+//                     motionSicknessLevel, GetRepeatCount, HasAnyCompletion added.
+//   v2.0             unlockCondition changed string→int. rirosReward removed.
+//   v1.0             Initial implementation.
 //
-//   v1  2026-03-07  Initial creation
+// OBSOLETE FILES: None — same filename, version tracked in header.
 //
 // PURPOSE:
-//   Local stand-in for the Supabase backend during pre-backend development.
-//   Stores session state in memory. When the real backend is ready, replace
-//   calls to MockUserProgress with calls to UserProgressService — the
-//   constellation code does not need to change.
+//   Local stand-in for the Supabase backend during pre-S4 development.
+//   Replaced by UserProgressService.cs in Sprint 4 — public API is identical.
 //
-//   Attach to the same persistent GameObject as SessionRegistry.
-// ═══════════════════════════════════════════════════════════════════════════
+// DEPENDENCY: ZoneConfig.asset — drag into Inspector field on GameManager.
 
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// MockUserProgress — local stand-in for the Supabase backend during pre-backend development.
-/// Stores session state in memory.
-/// When the real backend is ready, replace calls to MockUserProgress with
-/// calls to UserProgressService — the constellation code doesn't need to change.
-///
-/// Attach to the same persistent GameObject as SessionRegistry.
-/// </summary>
 public class MockUserProgress : MonoBehaviour
 {
+    // ── Singleton ─────────────────────────────────────────────────────────────
     public static MockUserProgress Instance { get; private set; }
 
-    // ── Orb visual states ─────────────────────────────────────────────────────
+    // ── Orb visual states — DO NOT REORDER (ConstellationOrb serialises these) ─
     public enum OrbState { Locked, Available, Recommended, Completed }
 
-    // ── Internal state ────────────────────────────────────────────────────────
-    private Dictionary<string, OrbState> _sessionStates    = new Dictionary<string, OrbState>();
-    private HashSet<string>              _completedSessions = new HashSet<string>();
-    private int _rirosBalance = 0;
-    private int _bakuStage    = 1;
+    // ── Zone Config ───────────────────────────────────────────────────────────
+    [Header("Zone Config")]
+    [Tooltip("Drag ZoneConfig.asset here. Used for prefix lookups — no zone data hardcoded.")]
+    public ZoneConfig zoneConfig;
 
-    [Header("Preset for testing — set states in Inspector")]
+    // ── Vestibular gate ───────────────────────────────────────────────────────
+    [Header("Vestibular / VR Onboarding")]
+    [Tooltip("Set true in Inspector to simulate VR onboarding complete. " +
+             "All non-Vestibular zones unlock when this is true.")]
+    public bool vrOnboardingComplete = false;
+
+    [Tooltip("0 = none, 1 = mild, 2 = moderate, 3 = severe")]
+    [Range(0, 3)]
+    public int motionSicknessLevel = 0;
+
+    [Tooltip("Flagged by HeadsetMonitor or self-report. Pauses progression.")]
+    public bool motionSicknessFlagged = false;
+
+    // ── Test overrides ────────────────────────────────────────────────────────
+    [Header("Test Overrides — set session states in Inspector")]
     public List<SessionStateOverride> testOverrides = new List<SessionStateOverride>();
 
     [System.Serializable]
@@ -63,96 +61,110 @@ public class MockUserProgress : MonoBehaviour
         public OrbState state;
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // ── Internal state ────────────────────────────────────────────────────────
+    private Dictionary<string, OrbState> _sessionStates     = new Dictionary<string, OrbState>();
+    private HashSet<string>              _completedSessions  = new HashSet<string>();
+    private Dictionary<PhobiaZone, int>  _repeatCounts       = new Dictionary<PhobiaZone, int>();
+    private int                          _rirosBalance       = 0;
+    private int                          _bakuStage          = 1;
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-    }
-
-    void Start()
-    {
         ApplyTestOverrides();
     }
 
-    // ── Public API — mirrors what the real backend will return ────────────────
+    // ── Public API — identical signatures to UserProgressService ──────────────
 
-    /// <summary>Get the visual state of any orb.</summary>
     public OrbState GetOrbState(string sessionID)
     {
-        if (_sessionStates.TryGetValue(sessionID, out var state))
-            return state;
+        if (_sessionStates.TryGetValue(sessionID, out var state)) return state;
         return OrbState.Locked;
     }
 
-    /// <summary>Mark a session as completed. Call after a test session ends.</summary>
-    public void MarkCompleted(string sessionID, int rirosEarned = 10)
+    public void MarkCompleted(string sessionID)
     {
+        if (_completedSessions.Contains(sessionID)) return;
+
         _completedSessions.Add(sessionID);
         _sessionStates[sessionID] = OrbState.Completed;
-        _rirosBalance += rirosEarned;
-        Debug.Log($"[MockProgress] {sessionID} completed. Riros balance: {_rirosBalance}");
+
+        SessionData session = SessionRegistry.Instance?.GetSession(sessionID);
+        if (session != null)
+        {
+            PhobiaZone zone = session.primaryZone;
+            _repeatCounts[zone] = _repeatCounts.ContainsKey(zone) ? _repeatCounts[zone] + 1 : 1;
+        }
+
+        Debug.Log($"[MockProgress] Completed: {sessionID}");
         EvaluateUnlocks();
     }
 
-    public int  GetRirosBalance()            => _rirosBalance;
-    public int  GetBakuStage()               => _bakuStage;
-    public bool IsCompleted(string sessionID) => _completedSessions.Contains(sessionID);
+    public bool IsCompleted(string sessionID)
+        => _completedSessions.Contains(sessionID);
+
+    public bool IsZoneAccessible(PhobiaZone zone)
+        => zone == PhobiaZone.Vestibular || vrOnboardingComplete;
+
+    public int GetRepeatCount(PhobiaZone zone)
+        => _repeatCounts.ContainsKey(zone) ? _repeatCounts[zone] : 0;
+
+    public bool HasAnyCompletion(PhobiaZone zone)
+    {
+        if (SessionRegistry.Instance == null) return false;
+        foreach (var s in SessionRegistry.Instance.GetByPhobiaZone(zone))
+            if (_completedSessions.Contains(s.sessionID)) return true;
+        return false;
+    }
+
+    public int GetRirosBalance() => _rirosBalance;
+    public int GetBakuStage()    => _bakuStage;
+
+    /// <summary>
+    /// 3-letter zone prefix. Reads from ZoneConfig asset — no hardcoded list.
+    /// Falls back to "UNK" if ZoneConfig is not assigned or zone not found.
+    /// </summary>
+    public string ZonePrefix(PhobiaZone zone)
+    {
+        if (zoneConfig == null)
+        {
+            Debug.LogWarning("[MockProgress] ZoneConfig not assigned — cannot resolve prefix.");
+            return "UNK";
+        }
+        return zoneConfig.GetPrefix(zone);
+    }
 
     // ── Unlock evaluation ─────────────────────────────────────────────────────
-    // unlockCondition is an int (SessionData v2+):
-    //   0  = always available
-    //   n  = requires level n to be completed in the same zone first
-    //
-    // Logic: for each session not yet in _sessionStates, check whether
-    // any lower-level session in the same zone with level == unlockCondition
-    // has been completed. If so, mark this session Available.
-    //
-    // This mirrors what the real UnlockEngine will do in Sprint 5.
-
     private void EvaluateUnlocks()
     {
         if (SessionRegistry.Instance == null) return;
 
         foreach (var session in SessionRegistry.Instance.allSessions)
         {
-            // Skip sessions that already have an explicit state set
             if (_sessionStates.ContainsKey(session.sessionID)) continue;
-
             if (session.unlockCondition == 0)
             {
-                // Always available — make sure it is marked so
                 _sessionStates[session.sessionID] = OrbState.Available;
                 continue;
             }
 
-            // Find the gate session: same zone, level == unlockCondition
-            var gateSessions = SessionRegistry.Instance.GetByPhobiaZone(session.primaryZone);
-            bool gateCleared = false;
-
-            foreach (var gate in gateSessions)
-            {
-                if (gate.level == session.unlockCondition && _completedSessions.Contains(gate.sessionID))
-                {
-                    gateCleared = true;
-                    break;
-                }
-            }
-
-            if (gateCleared)
+            int zoneCompletions = GetRepeatCount(session.primaryZone);
+            if (zoneCompletions >= session.unlockCondition)
             {
                 _sessionStates[session.sessionID] = OrbState.Available;
-                Debug.Log($"[MockProgress] Unlocked: {session.sessionID} (gate level {session.unlockCondition} cleared)");
+                Debug.Log($"[MockProgress] Unlocked: {session.sessionID}");
             }
         }
 
-        // Update Baku companion stage
-        int totalCompleted = _completedSessions.Count;
-        _bakuStage = totalCompleted >= 6 ? 3 : totalCompleted >= 3 ? 2 : 1;
+        _bakuStage = _completedSessions.Count >= 6 ? 3
+                   : _completedSessions.Count >= 3 ? 2
+                   : 1;
     }
 
+    // ── Test overrides ────────────────────────────────────────────────────────
     private void ApplyTestOverrides()
     {
         foreach (var o in testOverrides)
@@ -164,12 +176,12 @@ public class MockUserProgress : MonoBehaviour
     }
 
     // ── Editor helpers ────────────────────────────────────────────────────────
-
     [ContextMenu("Reset All Progress")]
     public void ResetAll()
     {
         _sessionStates.Clear();
         _completedSessions.Clear();
+        _repeatCounts.Clear();
         _rirosBalance = 0;
         _bakuStage    = 1;
         ApplyTestOverrides();
@@ -181,6 +193,13 @@ public class MockUserProgress : MonoBehaviour
     {
         if (SessionRegistry.Instance == null) return;
         foreach (var s in SessionRegistry.Instance.allSessions)
-            MarkCompleted(s.sessionID); // rirosEarned defaults to 10 — rirosReward does not exist on SessionData
+            MarkCompleted(s.sessionID);
+    }
+
+    [ContextMenu("Set VR Onboarding Complete (Test)")]
+    public void SetVROnboardingComplete()
+    {
+        vrOnboardingComplete = true;
+        Debug.Log("[MockProgress] vrOnboardingComplete = true. All zones now accessible.");
     }
 }

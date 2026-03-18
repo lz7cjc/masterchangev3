@@ -1,7 +1,8 @@
 // SessionRegistry.cs
 // MasterChange VR — Sprint 1
-// Version   : v1
+// Version   : v2
 // Created   : 2026-03-07
+// Updated   : 2026-03-15
 // Location  : Assets/MCAssets/Migration/Scripts/SessionRegistry.cs
 //
 // Purpose   : Singleton ScriptableObject-collection holder. Loaded at runtime by
@@ -10,16 +11,21 @@
 //             Resources or AssetDatabase.
 //
 // Public API (consumed by ConstellationManager, MockUserProgress, UserProgressService,
-//             RirosManager, HeadsetMonitor):
+//             RirosManager, HeadsetMonitor, PostSessionController):
 //   allSessions                          — full flat list
 //   GetByPhobiaZone(zone)               — sessions for a given PhobiaZone
 //   GetSessionsByZone(zone)             — alias of GetByPhobiaZone (used in guide S4+)
 //   GetSession(sessionID)               — lookup by string ID
 //   GetCrossovers(zone)                 — crossover sessions that include this zone
+//   GetMindfulnessPool()                — isMindfulnessSession sessions (all levels)
 //   GetVestibularOnboardingPool()       — isOnboardingEligible sessions only
 //   GetVestibularRecoveryPool()         — isRecoverySession sessions only
 //
 // Change log:
+//   v2  2026-03-15  GetMindfulnessPool() added.
+//                   PostSessionController.CheckMindfulnessTrigger() calls this to
+//                   select a random Mindfulness session to offer the user.
+//                   OBSOLETE: SessionRegistry.cs v1
 //   v1  2026-03-07  Initial creation. Covers full API surface required by Sprint 1–6.
 // ─────────────────────────────────────────────────────────────────────────────────
 
@@ -98,6 +104,23 @@ public class SessionRegistry : MonoBehaviour
         return allSessions
             .Where(s => s.isCrossover &&
                         (s.primaryZone == zone || s.additionalZones.Contains(zone)))
+            .ToList();
+    }
+
+    // ── Mindfulness pool ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// All sessions flagged as Mindfulness sessions (isMindfulnessSession = true).
+    /// Used by PostSessionController.CheckMindfulnessTrigger() to randomly select
+    /// a Mindfulness session to offer the user when the anxiety/repeat thresholds
+    /// are met. Mindfulness sessions suppress the post-session form and standard
+    /// Riros reward — only the presence bonus is awarded.
+    /// </summary>
+    public List<SessionData> GetMindfulnessPool()
+    {
+        return allSessions
+            .Where(s => s.isMindfulnessSession)
+            .OrderBy(s => s.level)
             .ToList();
     }
 

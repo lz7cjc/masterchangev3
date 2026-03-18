@@ -71,6 +71,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\GyroTest.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ApplicationManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Bio.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SkyboxController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\simplestchangescene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\firstLoad.cs" />
     <Compile Include="Assets\Island\Scripts\WaterScroller.cs" />
@@ -115,6 +116,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRPausePlayToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeXRModeController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmove.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionDataEditor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTrigger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\DockGenerator.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDToggleButton.cs" />
@@ -138,6 +140,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\sethabitsnext.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\DefaultSceneSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\vr\MoveCameraandshowhide.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\ZonePlanet.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\RirosManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
@@ -224,6 +227,7 @@
     <Compile Include="Assets\MCAssets\InputManager\CameraController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\OptionalFieldHandler.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\GazePointerDwell.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\PhobiaPriorityManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHUDCountdown.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\HUDStep1_KeepInFront.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\iapmanager.cs" />
@@ -245,6 +249,7 @@
     <Compile Include="Assets\Default Example URP Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Island\Scripts\CharacterMovement.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\InsertHabits.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\OrbVisuals.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\ignoreFirstVisit.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\V6\FilmHUDFollower.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\MuteVideoAudio.cs" />
@@ -303,6 +308,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Habits.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\TestToggle.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDFollowerImproved.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\MotionProfileConfig.cs" />
     <Compile Include="Assets\3rdPartyAssets\Toby Fredson\Modular Dungeon Catacombs - Mobile\Scripts\FPSController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmoveold4huds.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitEnv.cs" />

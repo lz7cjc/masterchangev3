@@ -1,24 +1,57 @@
+// ═══════════════════════════════════════════════════════════════════════════
 // SessionScanner.cs
-// Assets/MCAssets/Migration/FilmDatabase/SessionScanner.cs
+// Assets/Editor/SessionScanner.cs
 //
-// VERSION:  9.0
-// TIMESTAMP: 2026-03-09T00:00:00Z
+// VERSION:  v10
+// DATE:     2026-03-15
+// TIMESTAMP: 2026-03-15T00:00:00Z
+//
+// ████████████████████████████████████████████████████████████████████████
+// THIS IS THE BASELINE. ALL PREVIOUS VERSIONS ARE OBSOLETE.
+// DO NOT USE ANY EARLIER VERSION OF THIS SCRIPT.
+// ████████████████████████████████████████████████████████████████████████
 //
 // CHANGE LOG:
-//   v9.0  2026-03-09  ZONE_MAP hardcoded dictionary removed. ParseGCSPath() now
-//                     resolves zone names via ZoneConfig.asset loaded from
-//                     Assets/MCAssets/Migration/ZoneConfig.asset.
-//                     BEHAVIOUR_ZONES dict removed — ZoneConfig.GetEntry() used instead.
-//                     ImportFromCsv() already used System.Enum.TryParse — no change needed.
-//                     Adding a new zone: add to PhobiaZone enum + add row in ZoneConfig asset.
-//                     No code changes to this script required when adding zones.
-//   v8.0  2026-03-06  ZONE_MAP: Flying reinstated, Insects + FoodContamination added.
-//   v7.0  2026-03-06  motionProfile type corrected string→MotionProfile enum.
-//   v6.0  2026-02-27  MotionProfile column added (broken — see v7 notes).
-//   v5.0  2026-02-26  Baseline synchronisation.
-//   v3.0  2026-02-23  v2 CSV schema (21 columns).
+//   v10  2026-03-15  CANONICAL MERGE — two diverged v9 files resolved into one
+//     - FILE MUST LIVE IN Assets/Editor/ — confirmed authoritative location.
+//       Any copy outside Assets/Editor/ must be deleted.
+//     - Hardcoded ZONE_MAP dictionary removed (was in the 2026-03-14 Editor
+//       version). Zone resolution now fully delegated to ZoneConfig.GetZoneFromString()
+//       in ParseGCSPath() — consistent with the no-hardcoding rule.
+//     - ZONE_MAP and BEHAVIOUR_ZONES static fields removed entirely.
+//     - ParseGCSPath() now takes ZoneConfig parameter (from v9.0 ZoneConfig version).
+//     - ScanGCSFileList() passes ZoneConfig to ParseGCSPath() (from v9.0).
+//     - Comment-line skipping (#) added to ImportFromCsv() (from v9.0).
+//     - ParseCsvLine() replaces SplitCsv() — same logic, clearer name.
+//     - ValidateAll() replaces ValidateAllSessions() — proper errors/warnings
+//       lists, better dialog messaging (from v9.0).
+//     - AutoFillUnlockConditions() added (from v9.0).
+//     - AutoFillAntechambers() added (from v9.0).
+//     - OBSOLETE: any SessionScanner at Assets/MCAssets/Migration/ (wrong location)
+//     - OBSOLETE: any SessionScanner at Assets/MCAssets/Migration/FilmDatabase/
 //
-// OBSOLETE FILES: None — same filename, version tracked in header.
+//   v9   2026-03-14  CRITICAL LOCATION FIX (Editor-only version)
+//     - Moved to Assets/Editor/ — UnityEditor APIs unavailable at runtime.
+//     - Every "type 'MenuItem' could not be found" error was caused by wrong location.
+//
+//   v9.0 2026-03-09  ZONE_MAP dictionary removed (ZoneConfig version)
+//     - ParseGCSPath() delegates to ZoneConfig.GetZoneFromString().
+//     - Adding a new zone requires only: PhobiaZone enum append + ZoneConfig row.
+//     - No code change to this script when adding zones.
+//
+//   v8   2026-03-06  ZONE LIST UPDATE — Flying reinstated, Insects + FoodContamination added
+//   v7   2026-03-06  BUG FIX — motionProfile type corrected, AutoFillRiros removed
+//   v6   2026-02-27  MotionProfile column added (broken — fixed in v7)
+//   v5   2026-02-26  Baseline synchronisation
+//   v3   2026-02-23  v2 CSV schema (21 columns)
+//
+// OBSOLETE FILES — DELETE ALL OF THESE:
+//   Assets/MCAssets/Migration/Scripts/SessionScanner.cs      ← DELETE
+//   Assets/MCAssets/Migration/FilmDatabase/SessionScanner.cs ← DELETE
+//   Any SessionScanner with a number suffix anywhere in project ← DELETE
+//
+// FILE LOCATION (canonical):
+//   E:\Development\MC_V3_clean\Assets\Editor\SessionScanner.cs
 //
 // DEPENDENCY:
 //   ZoneConfig.asset — must exist at Assets/MCAssets/Migration/ZoneConfig.asset
@@ -40,6 +73,7 @@
 //   4. SessionScanner.cs     ← YOU ARE HERE
 //      MasterChange → Import Sessions from CSV → creates SessionData assets
 //      MasterChange → Validate All Sessions    → confirm all fields correct
+// ═══════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
 using UnityEditor;
@@ -57,8 +91,7 @@ public class SessionScanner
     private const string CSV_IMPORT_PATH  = "Assets/MCAssets/Migration/FilmDatabase/session_registry.csv";
     private const string ZONE_CONFIG_PATH = "Assets/MCAssets/Migration/ZoneConfig.asset";
 
-    // ── GCS BUCKET BASE URL ──────────────────────────────────────────────────
-    private const string GCS_BASE_URL = "https://storage.googleapis.com/YOUR-BUCKET/sessions";
+    private const string GCS_BASE_URL = "https://storage.googleapis.com/masterchange/Phobias";
 
     // ── Zone config loader ───────────────────────────────────────────────────
     private static ZoneConfig LoadZoneConfig()
@@ -78,8 +111,7 @@ public class SessionScanner
     public static void ScanExistingAssets()
     {
         string[] guids = AssetDatabase.FindAssets("t:SessionData");
-        var rows = new List<string[]>();
-        rows.Add(CsvHeader());
+        var rows = new List<string[]> { CsvHeader() };
 
         foreach (string guid in guids)
         {
@@ -120,6 +152,7 @@ public class SessionScanner
 
     // ─────────────────────────────────────────────────────────────────────────
     // MENU: Scan GCS file list → generate import-ready CSV
+    // Zone resolution uses ZoneConfig — no hardcoded zone list.
     // ─────────────────────────────────────────────────────────────────────────
     [MenuItem("MasterChange/Scan GCS File List → Sessions CSV")]
     public static void ScanGCSFileList()
@@ -132,15 +165,15 @@ public class SessionScanner
             EditorUtility.DisplayDialog("File Not Found",
                 $"Expected file not found:\n{GCS_LIST_PATH}\n\n" +
                 "Generate it by running:\n\n" +
-                "gsutil ls -r gs://YOUR-BUCKET/sessions/** > Assets/MCAssets/Migration/FilmDatabase/gcs_file_list.txt\n\n" +
+                "gsutil ls -r gs://masterchange/Phobias/** > " +
+                "Assets/MCAssets/Migration/FilmDatabase/gcs_file_list.txt\n\n" +
                 "Then re-run this menu item.",
                 "OK");
             return;
         }
 
         string[] lines = File.ReadAllLines(GCS_LIST_PATH);
-        var rows = new List<string[]>();
-        rows.Add(CsvHeader());
+        var rows = new List<string[]> { CsvHeader() };
 
         var existingAssets = AssetDatabase.FindAssets("t:SessionData")
             .Select(g => AssetDatabase.LoadAssetAtPath<SessionData>(AssetDatabase.GUIDToAssetPath(g)))
@@ -241,7 +274,7 @@ public class SessionScanner
             return;
         }
 
-        // Skip comment lines (lines beginning with #)
+        // Skip comment lines (lines beginning with # — version-control metadata)
         var dataLines = lines.Where(l => !l.TrimStart().StartsWith("#")).ToArray();
         if (dataLines.Length < 2)
         {
@@ -291,7 +324,6 @@ public class SessionScanner
                 continue;
             }
 
-            // Create zone sub-folder if needed
             string zoneFolder = $"{assetFolder}/{primaryZone}";
             if (!AssetDatabase.IsValidFolder(zoneFolder))
             {
@@ -359,16 +391,8 @@ public class SessionScanner
             sd.motionProfile = System.Enum.TryParse(GetCol(cols, colIndex, "MotionProfile"), out MotionProfile mp)
                 ? mp : MotionProfile.Unclassified;
 
-            if (isNew)
-            {
-                AssetDatabase.CreateAsset(sd, assetPath);
-                created++;
-            }
-            else
-            {
-                EditorUtility.SetDirty(sd);
-                updated++;
-            }
+            if (isNew) { AssetDatabase.CreateAsset(sd, assetPath); created++; }
+            else       { EditorUtility.SetDirty(sd);               updated++; }
         }
 
         AssetDatabase.SaveAssets();
@@ -379,8 +403,7 @@ public class SessionScanner
             $"Created:  {created} new session assets\n" +
             $"Updated:  {updated} existing assets\n" +
             $"Skipped:  {skipped} empty/invalid rows\n\n" +
-            "Run MasterChange → Validate All Sessions to check for errors.",
-            "OK");
+            "Run MasterChange → Validate All Sessions to check for errors.", "OK");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -430,7 +453,7 @@ public class SessionScanner
                 $"Validated {total} sessions.\n\n" +
                 $"Errors:   {errors.Count} (fix before shipping)\n" +
                 $"Warnings: {warnings.Count} (review before shipping)\n\n" +
-                "motionProfile warnings are expected until tagged.",
+                "MotionProfile warnings are expected until all sessions are tagged.",
                 "OK");
         }
     }
@@ -512,11 +535,14 @@ public class SessionScanner
 
         AssetDatabase.SaveAssets();
         Debug.Log($"[Scanner] Set antechambers on {updated} sessions.");
+        EditorUtility.DisplayDialog("Done",
+            $"Set antechambers on {updated} sessions.\n\nRun MasterChange → Validate All Sessions to confirm.", "OK");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────────────────────────────────────
+    // NOTE: AutoFillRiros() permanently removed in v7.
+    // rirosReward removed from SessionData v2 schema. Riros calculated at runtime by RirosManager.cs.
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private class ParsedSession
     {
@@ -534,7 +560,8 @@ public class SessionScanner
 
     /// <summary>
     /// Infers session fields from a GCS path.
-    /// Zone resolution uses ZoneConfig — no hardcoded zone list.
+    /// Zone resolution is fully delegated to ZoneConfig — no hardcoded zone list.
+    /// Adding a new zone requires only: PhobiaZone enum append + ZoneConfig row.
     /// </summary>
     private static ParsedSession ParseGCSPath(string gcsPath, ZoneConfig zoneCfg)
     {
@@ -542,7 +569,6 @@ public class SessionScanner
         string[] parts = path.Split('/');
         if (parts.Length < 3) return null;
 
-        // Find the first path segment that matches a known zone
         ZoneEntry matchedEntry = null;
         string matchedFolder   = null;
 
@@ -559,13 +585,11 @@ public class SessionScanner
 
         if (matchedEntry == null) return null;
 
-        string zoneName    = matchedEntry.zone.ToString();
-        bool   isBehaviour = matchedEntry.zone == PhobiaZone.None; // BehaviourZones not in PhobiaZone
-        bool   isMindful   = matchedEntry.zone == PhobiaZone.Mindfulness;
+        string zoneName  = matchedEntry.zone.ToString();
+        bool   isMindful = matchedEntry.zone == PhobiaZone.Mindfulness;
+        string fileName  = Path.GetFileNameWithoutExtension(parts.Last());
 
-        string fileName = Path.GetFileNameWithoutExtension(parts.Last());
-
-        string levelStr = "?";
+        string levelStr = "1";
         Match levelMatch = Regex.Match(fileName, @"_[Ll](\d+)");
         if (levelMatch.Success)
             levelStr = levelMatch.Groups[1].Value;
@@ -585,15 +609,19 @@ public class SessionScanner
             _                 => "None"
         };
 
+        // Build video URL from matched folder position
+        int folderIndex = System.Array.IndexOf(parts, matchedFolder);
+        string urlSuffix = folderIndex >= 0
+            ? string.Join("/", parts.Skip(folderIndex))
+            : parts.Last();
+
         return new ParsedSession
         {
             SessionID       = fileName,
             PrimaryZone     = zoneName,
             BehaviourZone   = "None",
             WorldType       = "Constellation",
-            VideoURL        = GCS_BASE_URL + "/" + string.Join("/", parts.Skip(
-                                  parts.TakeWhile(p => !p.Equals(matchedFolder,
-                                  System.StringComparison.OrdinalIgnoreCase)).Count() - 1)),
+            VideoURL        = $"{GCS_BASE_URL}/{urlSuffix}",
             GCSFilename     = parts.Last(),
             Level           = levelStr,
             UnlockCondition = unlockCondition,
@@ -602,7 +630,8 @@ public class SessionScanner
         };
     }
 
-    private static string[] CsvHeader() => new string[] {
+    private static string[] CsvHeader() => new[]
+    {
         "SessionID", "PrimaryZone", "AdditionalZones", "BehaviourZone", "WorldType",
         "DisplayTitle", "Description", "VideoURL",
         "Level", "UnlockCondition",
@@ -621,9 +650,9 @@ public class SessionScanner
 
     private static string[] ParseCsvLine(string line)
     {
-        var result  = new List<string>();
+        var result    = new List<string>();
         bool inQuotes = false;
-        var current = new StringBuilder();
+        var current   = new StringBuilder();
 
         for (int i = 0; i < line.Length; i++)
         {
@@ -644,11 +673,14 @@ public class SessionScanner
 
     private static void WriteCsv(List<string[]> rows, string path)
     {
+        string dir = Path.GetDirectoryName(path);
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         var sb = new StringBuilder();
         foreach (var row in rows)
         {
             sb.AppendLine(string.Join(",", row.Select(cell =>
             {
+                if (cell == null) return "";
                 if (cell.Contains(",") || cell.Contains("\"") || cell.Contains("\n"))
                     return "\"" + cell.Replace("\"", "\"\"") + "\"";
                 return cell;

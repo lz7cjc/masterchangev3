@@ -1,45 +1,51 @@
 // OrientationHelper.cs
-// MasterChange VR — Sprint 3 (S3.5)
-// Version   : v1
-// Created   : 2026-03-07
-// Location  : Assets/MCAssets/Migration/Scripts/OrientationHelper.cs
-//             (attach to GameManager)
+// Assets/MCAssets/Migration/Scripts/OrientationHelper.cs
 //
-// Purpose   : On the very first time a user opens the Constellation scene, displays
-//             a gentle world-space prompt ("Look around — your zones are waiting.")
-//             positioned 3m ahead at eye level.
+// VERSION:  2.0
+// DATE:     2026-03-15
+// TIMESTAMP: 2026-03-15T00:00:00Z
 //
-//             The prompt disappears automatically once the user has rotated their
-//             head at least 180° from their starting direction. It never shows again
-//             (stored in PlayerPrefs — device-side UI hint only, not Supabase data).
+// CHANGE LOG:
+//   v2.0  2026-03-15  DYNAMIC PLANET COUNT MESSAGE
+//     - Prompt text is now dynamic: "X planets are waiting — look around to find them all."
+//       where X = ConstellationManager.Instance.ZoneClusterCount.
+//     - New Inspector slot: promptText (TextMeshPro) — drag the text component here.
+//       If not assigned, the prompt still displays but text cannot be updated dynamically.
+//     - Text is set in Start() after one frame wait so ConstellationManager has
+//       finished BuildConstellation() and ZoneClusterCount is accurate.
+//     - Backward-compatible with v1 scene setup — new promptText slot is optional.
+//     - OBSOLETE: OrientationHelper.cs v1 (2026-03-07)
 //
-// Scene setup:
-//   1. Attach this script to GameManager.
-//   2. Create an empty child GameObject called OrientationPrompt.
-//   3. Add a CanvasGroup component to OrientationPrompt.
-//   4. Add a 3D TextMeshPro (3D Object → Text - TextMeshPro) as a child of
-//      OrientationPrompt. Text: "Look around — your zones are waiting."
-//      Font size 0.4, Bold, White, Centre-aligned.
-//   5. Position OrientationPrompt at (0, 0, 3) relative to GameManager
-//      (3m ahead of the player spawn point).
-//   6. Assign the OrientationPrompt GameObject to the promptRoot slot below.
+//   v1  2026-03-07  Initial implementation. Static message.
 //
-// Change log:
-//   v1  2026-03-07  Initial creation.
-// ─────────────────────────────────────────────────────────────────────────────────
+// OBSOLETE FILES:
+//   OrientationHelper.cs v1 (2026-03-07)
+//
+// SCENE SETUP (v2):
+//   Steps 1–6 from v1 remain the same. New step:
+//   7. In the Inspector, drag the TextMeshPro component (child of OrientationPrompt)
+//      into the new "Prompt Text" slot. Without this the count won't update at runtime.
+//
+// DEPENDENCIES:
+//   ConstellationManager.cs v3.1 — exposes ZoneClusterCount property
 
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Displays a first-launch orientation prompt. Dismisses after 180° head rotation.
-/// Stored in PlayerPrefs ("OrientationShown") — never repeats.
+/// Displays a first-launch orientation prompt with a dynamic planet count.
+/// Dismisses after 180° head rotation. Stored in PlayerPrefs — never repeats.
 /// </summary>
 public class OrientationHelper : MonoBehaviour
 {
     [Header("References")]
     [Tooltip("Root GameObject of the orientation prompt UI. Must have a CanvasGroup.")]
     [SerializeField] private GameObject _promptRoot;
+
+    [Tooltip("TextMeshPro component inside the prompt. Text is updated dynamically at runtime. " +
+             "Drag the 3D TextMeshPro child of OrientationPrompt here.")]
+    [SerializeField] private TextMeshPro _promptText;
 
     [Header("Settings")]
     [Tooltip("Degrees of head rotation required to dismiss the prompt")]
@@ -48,7 +54,7 @@ public class OrientationHelper : MonoBehaviour
     [Tooltip("Seconds to fade out when dismissed")]
     [SerializeField] private float _fadeDuration = 1.5f;
 
-    // PlayerPrefs key — do not change after shipping
+    // PlayerPrefs key — do not change after shipping (changing breaks first-launch detection)
     private const string PREFS_KEY = "OrientationShown";
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -60,22 +66,22 @@ public class OrientationHelper : MonoBehaviour
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    void Start()
+    IEnumerator Start()
     {
-        // Already shown on this device — disable immediately, no fade needed
+        // Already shown on this device — disable immediately
         if (PlayerPrefs.GetInt(PREFS_KEY, 0) == 1)
         {
             if (_promptRoot != null)
                 _promptRoot.SetActive(false);
             enabled = false;
-            return;
+            yield break;
         }
 
         if (_promptRoot == null)
         {
             Debug.LogWarning("[OrientationHelper] promptRoot not assigned. Helper disabled.");
             enabled = false;
-            return;
+            yield break;
         }
 
         _canvasGroup = _promptRoot.GetComponent<CanvasGroup>();
@@ -83,13 +89,18 @@ public class OrientationHelper : MonoBehaviour
         {
             Debug.LogWarning("[OrientationHelper] CanvasGroup missing from promptRoot. Add one.");
             enabled = false;
-            return;
+            yield break;
         }
+
+        // Wait one frame for ConstellationManager.BuildConstellation() to complete
+        // so ZoneClusterCount is populated before we set the text
+        yield return null;
+
+        // Set dynamic prompt text
+        UpdatePromptText();
 
         _canvasGroup.alpha = 1f;
         _promptRoot.SetActive(true);
-
-        // Record starting yaw from main camera
         _startYaw    = Camera.main != null ? Camera.main.transform.eulerAngles.y : 0f;
         _maxDeltaYaw = 0f;
         _active      = true;
@@ -98,11 +109,10 @@ public class OrientationHelper : MonoBehaviour
     void Update()
     {
         if (!_active || _dismissing) return;
-
         if (Camera.main == null) return;
 
         float currentYaw = Camera.main.transform.eulerAngles.y;
-        float delta = Mathf.Abs(Mathf.DeltaAngle(_startYaw, currentYaw));
+        float delta      = Mathf.Abs(Mathf.DeltaAngle(_startYaw, currentYaw));
 
         if (delta > _maxDeltaYaw)
             _maxDeltaYaw = delta;
@@ -114,6 +124,21 @@ public class OrientationHelper : MonoBehaviour
         }
     }
 
+    // ── Dynamic text ──────────────────────────────────────────────────────────
+
+    private void UpdatePromptText()
+    {
+        if (_promptText == null) return;
+
+        int planetCount = 0;
+        if (ConstellationManager.Instance != null)
+            planetCount = ConstellationManager.Instance.ZoneClusterCount;
+
+        _promptText.text = planetCount > 0
+            ? $"{planetCount} planets are waiting — look around to find them all."
+            : "Your planets are waiting — look around to find them all.";
+    }
+
     // ── Fade and dismiss ──────────────────────────────────────────────────────
 
     private IEnumerator FadeAndDismiss()
@@ -122,7 +147,7 @@ public class OrientationHelper : MonoBehaviour
 
         while (elapsed < _fadeDuration)
         {
-            elapsed            += Time.deltaTime;
+            elapsed           += Time.deltaTime;
             _canvasGroup.alpha  = Mathf.Lerp(1f, 0f, elapsed / _fadeDuration);
             yield return null;
         }
@@ -139,10 +164,6 @@ public class OrientationHelper : MonoBehaviour
 
     // ── Editor helper ─────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Resets the PlayerPrefs flag so the prompt shows again on next play.
-    /// Use during development to test first-launch behaviour.
-    /// </summary>
     [ContextMenu("Reset Orientation Shown (Dev)")]
     public void ResetOrientationShown()
     {

@@ -1,25 +1,43 @@
 // MockUserProgress.cs
 // Assets/MCAssets/Migration/Scripts/MockUserProgress.cs
 //
-// VERSION:  4.0
-// TIMESTAMP: 2026-03-09T00:00:00Z
+// VERSION:  5.0
+// DATE:     2026-03-19
+// TIMESTAMP: 2026-03-19T00:00:00Z
 //
 // CHANGE LOG:
-//   v4.0  2026-03-09  ZonePrefix() switch statement removed — replaced with
-//                     ZoneConfig.GetPrefix() lookup. No zone metadata hardcoded
-//                     in this script. ZoneConfig asset reference added.
-//   v3.0  2026-03-07  All 12 zones added to ZonePrefix() switch. Vestibular gate,
-//                     motionSicknessLevel, GetRepeatCount, HasAnyCompletion added.
-//   v2.0             unlockCondition changed string→int. rirosReward removed.
+//   v5.0  2026-03-19  PROJECTCONFIG INTEGRATION — BAKU THRESHOLDS DE-HARDCODED
+//     - Hardcoded Baku stage thresholds (>= 3 for Stage 2, >= 6 for Stage 3)
+//       removed from EvaluateUnlocks().
+//     - Thresholds now read from ProjectConfig.bakuStage2Threshold and
+//       ProjectConfig.bakuStage3Threshold.
+//     - [SerializeField] private ProjectConfig _projectConfig slot added.
+//     - If _projectConfig is null, falls back to hardcoded values with a
+//       LogWarning so unset Inspector slots surface immediately.
+//     - OBSOLETE: MockUserProgress.cs v4.0
+//
+//   v4.0  2026-03-09  ZonePrefix() switch removed — ZoneConfig.GetPrefix() lookup.
+//   v3.0  2026-03-07  All 12 zones. Vestibular gate. motionSicknessLevel.
+//   v2.0             unlockCondition string→int. rirosReward removed.
 //   v1.0             Initial implementation.
 //
-// OBSOLETE FILES: None — same filename, version tracked in header.
+// OBSOLETE FILES: None — same canonical filename, version tracked in header.
 //
 // PURPOSE:
 //   Local stand-in for the Supabase backend during pre-S4 development.
 //   Replaced by UserProgressService.cs in Sprint 4 — public API is identical.
 //
-// DEPENDENCY: ZoneConfig.asset — drag into Inspector field on GameManager.
+// INSPECTOR SETUP — NEW IN v5.0:
+//   Drag ProjectConfig.asset into the Project Config slot on GameManager.
+//   Create via Assets → Create → MasterChange → Project Config if not present.
+//
+// DEPENDENCIES:
+//   ZoneConfig.asset    — drag into Inspector. Prefix lookups.
+//   ProjectConfig.asset — drag into Inspector. Baku stage thresholds.
+//
+// FILE LOCATION:
+//   Assets/MCAssets/Migration/Scripts/MockUserProgress.cs
+// ═══════════════════════════════════════════════════════════════════════════════
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -36,6 +54,12 @@ public class MockUserProgress : MonoBehaviour
     [Header("Zone Config")]
     [Tooltip("Drag ZoneConfig.asset here. Used for prefix lookups — no zone data hardcoded.")]
     public ZoneConfig zoneConfig;
+
+    // ── Project Config ────────────────────────────────────────────────────────
+    [Header("Project Config")]
+    [Tooltip("Drag ProjectConfig.asset here. Provides Baku stage thresholds. " +
+             "Create via Assets → Create → MasterChange → Project Config if not present.")]
+    [SerializeField] private ProjectConfig _projectConfig;
 
     // ── Vestibular gate ───────────────────────────────────────────────────────
     [Header("Vestibular / VR Onboarding")]
@@ -62,11 +86,11 @@ public class MockUserProgress : MonoBehaviour
     }
 
     // ── Internal state ────────────────────────────────────────────────────────
-    private Dictionary<string, OrbState> _sessionStates     = new Dictionary<string, OrbState>();
-    private HashSet<string>              _completedSessions  = new HashSet<string>();
-    private Dictionary<PhobiaZone, int>  _repeatCounts       = new Dictionary<PhobiaZone, int>();
-    private int                          _rirosBalance       = 0;
-    private int                          _bakuStage          = 1;
+    private Dictionary<string, OrbState> _sessionStates    = new Dictionary<string, OrbState>();
+    private HashSet<string>              _completedSessions = new HashSet<string>();
+    private Dictionary<PhobiaZone, int>  _repeatCounts      = new Dictionary<PhobiaZone, int>();
+    private int                          _rirosBalance      = 0;
+    private int                          _bakuStage         = 1;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
@@ -159,9 +183,28 @@ public class MockUserProgress : MonoBehaviour
             }
         }
 
-        _bakuStage = _completedSessions.Count >= 6 ? 3
-                   : _completedSessions.Count >= 3 ? 2
+        // Baku stage — thresholds read from ProjectConfig.
+        // Falls back to hardcoded defaults with a warning if ProjectConfig not assigned.
+        int stage2 = _projectConfig != null ? _projectConfig.bakuStage2Threshold : FallbackStage2();
+        int stage3 = _projectConfig != null ? _projectConfig.bakuStage3Threshold : FallbackStage3();
+
+        _bakuStage = _completedSessions.Count >= stage3 ? 3
+                   : _completedSessions.Count >= stage2 ? 2
                    : 1;
+    }
+
+    private int FallbackStage2()
+    {
+        Debug.LogWarning("[MockProgress] ProjectConfig not assigned — using fallback bakuStage2Threshold = 3. " +
+                         "Drag ProjectConfig.asset into the Project Config slot on MockUserProgress.");
+        return 3;
+    }
+
+    private int FallbackStage3()
+    {
+        Debug.LogWarning("[MockProgress] ProjectConfig not assigned — using fallback bakuStage3Threshold = 6. " +
+                         "Drag ProjectConfig.asset into the Project Config slot on MockUserProgress.");
+        return 6;
     }
 
     // ── Test overrides ────────────────────────────────────────────────────────

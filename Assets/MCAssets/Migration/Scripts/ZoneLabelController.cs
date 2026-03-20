@@ -1,45 +1,55 @@
 // ZoneLabelController.cs
 // Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
 //
-// VERSION : (no version suffix -- canonical filename)
-// DATE    : 2026-03-07
+// VERSION:  1.1
+// DATE:     2026-03-20
+// TIMESTAMP: 2026-03-20T12:00:00Z
 //
 // CHANGE LOG:
-//   2026-03-07  Initial implementation (replaces empty Unity stub).
-//               Implements S3.5 spec from Setup Guide v6.4.
+//   v1.1  2026-03-20  DISPLAY NAME SOURCE CHANGE
+//     - SetLabel() no longer applies internal PascalCase → spaced formatting.
+//       ConstellationManager now passes the resolved display name from
+//       ZoneConfig.GetDisplayName() directly. The internal FormatZoneName()
+//       helper is retained as a private fallback but is no longer called by default.
+//     - This ensures "Motion Sickness" (from ZoneConfig) renders correctly rather
+//       than "Vestibular" (from zone.ToString()).
+//     - No prefab changes required — API signature unchanged.
+//
+//   v1.0  2026-03-07  Initial implementation.
+//
+// OBSOLETE FILES:
+//   ZoneLabelController.cs v1.0 (2026-03-07)
 //
 // PURPOSE:
-//   Floating world-space label attached to each zone orb in the Constellation.
+//   Floating world-space label attached to each zone planet in the Constellation.
 //   Fades in when the player gazes near it, faces the camera each frame.
-//   Assigned and driven by ConstellationManager -- one label per zone cluster root.
+//   Assigned and driven by ConstellationManager — one label per zone planet.
 //
-// PREFAB SETUP (S3.5):
-//   1. In Project panel: right-click -> Create -> 3D Object -> Text - TextMeshPro
-//      This creates a world-space TextMeshPro object (TextMeshPro component,
-//      NOT TextMeshProUGUI -- no Canvas required).
+// PREFAB SETUP:
+//   1. In Project panel: right-click → Create → 3D Object → Text - TextMeshPro
+//      (TextMeshPro component, NOT TextMeshProUGUI — no Canvas required).
 //   2. Set Font Size: 0.4, Alignment: Centre, Font Style: Bold, Color: white #FFFFFF
 //   3. Add a CanvasGroup component to the root GameObject for alpha fade.
 //   4. Rename the root GameObject "ZoneLabel".
-//   5. Attach this script (ZoneLabelController.cs) to the root GameObject.
+//   5. Attach this script to the root GameObject.
 //   6. Save as a prefab: Assets/Prefabs/ZoneLabel.prefab
 //
 // USAGE:
-//   ConstellationManager instantiates one ZoneLabel prefab per zone cluster root,
-//   positions it at zoneOrbPosition + Vector3.up * 0.7f, then calls:
-//     label.SetLabel(zone.ToString());
-// -----------------------------------------------------------------------------
+//   ConstellationManager instantiates one ZoneLabel prefab per zone planet,
+//   positions it above the planet, then calls:
+//     label.SetLabel(zoneConfig.GetDisplayName(zone));
+//
+// FILE LOCATION:
+//   Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
+// ═══════════════════════════════════════════════════════════════════════════════
 
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// World-space zone label. Fades in on gaze approach, faces camera each frame.
-/// Attach to a GameObject that also has a CanvasGroup component.
-/// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class ZoneLabelController : MonoBehaviour
 {
-    // -- Settings -------------------------------------------------------------
+    // ── Settings ──────────────────────────────────────────────────────────────
     [Header("Fade Settings")]
     [Tooltip("Seconds to fade in when becoming visible")]
     [SerializeField] private float _fadeInDuration  = 0.4f;
@@ -47,13 +57,13 @@ public class ZoneLabelController : MonoBehaviour
     [Tooltip("Seconds to fade out when becoming hidden")]
     [SerializeField] private float _fadeOutDuration = 0.6f;
 
-    // -- Private --------------------------------------------------------------
-    private CanvasGroup  _canvasGroup;
-    private string       _labelText;
-    private bool         _visible;
-    private Coroutine    _fadeCoroutine;
+    // ── Private ───────────────────────────────────────────────────────────────
+    private CanvasGroup _canvasGroup;
+    private string      _labelText;
+    private bool        _visible;
+    private Coroutine   _fadeCoroutine;
 
-    // -- Lifecycle ------------------------------------------------------------
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     void Awake()
     {
@@ -63,25 +73,21 @@ public class ZoneLabelController : MonoBehaviour
 
     void LateUpdate()
     {
-        // Always face the camera so the label is readable from any direction.
         if (Camera.main != null)
             transform.LookAt(Camera.main.transform);
     }
 
-    // -- Public API -----------------------------------------------------------
+    // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Set the display text. Called by ConstellationManager after instantiation.
-    /// Converts enum names to readable form (e.g. "ClosedSpaces" -> "Closed Spaces").
+    /// Set the display text. Pass the fully resolved display name from
+    /// ZoneConfig.GetDisplayName(zone) — do not pass zone.ToString().
+    /// The string is used as-is; no formatting is applied.
     /// </summary>
     public void SetLabel(string text)
     {
-        _labelText = FormatZoneName(text);
+        _labelText = text;
 
-        // Find the TextMeshPro component on this or a child object and set text.
-        // Using string-based component lookup to avoid a hard TMPro dependency
-        // in case TMP is not yet imported -- ConstellationManager should check
-        // TMP is installed before calling this.
         var tmp = GetComponentInChildren<TMPro.TextMeshPro>();
         if (tmp != null)
             tmp.text = _labelText;
@@ -106,7 +112,7 @@ public class ZoneLabelController : MonoBehaviour
         StartFade(0f, _fadeOutDuration);
     }
 
-    /// <summary>Show or hide with no fade -- use for initial state setup.</summary>
+    /// <summary>Show or hide with no fade — use for initial state setup.</summary>
     public void SetVisibleImmediate(bool visible)
     {
         _visible           = visible;
@@ -114,7 +120,7 @@ public class ZoneLabelController : MonoBehaviour
         if (_fadeCoroutine != null) { StopCoroutine(_fadeCoroutine); _fadeCoroutine = null; }
     }
 
-    // -- Fade -----------------------------------------------------------------
+    // ── Fade ──────────────────────────────────────────────────────────────────
 
     private void StartFade(float targetAlpha, float duration)
     {
@@ -136,24 +142,5 @@ public class ZoneLabelController : MonoBehaviour
 
         _canvasGroup.alpha = target;
         _fadeCoroutine     = null;
-    }
-
-    // -- Helpers --------------------------------------------------------------
-
-    /// <summary>
-    /// Inserts a space before each capital letter in a PascalCase zone name.
-    /// "ClosedSpaces" -> "Closed Spaces", "FoodContamination" -> "Food Contamination"
-    /// </summary>
-    private static string FormatZoneName(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return name;
-        var sb = new System.Text.StringBuilder();
-        for (int i = 0; i < name.Length; i++)
-        {
-            if (i > 0 && char.IsUpper(name[i]))
-                sb.Append(' ');
-            sb.Append(name[i]);
-        }
-        return sb.ToString();
     }
 }

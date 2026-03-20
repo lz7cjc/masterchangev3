@@ -276,6 +276,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\MainVREntryMonitor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\TennisCourtGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideLocations.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\ProjectConfig.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />

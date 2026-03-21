@@ -1,33 +1,49 @@
 // SessionRegistry.cs
-// MasterChange VR — Sprint 1
-// Version   : v2
-// Created   : 2026-03-07
-// Updated   : 2026-03-15
-// Location  : Assets/MCAssets/Migration/Scripts/SessionRegistry.cs
+// Assets/MCAssets/Migration/Scripts/SessionRegistry.cs
 //
-// Purpose   : Singleton ScriptableObject-collection holder. Loaded at runtime by
-//             SessionScanner (Editor) or manually dragged into the Inspector slot.
-//             All other scripts read sessions through this — never directly from
-//             Resources or AssetDatabase.
+// VERSION:  3
+// DATE:     2026-03-21
+// TIMESTAMP: 2026-03-21T22:30:00Z
 //
-// Public API (consumed by ConstellationManager, MockUserProgress, UserProgressService,
-//             RirosManager, HeadsetMonitor, PostSessionController):
-//   allSessions                          — full flat list
-//   GetByPhobiaZone(zone)               — sessions for a given PhobiaZone
-//   GetSessionsByZone(zone)             — alias of GetByPhobiaZone (used in guide S4+)
-//   GetSession(sessionID)               — lookup by string ID
-//   GetCrossovers(zone)                 — crossover sessions that include this zone
-//   GetMindfulnessPool()                — isMindfulnessSession sessions (all levels)
-//   GetVestibularOnboardingPool()       — isOnboardingEligible sessions only
-//   GetVestibularRecoveryPool()         — isRecoverySession sessions only
+// PURPOSE:
+//   Singleton ScriptableObject-collection holder. Loaded at runtime by
+//   SessionScanner (Editor) or manually dragged into the Inspector slot.
+//   All other scripts read sessions through this — never directly from
+//   Resources or AssetDatabase.
 //
-// Change log:
+// PUBLIC API:
+//   allSessions                    — full flat list
+//   GetByPhobiaZone(zone)          — sessions for a given PhobiaZone
+//   GetSessionsByZone(zone)        — alias of GetByPhobiaZone
+//   GetSession(sessionID)          — lookup by string ID
+//   GetCrossovers(zone)            — crossover sessions that include this zone
+//   GetMindfulnessPool()           — isMindfulnessSession sessions (all levels)
+//   GetVestibularOnboardingPool()  — isOnboardingEligible sessions only
+//   GetVestibularRecoveryPool()    — isRecoverySession sessions only
+//
+// CHANGE LOG:
+//   v3  2026-03-21  REMOVE DontDestroyOnLoad
+//     - DontDestroyOnLoad removed from Awake().
+//     - Root cause of GameManager disappearing during Play: SessionRegistry
+//       called DontDestroyOnLoad(gameObject), moving GameManager to the
+//       DontDestroyOnLoad group. On a second Play press, the survivor from
+//       the previous session triggered the duplicate check and destroyed the
+//       new GameManager instance — taking all components with it.
+//     - SessionRegistry is a single-scene object for MVP. It does not need
+//       to persist across scene loads.
+//     - Duplicate check changed to Destroy(this) instead of Destroy(gameObject)
+//       to avoid destroying the entire GameManager if a duplicate component
+//       is added by mistake.
 //   v2  2026-03-15  GetMindfulnessPool() added.
-//                   PostSessionController.CheckMindfulnessTrigger() calls this to
-//                   select a random Mindfulness session to offer the user.
-//                   OBSOLETE: SessionRegistry.cs v1
-//   v1  2026-03-07  Initial creation. Covers full API surface required by Sprint 1–6.
-// ─────────────────────────────────────────────────────────────────────────────────
+//   v1  2026-03-07  Initial creation.
+//
+// OBSOLETE FILES:
+//   SessionRegistry.cs v2 (2026-03-15)
+//   SessionRegistry.cs v1 (2026-03-07)
+//
+// FILE LOCATION:
+//   Assets/MCAssets/Migration/Scripts/SessionRegistry.cs
+// ─────────────────────────────────────────────────────────────────────────────
 
 using System.Collections.Generic;
 using System.Linq;
@@ -47,11 +63,21 @@ public class SessionRegistry : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            Debug.LogWarning("[SessionRegistry] Duplicate instance detected — destroying component.");
+            Destroy(this);
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        Debug.Log("[SessionRegistry] Awake — singleton set.");
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+            Debug.Log("[SessionRegistry] OnDestroy — singleton cleared.");
+        }
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -111,10 +137,7 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// All sessions flagged as Mindfulness sessions (isMindfulnessSession = true).
-    /// Used by PostSessionController.CheckMindfulnessTrigger() to randomly select
-    /// a Mindfulness session to offer the user when the anxiety/repeat thresholds
-    /// are met. Mindfulness sessions suppress the post-session form and standard
-    /// Riros reward — only the presence bonus is awarded.
+    /// Used by PostSessionController.CheckMindfulnessTrigger().
     /// </summary>
     public List<SessionData> GetMindfulnessPool()
     {
@@ -128,8 +151,6 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// Sessions eligible as the first Vestibular onboarding experience.
-    /// isOnboardingEligible = true, primaryZone = Vestibular.
-    /// Used by the Vestibular gate system (Sprint 6).
     /// </summary>
     public List<SessionData> GetVestibularOnboardingPool()
     {
@@ -141,8 +162,6 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// Shorter recovery sessions used between intense phobia sessions.
-    /// isRecoverySession = true, primaryZone = Vestibular.
-    /// Used by UnlockEngine (Sprint 6).
     /// </summary>
     public List<SessionData> GetVestibularRecoveryPool()
     {

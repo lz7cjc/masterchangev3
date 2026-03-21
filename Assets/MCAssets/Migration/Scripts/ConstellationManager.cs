@@ -2,25 +2,26 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:  3.5
-// DATE:     2026-03-20
-// TIMESTAMP: 2026-03-20T00:00:00Z
+// VERSION:  3.8
+// DATE:     2026-03-21
+// TIMESTAMP: 2026-03-21T22:00:00Z
 //
 // CHANGE LOG:
-//   v3.5  2026-03-20  SCENE-PLACED PLANETS — ORB PREFAB OPTIONAL
-//     - zonePlanetPrefab slot REMOVED. Planets are no longer instantiated from a
-//       prefab. Each zone's planet must already exist in the scene as a child of
-//       its cluster root with ZonePlanet.cs attached. SpawnZone() now finds it
-//       via GetComponentInChildren<ZonePlanet>() on the cluster root.
-//     - orbPrefab is now fully optional. Null = no session orbs for any zone —
-//       no error, no warning. Zones with no sessions registered also produce no
-//       orbs silently.
-//     - BuildConstellation() null-guards for zonePlanetPrefab and orbPrefab
-//       REMOVED — they were the source of the startup errors.
-//     - SpawnZone() logs a clear Debug.Log (not error) when no planet is found
-//       under a cluster root, to assist setup without spamming errors.
-//     - All other behaviour (expand/collapse, crossovers, camera face) unchanged.
+//   v3.8  2026-03-21  REMOVE DontDestroyOnLoad
+//     - DontDestroyOnLoad removed from ConstellationManager.
+//     - Root cause of orbs persisting in Scene view after Play stops: orbs are
+//       spawned as children of scene-placed planet GameObjects. When Play stops,
+//       Unity destroys DontDestroyOnLoad objects but NOT GameObjects instantiated
+//       as children of scene objects — those remain, leaving orphaned orbs in the
+//       scene between Play sessions.
+//     - ConstellationManager is a single-scene object for MVP and does not need
+//       to persist across scene loads. Removing DontDestroyOnLoad means Unity
+//       cleans up the entire scene correctly on Play stop.
+//     - All other behaviour unchanged.
 //
+//   v3.7  2026-03-21  SINGLETON MOVED TO AWAKE
+//   v3.6  2026-03-21  ZONE LABELS
+//   v3.5  2026-03-20  SCENE-PLACED PLANETS — ORB PREFAB OPTIONAL.
 //   v3.4  2026-03-19  TWO-TIER SPAWN — FULL IMPLEMENTATION.
 //   v3.3  2026-03-18  Four missing public methods added as compiler stubs.
 //   v3.2  2026-03-15  Instance singleton added.
@@ -31,6 +32,9 @@
 //   v1    (unversioned) 5 hardcoded zones.
 //
 // OBSOLETE FILES — DELETE THESE:
+//   ConstellationManager.cs v3.7 (2026-03-21)
+//   ConstellationManager.cs v3.6 (2026-03-21)
+//   ConstellationManager.cs v3.5 (2026-03-20)
 //   ConstellationManager.cs v3.4 (2026-03-19)
 //   ConstellationManager.cs v3.3 (2026-03-18)
 //   ConstellationManager.cs v3.2 (2026-03-15)
@@ -42,22 +46,32 @@
 // DEPENDENCIES:
 //   SessionRegistry.cs            — GetByPhobiaZone(), GetCrossovers()
 //   UserProgressService.cs v2.2.0 — IsCompleted()
-//   ZonePlanet.cs v1.0            — zone planet behaviour (gaze → expand/collapse)
-//   ConstellationOrb.cs v4.0+     — session orb behaviour (gaze → dwell → launch)
+//   ZonePlanet.cs v1.1            — zone planet behaviour (gaze → expand/collapse)
+//   ConstellationOrb.cs v6.0+     — session orb behaviour (gaze → dwell → launch)
 //   OrbVisuals.cs v1.0            — shared emission helpers
+//   ZoneLabelController.cs v1.1   — floating zone label (optional)
+//   ZoneConfig.cs v1.4            — display names for labels (optional)
 //   SessionLauncher.cs            — LaunchSession()
-//   PhobiaPriorityManager.cs v1.1 — GetStartZone() (optional — graceful null)
+//   PhobiaPriorityManager.cs v1.2 — GetStartZone() (optional — graceful null)
 //   SessionData.cs                — PhobiaZone enum
 //
 // INSPECTOR SETUP:
 //   Orb Prefab (optional)    — Session orb prefab with ConstellationOrb.cs +
 //                              GazeHoverTrigger. Leave empty if no session orbs
 //                              are used yet. No error will be raised.
-//   Zone Cluster Entries     — One entry per active arc zone (Mindfulness excluded).
+//   Label Prefab (optional)  — ZoneLabel prefab with ZoneLabelController.cs,
+//                              CanvasGroup, and TextMeshPro child. One instantiated
+//                              per zone planet. Leave empty for no labels.
+//   Zone Config (optional)   — ZoneConfig asset. Provides display names for labels.
+//                              If unassigned, zone.ToString() is used as fallback.
+//   Label Offset             — Vertical offset above planet centre (default 0.3).
+//   Zone Cluster Entries     — One entry per active arc zone (Mindfulness excluded
+//                              unless you want it as a selectable planet).
 //                              Each cluster root must already have a child GameObject
 //                              with ZonePlanet.cs attached — this is the scene-placed
 //                              planet. No prefab instantiation occurs.
 //   Crossover Connectors     — LineRenderer child objects on ConstellationManager.
+//                              Post-MVP — leave empty for no error.
 // ═══════════════════════════════════════════════════════════════════════════
 
 using System.Collections;
@@ -76,7 +90,7 @@ public class ZoneClusterEntry
 }
 
 /// <summary>
-/// ConstellationManager v3.5
+/// ConstellationManager v3.7
 ///
 /// Manages the full two-tier constellation:
 ///   Tier 1 — Zone planets (ZonePlanet.cs): one per zone, always visible.
@@ -100,6 +114,22 @@ public class ConstellationManager : MonoBehaviour
              "Spawned hidden as children of the zone planet on zone expand. " +
              "OPTIONAL — leave empty if session orbs are not yet in use.")]
     public GameObject orbPrefab;
+
+    [Tooltip("Zone label prefab — must have ZoneLabelController.cs, CanvasGroup, and TextMeshPro child. " +
+             "One instantiated per zone planet, positioned above it. " +
+             "OPTIONAL — leave empty for no labels.")]
+    public GameObject labelPrefab;
+
+    // ── Zone labels ───────────────────────────────────────────────────────────
+    [Header("Zone Labels")]
+    [Tooltip("ZoneConfig asset — provides display names for zone labels. " +
+             "If unassigned, zone.ToString() is used as fallback.")]
+    public ZoneConfig zoneConfig;
+
+    [Tooltip("Vertical offset above the planet centre where the label appears. " +
+             "Increase if the label overlaps the planet mesh.")]
+    [Range(0f, 2f)]
+    public float labelOffset = 0.3f;
 
     // ── Zone cluster roots ────────────────────────────────────────────────────
     [Header("Zone Cluster Entries")]
@@ -127,9 +157,10 @@ public class ConstellationManager : MonoBehaviour
     public float cameraFaceDuration = 1.5f;
 
     // ── Private state ─────────────────────────────────────────────────────────
-    private List<ConstellationOrb>                   _allOrbs           = new List<ConstellationOrb>();
-    private Dictionary<PhobiaZone, ZonePlanet>       _allZonePlanets    = new Dictionary<PhobiaZone, ZonePlanet>();
-    private Dictionary<PhobiaZone, List<GameObject>> _sessionOrbsByZone = new Dictionary<PhobiaZone, List<GameObject>>();
+    private List<ConstellationOrb>                      _allOrbs           = new List<ConstellationOrb>();
+    private Dictionary<PhobiaZone, ZonePlanet>          _allZonePlanets    = new Dictionary<PhobiaZone, ZonePlanet>();
+    private Dictionary<PhobiaZone, List<GameObject>>    _sessionOrbsByZone = new Dictionary<PhobiaZone, List<GameObject>>();
+    private Dictionary<PhobiaZone, ZoneLabelController> _allLabels         = new Dictionary<PhobiaZone, ZoneLabelController>();
     private PhobiaZone _expandedZone = PhobiaZone.None;
 
     // ── ZoneClusterCount — read by OrientationHelper ──────────────────────────
@@ -147,11 +178,21 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.Log("[ConstellationManager] Duplicate instance destroyed in Awake().");
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        Debug.Log("[ConstellationManager] Awake — singleton set.");
+    }
+
     void Start()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        Debug.Log("[ConstellationManager] Start — singleton set, beginning BuildConstellation coroutine.");
+        Debug.Log("[ConstellationManager] Start — beginning BuildConstellation coroutine.");
         StartCoroutine(BuildConstellation());
     }
 
@@ -184,7 +225,8 @@ public class ConstellationManager : MonoBehaviour
         UpdateCrossoverConnectors();
 
         Debug.Log($"[ConstellationManager] Built: {_allZonePlanets.Count} zone planets, " +
-                  $"{_allOrbs.Count} session orbs across {ZoneClusterCount} zones.");
+                  $"{_allOrbs.Count} session orbs across {ZoneClusterCount} zones, " +
+                  $"{_allLabels.Count} zone labels.");
 
         FaceStartZone();
     }
@@ -210,6 +252,33 @@ public class ConstellationManager : MonoBehaviour
             _allZonePlanets[zone] = zp;
             Debug.Log($"[ConstellationManager] SpawnZone: found ZonePlanet '{zp.gameObject.name}' " +
                       $"under '{clusterRoot.name}' for zone {zone}.");
+
+            // ── Zone label ────────────────────────────────────────────────────
+            if (labelPrefab != null)
+            {
+                GameObject labelGO = Instantiate(labelPrefab,
+                                                  zp.transform.position + Vector3.up * labelOffset,
+                                                  Quaternion.identity,
+                                                  zp.transform);
+                labelGO.name = $"Label_{zone}";
+
+                ZoneLabelController label = labelGO.GetComponent<ZoneLabelController>();
+                if (label != null)
+                {
+                    string displayName = (zoneConfig != null)
+                        ? zoneConfig.GetDisplayName(zone)
+                        : zone.ToString();
+
+                    label.SetLabel(displayName);
+                    label.Show();
+                    _allLabels[zone] = label;
+                    Debug.Log($"[ConstellationManager] Label spawned for {zone}: '{displayName}'.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[ConstellationManager] labelPrefab is missing ZoneLabelController on '{labelGO.name}'.");
+                }
+            }
         }
         else
         {

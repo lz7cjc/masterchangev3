@@ -1,9 +1,10 @@
 // SessionRegistry.cs
 // Assets/MCAssets/Migration/Scripts/SessionRegistry.cs
 //
-// VERSION:  3
-// DATE:     2026-03-21
-// TIMESTAMP: 2026-03-21T22:30:00Z
+// VERSION:   v4
+// CREATED:   2026-03-07
+// UPDATED:   2026-03-22
+// TIMESTAMP: 2026-03-22T12:00:00Z
 //
 // PURPOSE:
 //   Singleton ScriptableObject-collection holder. Loaded at runtime by
@@ -22,22 +23,25 @@
 //   GetVestibularRecoveryPool()    — isRecoverySession sessions only
 //
 // CHANGE LOG:
-//   v3  2026-03-21  REMOVE DontDestroyOnLoad
-//     - DontDestroyOnLoad removed from Awake().
-//     - Root cause of GameManager disappearing during Play: SessionRegistry
-//       called DontDestroyOnLoad(gameObject), moving GameManager to the
-//       DontDestroyOnLoad group. On a second Play press, the survivor from
-//       the previous session triggered the duplicate check and destroyed the
-//       new GameManager instance — taking all components with it.
-//     - SessionRegistry is a single-scene object for MVP. It does not need
-//       to persist across scene loads.
-//     - Duplicate check changed to Destroy(this) instead of Destroy(gameObject)
-//       to avoid destroying the entire GameManager if a duplicate component
-//       is added by mistake.
+//   v4  2026-03-22  Fix stale Instance ghost between Play sessions.
+//                   ROOT CAUSE: When entering Play a second time, Instance still
+//                   held a reference to the destroyed component from the previous
+//                   session. Unity's == operator returns true for destroyed objects
+//                   compared to null, but the duplicate Awake check uses != null
+//                   which evaluates as true against the ghost. This causes the
+//                   NEW (valid) component to be treated as the duplicate and
+//                   destroyed, clearing Instance via OnDestroy. One frame later
+//                   ConstellationManager finds Instance == null.
+//                   FIX: Instance is declared as a plain static field and explicitly
+//                   reset via [RuntimeInitializeOnLoadMethod(SubsystemRegistration)]
+//                   which fires before any Awake on every Play press, guaranteeing
+//                   a clean slate regardless of previous session state.
+//   v3  2026-03-22  Remove DontDestroyOnLoad. Destroy(this) for duplicates.
 //   v2  2026-03-15  GetMindfulnessPool() added.
 //   v1  2026-03-07  Initial creation.
 //
 // OBSOLETE FILES:
+//   SessionRegistry.cs v3 (2026-03-22)
 //   SessionRegistry.cs v2 (2026-03-15)
 //   SessionRegistry.cs v1 (2026-03-07)
 //
@@ -57,18 +61,35 @@ using UnityEngine;
 public class SessionRegistry : MonoBehaviour
 {
     // ── Singleton ─────────────────────────────────────────────────────────────
-    public static SessionRegistry Instance { get; private set; }
+
+    // Plain static field — Unity's destroyed-object magic cannot interfere with
+    // a raw field the way it can with properties backed by Unity Object references.
+    public static SessionRegistry Instance;
+
+    // Fires before ANY Awake() on every Play press — clears the stale reference
+    // left over from the previous Play session before any component initialises.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+        Debug.Log("[SessionRegistry] Static reset — clean slate for this Play session.");
+    }
 
     void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning("[SessionRegistry] Duplicate instance detected — destroying component.");
+            // A live instance already exists — this is a genuine duplicate.
+            Debug.LogWarning($"[SessionRegistry] Duplicate detected on '{gameObject.name}' " +
+                             $"— destroying this component. Live instance is on " +
+                             $"'{Instance.gameObject.name}'.");
             Destroy(this);
             return;
         }
+
         Instance = this;
-        Debug.Log("[SessionRegistry] Awake — singleton set.");
+        Debug.Log($"[SessionRegistry] Awake — singleton set on '{gameObject.name}'. " +
+                  $"{allSessions.Count} session(s) pre-loaded.");
     }
 
     void OnDestroy()
@@ -137,7 +158,10 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// All sessions flagged as Mindfulness sessions (isMindfulnessSession = true).
-    /// Used by PostSessionController.CheckMindfulnessTrigger().
+    /// Used by PostSessionController.CheckMindfulnessTrigger() to randomly select
+    /// a Mindfulness session to offer the user when thresholds are met.
+    /// Mindfulness sessions suppress the post-session form and standard Riros
+    /// reward — only the presence bonus is awarded.
     /// </summary>
     public List<SessionData> GetMindfulnessPool()
     {
@@ -151,6 +175,7 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// Sessions eligible as the first Vestibular onboarding experience.
+    /// isOnboardingEligible = true, primaryZone = Vestibular.
     /// </summary>
     public List<SessionData> GetVestibularOnboardingPool()
     {
@@ -162,6 +187,7 @@ public class SessionRegistry : MonoBehaviour
 
     /// <summary>
     /// Shorter recovery sessions used between intense phobia sessions.
+    /// isRecoverySession = true, primaryZone = Vestibular.
     /// </summary>
     public List<SessionData> GetVestibularRecoveryPool()
     {
@@ -181,7 +207,7 @@ public class SessionRegistry : MonoBehaviour
         {
             int count = GetByPhobiaZone(zone).Count;
             if (count > 0)
-                Debug.Log($"  {zone}: {count} session(s)");
+                Debug.Log($"[SessionRegistry]   {zone}: {count} session(s)");
         }
     }
 }

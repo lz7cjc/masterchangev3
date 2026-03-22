@@ -116,7 +116,6 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRPausePlayToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeXRModeController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\floorceilingmove.cs" />
-    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionDataEditor.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleTrigger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\DockGenerator.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRHUDToggleButton.cs" />
@@ -380,6 +379,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHoverTrigger_premigration.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showWhichFormat.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\DBInsertHabits1.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\DestructionTracker.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Sports\BikeTrailGenerator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDRotationCompensator.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\showHideHUDtop.cs" />
@@ -404,6 +404,7 @@
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSphere360Setup.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\VRLauncher.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\PostSessionController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\ZoneManager.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\SessionData.cs" />
@@ -500,6 +501,7 @@
     <None Include="Assets\Packages\Microsoft.IdentityModel.Logging.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Logging.xml" />
     <None Include="Assets\Packages\System.Threading.Channels.5.0.0\LICENSE.TXT" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
+    <None Include="Assets\MCAssets\Migration\Shaders\VestibularPlanet.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\Packages\System.Threading.Channels.5.0.0\version.txt" />
     <None Include="Assets\MCAssets\Materials\Material_Assignment_Guide.txt" />

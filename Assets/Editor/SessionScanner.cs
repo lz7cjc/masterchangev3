@@ -2,9 +2,9 @@
 // SessionScanner.cs
 // Assets/Editor/SessionScanner.cs
 //
-// VERSION:  v11
-// DATE:     2026-03-21
-// TIMESTAMP: 2026-03-21T18:00:00Z
+// VERSION:  v12
+// DATE:     2026-03-31
+// TIMESTAMP: 2026-03-31T00:00:00Z
 //
 // ████████████████████████████████████████████████████████████████████████
 // THIS IS THE BASELINE. ALL PREVIOUS VERSIONS ARE OBSOLETE.
@@ -12,50 +12,31 @@
 // ████████████████████████████████████████████████████████████████████████
 //
 // CHANGE LOG:
+//   v12  2026-03-31  FIX videoURL CONSTRUCTION
+//     - GCS_BASE_URL corrected: "Phobias" → "App".
+//       All new session files live in gs://masterchange/App/ not Phobias/.
+//       This was the root cause of videoURL being empty on all 86 session assets.
+//     - ImportFromCsv(): videoURL fallback added after reading the VideoURL column.
+//       When the column is empty (as in all current session_registry.csv rows),
+//       the URL is constructed automatically from GCSFilename:
+//         sd.videoURL = GCS_BASE_URL + "/" + sd.gcsFilename
+//       This means a re-import from the existing CSV now populates videoURL
+//       correctly on all 86 assets without editing the CSV.
+//     - ConstellationManager.OnSessionSelected() delegates to
+//       SessionLauncher.Instance.LaunchSession(session) — no change needed there.
+//     - SessionLauncher.LaunchSession() writes session.videoURL to PlayerPrefs
+//       "VideoUrl" and loads the Video scene — see SessionLauncher.cs.
+//     - OBSOLETE: SessionScanner.cs v11
+//
 //   v11  2026-03-21  POPULATE SESSION REGISTRY
-//     - PopulateSessionRegistry() added as MasterChange → Populate Session Registry.
-//     - Finds all SessionData assets in the project via AssetDatabase.
-//     - Finds the SessionRegistry component in the open scene via FindObjectOfType.
-//     - Populates SessionRegistry.allSessions with all found assets, sorted by
-//       primaryZone then level then sessionID.
-//     - Called automatically at the end of ImportFromCsv() so import + populate
-//       happen in one step. Also available as a standalone menu item.
-//     - Without this step, SessionRegistry.allSessions is empty at runtime and
-//       ConstellationManager spawns no session orbs.
-//     - OBSOLETE: SessionScanner.cs v10
-//
-//   v10  2026-03-15  CANONICAL MERGE — two diverged v9 files resolved into one
-//     - FILE MUST LIVE IN Assets/Editor/ — confirmed authoritative location.
-//       Any copy outside Assets/Editor/ must be deleted.
-//     - Hardcoded ZONE_MAP dictionary removed (was in the 2026-03-14 Editor
-//       version). Zone resolution now fully delegated to ZoneConfig.GetZoneFromString()
-//       in ParseGCSPath() — consistent with the no-hardcoding rule.
-//     - ZONE_MAP and BEHAVIOUR_ZONES static fields removed entirely.
-//     - ParseGCSPath() now takes ZoneConfig parameter (from v9.0 ZoneConfig version).
-//     - ScanGCSFileList() passes ZoneConfig to ParseGCSPath() (from v9.0).
-//     - Comment-line skipping (#) added to ImportFromCsv() (from v9.0).
-//     - ParseCsvLine() replaces SplitCsv() — same logic, clearer name.
-//     - ValidateAll() replaces ValidateAllSessions() — proper errors/warnings
-//       lists, better dialog messaging (from v9.0).
-//     - AutoFillUnlockConditions() added (from v9.0).
-//     - AutoFillAntechambers() added (from v9.0).
-//     - OBSOLETE: any SessionScanner at Assets/MCAssets/Migration/ (wrong location)
-//     - OBSOLETE: any SessionScanner at Assets/MCAssets/Migration/FilmDatabase/
-//
-//   v9   2026-03-14  CRITICAL LOCATION FIX (Editor-only version)
-//     - Moved to Assets/Editor/ — UnityEditor APIs unavailable at runtime.
-//     - Every "type 'MenuItem' could not be found" error was caused by wrong location.
-//
-//   v9.0 2026-03-09  ZONE_MAP dictionary removed (ZoneConfig version)
-//     - ParseGCSPath() delegates to ZoneConfig.GetZoneFromString().
-//     - Adding a new zone requires only: PhobiaZone enum append + ZoneConfig row.
-//     - No code change to this script when adding zones.
-//
-//   v8   2026-03-06  ZONE LIST UPDATE — Flying reinstated, Insects + FoodContamination added
-//   v7   2026-03-06  BUG FIX — motionProfile type corrected, AutoFillRiros removed
-//   v6   2026-02-27  MotionProfile column added (broken — fixed in v7)
-//   v5   2026-02-26  Baseline synchronisation
-//   v3   2026-02-23  v2 CSV schema (21 columns)
+//   v10  2026-03-15  CANONICAL MERGE
+//   v9   2026-03-14  CRITICAL LOCATION FIX
+//   v9.0 2026-03-09  ZONE_MAP removed
+//   v8   2026-03-06  ZONE LIST UPDATE
+//   v7   2026-03-06  BUG FIX motionProfile
+//   v6   2026-02-27  MotionProfile column
+//   v5   2026-02-26  Baseline sync
+//   v3   2026-02-23  v2 CSV schema
 //
 // OBSOLETE FILES — DELETE ALL OF THESE:
 //   Assets/MCAssets/Migration/Scripts/SessionScanner.cs      ← DELETE
@@ -105,7 +86,8 @@ public class SessionScanner
     private const string CSV_IMPORT_PATH  = "Assets/MCAssets/Migration/FilmDatabase/session_registry.csv";
     private const string ZONE_CONFIG_PATH = "Assets/MCAssets/Migration/ZoneConfig.asset";
 
-    private const string GCS_BASE_URL = "https://storage.googleapis.com/masterchange/Phobias";
+    // v12 FIX: was "Phobias" — all new session files are in the "App" folder.
+    private const string GCS_BASE_URL = "https://storage.googleapis.com/masterchange/App";
 
     // ── Zone config loader ───────────────────────────────────────────────────
     private static ZoneConfig LoadZoneConfig()
@@ -179,7 +161,7 @@ public class SessionScanner
             EditorUtility.DisplayDialog("File Not Found",
                 $"Expected file not found:\n{GCS_LIST_PATH}\n\n" +
                 "Generate it by running:\n\n" +
-                "gsutil ls -r gs://masterchange/Phobias/** > " +
+                "gsutil ls -r gs://masterchange/App/** > " +
                 "Assets/MCAssets/Migration/FilmDatabase/gcs_file_list.txt\n\n" +
                 "Then re-run this menu item.",
                 "OK");
@@ -357,13 +339,19 @@ public class SessionScanner
             sd.primaryZone    = primaryZone;
             sd.displayTitle   = GetCol(cols, colIndex, "DisplayTitle");
             sd.description    = GetCol(cols, colIndex, "Description");
-            sd.videoURL       = GetCol(cols, colIndex, "VideoURL");
             sd.gcsFilename    = GetCol(cols, colIndex, "GCSFilename");
             sd.locationSlug   = GetCol(cols, colIndex, "LocationSlug");
             sd.dateShot       = GetCol(cols, colIndex, "DateShot");
             sd.editVersion    = GetCol(cols, colIndex, "EditVersion");
             sd.notes          = GetCol(cols, colIndex, "Notes");
             sd.urlLastChecked = GetCol(cols, colIndex, "URLLastChecked");
+
+            // v12 FIX: read VideoURL column; if empty, construct from GCSFilename.
+            // The current session_registry.csv has an empty VideoURL column for all
+            // 86 sessions — the fallback ensures videoURL is always populated.
+            sd.videoURL = GetCol(cols, colIndex, "VideoURL");
+            if (string.IsNullOrEmpty(sd.videoURL) && !string.IsNullOrEmpty(sd.gcsFilename))
+                sd.videoURL = GCS_BASE_URL + "/" + sd.gcsFilename;
 
             sd.urlVerified = GetCol(cols, colIndex, "URLVerified")
                 .Equals("true", System.StringComparison.OrdinalIgnoreCase);
@@ -471,7 +459,8 @@ public class SessionScanner
                 $"Validated {total} sessions.\n\n" +
                 $"Errors:   {errors.Count} (fix before shipping)\n" +
                 $"Warnings: {warnings.Count} (review before shipping)\n\n" +
-                "MotionProfile warnings are expected until all sessions are tagged.",
+                "MotionProfile warnings are expected until all sessions are tagged.\n" +
+                "URLVerified warnings are expected until gcs_uploader.py has run.",
                 "OK");
         }
     }
@@ -503,7 +492,6 @@ public class SessionScanner
     /// </summary>
     private static int PopulateSessionRegistryInternal()
     {
-        // Find SessionRegistry in the open scene
         SessionRegistry registry = Object.FindObjectOfType<SessionRegistry>();
         if (registry == null)
         {
@@ -516,7 +504,6 @@ public class SessionScanner
             return -1;
         }
 
-        // Load all SessionData assets from the project
         string[] guids = AssetDatabase.FindAssets("t:SessionData");
         var sessions = guids
             .Select(g => AssetDatabase.LoadAssetAtPath<SessionData>(AssetDatabase.GUIDToAssetPath(g)))
@@ -526,7 +513,6 @@ public class SessionScanner
             .ThenBy(sd => sd.sessionID)
             .ToList();
 
-        // Populate the list
         Undo.RecordObject(registry, "Populate Session Registry");
         registry.allSessions = sessions;
         EditorUtility.SetDirty(registry);

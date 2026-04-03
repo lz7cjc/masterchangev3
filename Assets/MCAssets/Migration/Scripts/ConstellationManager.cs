@@ -2,34 +2,39 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.6
-// DATE:      2026-03-22
-// TIMESTAMP: 2026-03-22T12:00:00Z
+// VERSION:   3.12
+// DATE:      2026-04-02
+// TIMESTAMP: 2026-04-02T16:00:00Z
 //
 // CHANGE LOG:
+//   v3.13 2026-04-02  REMOVE zonePlanetPrefab + FIX LABEL COROUTINE
+//     - Each zone planet is a distinct FBX placed manually in the scene.
+//       zonePlanetPrefab field removed. SpawnZone() now finds the placed
+//       ZonePlanet via GetComponentInChildren<ZonePlanet>() on clusterRoot.
+//     - SpawnLabel() parentIsActive parameter removed. Now always calls
+//       SetVisibleImmediate(true) — coroutine-based Show() was failing
+//       because label GameObjects inherit inactive state from their parent
+//       at the point of instantiation.
+//
+//   v3.12 2026-04-02  REMOVE SessionLauncher DEPENDENCY
+//     - SessionLauncher was on GameManager (DontDestroyOnLoad), causing its
+//       singleton Instance to win over the Video scene's SessionLauncher on
+//       VideoPlayerObject — leaving _videoPlayer unassigned and video black.
+//     - OnSessionSelected() now calls SessionHandoff.Set() and
+//       SceneManager.LoadScene() directly, which is all LaunchSession() did.
+//     - SessionLauncher is removed from GameManager entirely.
+//     - videoSceneName Inspector field added (default "Video") — matches
+//       the field that was previously on SessionLauncher in the Constellation
+//       scene role.
+//     - SessionLauncher.cs dependency removed from header.
+//
+//   v3.11 2026-04-02  FIX ORB ORBIT PLANE — COLLIDER CENTRE OFFSET
+//   v3.10 2026-04-02  FIX ORB LOCAL POSITION SCALE COMPENSATION
+//   v3.9  2026-04-02  ONE ORB PER LEVEL
+//   v3.8  2026-04-02  FIX ORB LOCAL POSITION
+//   v3.7  2026-04-02  ORBITAL ORB PLACEMENT
 //   v3.6  2026-03-22  SESSION ORB LABEL COROUTINE FIX
-//     - SpawnLabel() gains parentIsActive bool parameter.
-//     - Zone planet labels (always active): call label.Show() — coroutine fade safe.
-//     - Session orb labels (spawned inactive): call label.SetVisibleImmediate(true)
-//       instead of Show(). Avoids "Coroutine couldn't be started because the
-//       game object is inactive" errors. Label alpha is correct when the orb
-//       is made active by ExpandZone().
-//     - No change to zone planet label behaviour.
-//
 //   v3.5  2026-03-22  Orb sizing as % of planet + session orb labels.
-//     - orbSizeAsPercentOfPlanet (Inspector float, default 25f):
-//         Session orbs spawn at this percentage of the zone planet's
-//         lossy world scale. Applied immediately after Instantiate().
-//         Fine-tune in Inspector — no code change needed.
-//     - Session orbs now receive a ZoneLabelController label showing
-//         session.displayTitle (falls back to session.sessionID if empty).
-//         Label uses the existing labelPrefab and labelOffset Inspector slots.
-//         Positioned labelOffset units above each session orb, same as
-//         zone planet labels.
-//     - labelPrefab / labelOffset / zoneConfig Inspector slots retained
-//         unchanged — no new Inspector fields required for labels.
-//     - Debug logs added for orb scale applied and label spawned per orb.
-//
 //   v3.4  2026-03-19  Two-tier spawn — zone planets + hidden session orbs.
 //   v3.3  2026-03-18  Four missing public methods added as compiler stubs.
 //   v3.2  2026-03-15  Instance singleton added.
@@ -40,14 +45,19 @@
 //   v1    (unversioned) 5 hardcoded zones.
 //
 // OBSOLETE FILES — DELETE THESE:
-//   ConstellationManager.cs v3.5 (2026-03-22)
-//   ConstellationManager.cs v3.4 (2026-03-19)
-//   ConstellationManager.cs v3.3 (2026-03-18)
-//   ConstellationManager.cs v3.2 (2026-03-15)
-//   ConstellationManager.cs v3.1 (2026-03-15)
-//   ConstellationManager.cs v3.0 (2026-03-15)
-//   ConstellationManager.cs v2.0 (2026-03-09)
-//   ConstellationManager.cs v1   (unversioned)
+//   ConstellationManager.cs v3.11 (2026-04-02)
+//   ConstellationManager.cs v3.10 (2026-04-02)
+//   ConstellationManager.cs v3.9  (2026-04-02)
+//   ConstellationManager.cs v3.7  (2026-04-02)
+//   ConstellationManager.cs v3.6  (2026-03-22)
+//   ConstellationManager.cs v3.5  (2026-03-22)
+//   ConstellationManager.cs v3.4  (2026-03-19)
+//   ConstellationManager.cs v3.3  (2026-03-18)
+//   ConstellationManager.cs v3.2  (2026-03-15)
+//   ConstellationManager.cs v3.1  (2026-03-15)
+//   ConstellationManager.cs v3.0  (2026-03-15)
+//   ConstellationManager.cs v2.0  (2026-03-09)
+//   ConstellationManager.cs v1    (unversioned)
 //
 // DEPENDENCIES:
 //   SessionRegistry.cs            — GetByPhobiaZone(), GetCrossovers()
@@ -56,7 +66,7 @@
 //   ConstellationOrb.cs v4.0+     — session orb behaviour (gaze → dwell → launch)
 //   ZoneLabelController.cs        — SetLabel(), Show() — used for both zone and orb labels
 //   OrbVisuals.cs v1.0            — shared emission helpers
-//   SessionLauncher.cs            — LaunchSession()
+//   SessionHandoff.cs             — Set() — static carrier, no instance needed
 //   PhobiaPriorityManager.cs v1.1 — GetStartZone() (optional — graceful null)
 //   SessionData.cs                — PhobiaZone enum, displayTitle field
 //
@@ -68,11 +78,15 @@
 //                          Spawned hidden as children of the zone planet.
 //     Label Prefab       — ZoneLabel prefab with ZoneLabelController + CanvasGroup + TMP.
 //                          Used for BOTH zone planet labels AND session orb labels.
+//   Scene Loading:
+//     Video Scene Name   — Must match the scene name in Build Settings (default "Video").
 //   Zone Labels:
 //     Zone Config        — ZoneConfig asset for zone display names (optional — enum fallback).
 //     Label Offset       — Vertical offset above centre for label placement (default 0.3).
 //   Orb Sizing:
 //     Orb Size As Percent Of Planet — session orb scale as % of planet world scale (default 25).
+//   Orb Orbit:
+//     Orb Orbit Padding  — extra gap (world units) between planet surface and orb edge (default 0.1).
 //   Zone Cluster Entries — one entry per active arc zone. No code change when adding a zone.
 //   Crossover Connectors — LineRenderer child objects for Flying↔Heights and Water↔Sharks.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -80,6 +94,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class ZoneClusterEntry
@@ -92,13 +107,14 @@ public class ZoneClusterEntry
 }
 
 /// <summary>
-/// ConstellationManager v3.5
+/// ConstellationManager v3.12
 ///
 /// Manages the full two-tier constellation:
 ///   Tier 1 — Zone planets (ZonePlanet.cs): one per zone, always visible.
 ///             Gaze → dwell → expands session orbs for that zone.
 ///   Tier 2 — Session orbs (ConstellationOrb.cs): one per SessionData per zone.
 ///             Spawn hidden. Visible only when parent zone planet is expanded.
+///             Distributed evenly around the planet circumference (orbital plane).
 ///             Gaze → dwell → antechamber → video.
 ///             Each orb carries a ZoneLabelController label (displayTitle / sessionID).
 ///
@@ -111,10 +127,6 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Prefabs ───────────────────────────────────────────────────────────────
     [Header("Prefabs")]
-    [Tooltip("Zone planet prefab — must have ZonePlanet.cs + GazeHoverTrigger attached. " +
-             "One instantiated per zone. Always visible in the constellation.")]
-    public GameObject zonePlanetPrefab;
-
     [Tooltip("Session orb prefab — must have ConstellationOrb.cs + GazeHoverTrigger attached. " +
              "Spawned hidden as children of the zone planet. Shown on zone expand.")]
     public GameObject orbPrefab;
@@ -122,6 +134,11 @@ public class ConstellationManager : MonoBehaviour
     [Tooltip("Zone label prefab — must have ZoneLabelController.cs, CanvasGroup, and TextMeshPro child. " +
              "Used for zone planet labels AND session orb labels. OPTIONAL — leave empty for no labels.")]
     public GameObject labelPrefab;
+
+    // ── Scene loading ─────────────────────────────────────────────────────────
+    [Header("Scene Loading")]
+    [Tooltip("Exact name of the Video scene as it appears in Build Settings.")]
+    public string videoSceneName = "Video";
 
     // ── Zone labels ───────────────────────────────────────────────────────────
     [Header("Zone Labels")]
@@ -142,6 +159,15 @@ public class ConstellationManager : MonoBehaviour
     [Range(5f, 100f)]
     public float orbSizeAsPercentOfPlanet = 25f;
 
+    // ── Orb orbit ─────────────────────────────────────────────────────────────
+    [Header("Orb Orbit")]
+    [Tooltip("Extra gap (world units) between the planet surface and the nearest edge of each orb. " +
+             "Orbit radius = (planetRadius) + (orbRadius) + orbOrbitPadding. " +
+             "Collider separation is guaranteed at any value ≥ 0. " +
+             "Increase to push orbs further from the planet surface.")]
+    [Range(0f, 1f)]
+    public float orbOrbitPadding = 0.1f;
+
     // ── Zone cluster roots ────────────────────────────────────────────────────
     [Header("Zone Cluster Entries")]
     [Tooltip("One entry per active arc zone. Mindfulness excluded — triggered contextually. " +
@@ -155,11 +181,6 @@ public class ConstellationManager : MonoBehaviour
 
     [Tooltip("LineRenderer connecting Water ↔ Sharks — shown when crossover unlocked")]
     public LineRenderer waterSharksConnector;
-
-    // ── Spawn settings ────────────────────────────────────────────────────────
-    [Header("Spawn Settings")]
-    [Tooltip("Spread radius of session orbs within each expanded zone cluster")]
-    public float clusterSpread = 1.2f;
 
     // ── Startup camera ────────────────────────────────────────────────────────
     [Header("Startup Camera")]
@@ -189,7 +210,7 @@ public class ConstellationManager : MonoBehaviour
 
     void Start()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
         StartCoroutine(BuildConstellation());
     }
@@ -207,10 +228,6 @@ public class ConstellationManager : MonoBehaviour
             yield break;
         }
 
-        if (zonePlanetPrefab == null)
-            Debug.LogError("[ConstellationManager] Zone Planet Prefab is not assigned. " +
-                           "Assign the FBX planet prefab with ZonePlanet.cs in the Inspector.");
-
         if (orbPrefab == null)
             Debug.LogError("[ConstellationManager] Orb Prefab is not assigned. " +
                            "Assign the session orb prefab with ConstellationOrb.cs in the Inspector.");
@@ -222,6 +239,7 @@ public class ConstellationManager : MonoBehaviour
         Debug.Log($"[ConstellationManager] Building constellation. " +
                   $"Zones: {zoneClusterEntries.Count}. " +
                   $"orbSizeAsPercentOfPlanet: {orbSizeAsPercentOfPlanet}%. " +
+                  $"orbOrbitPadding: {orbOrbitPadding}. " +
                   $"labelPrefab: {(labelPrefab != null ? labelPrefab.name : "none")}.");
 
         foreach (var entry in zoneClusterEntries)
@@ -236,10 +254,10 @@ public class ConstellationManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawns one ZonePlanet at the cluster root (always visible),
-    /// then spawns all session orbs for that zone as hidden children of the zone planet.
-    /// Session orbs are scaled as a percentage of the planet's world scale.
-    /// Each session orb receives a ZoneLabelController label showing displayTitle.
+    /// Finds the manually-placed ZonePlanet under clusterRoot, registers it,
+    /// then spawns all session orbs for that zone as hidden children of the planet.
+    /// Session orbs are distributed evenly around the planet circumference on a flat
+    /// orbital plane. Orbit radius guarantees no collider overlap with the planet.
     /// </summary>
     private void SpawnZone(PhobiaZone zone, Transform clusterRoot)
     {
@@ -249,79 +267,133 @@ public class ConstellationManager : MonoBehaviour
             return;
         }
 
-        // ── Tier 1: Zone planet ───────────────────────────────────────────────
-        ZonePlanet spawnedZonePlanet = null;
+        // ── Tier 1: Find the manually-placed ZonePlanet under clusterRoot ────
+        ZonePlanet spawnedZonePlanet = clusterRoot.GetComponentInChildren<ZonePlanet>();
+        float planetWorldScale = 1f;
 
-        if (zonePlanetPrefab != null)
+        if (spawnedZonePlanet != null)
         {
-            GameObject planetGO = Instantiate(zonePlanetPrefab, clusterRoot.position,
-                                              Quaternion.identity, clusterRoot);
-            planetGO.name = $"ZonePlanet_{zone}";
+            spawnedZonePlanet.zone    = zone;
+            _allZonePlanets[zone]     = spawnedZonePlanet;
+            planetWorldScale          = spawnedZonePlanet.transform.lossyScale.x;
 
-            ZonePlanet zp = planetGO.GetComponent<ZonePlanet>();
-            if (zp != null)
-            {
-                zp.zone = zone;
-                _allZonePlanets[zone] = zp;
-                spawnedZonePlanet     = zp;
-                Debug.Log($"[ConstellationManager] Zone planet spawned for {zone}. " +
-                          $"World scale: {planetGO.transform.lossyScale}.");
-            }
-            else
-            {
-                Debug.LogWarning($"[ConstellationManager] Zone Planet Prefab has no ZonePlanet component — {zone}.");
-            }
-
-            // ── Zone planet label — planet is active, coroutine fade is safe ─
-            SpawnLabel(planetGO.transform,
+            SpawnLabel(spawnedZonePlanet.transform,
                        zoneConfig != null ? zoneConfig.GetDisplayName(zone) : zone.ToString(),
-                       $"Label_{zone}",
-                       parentIsActive: true);
+                       $"Label_{zone}");
+
+            Debug.Log($"[ConstellationManager] Zone planet found for {zone}. " +
+                      $"World scale: {spawnedZonePlanet.transform.lossyScale}.");
+        }
+        else
+        {
+            Debug.LogError($"[ConstellationManager] No ZonePlanet component found under " +
+                           $"cluster root '{clusterRoot.name}' for zone {zone}. " +
+                           $"Ensure the placed FBX has ZonePlanet.cs attached.");
         }
 
-        // ── Tier 2: Session orbs (hidden children of the zone planet) ─────────
+        // ── Tier 2: Level orbs (one per level, hidden children of the zone planet) ──
         if (orbPrefab == null)
         {
             _sessionOrbsByZone[zone] = new List<GameObject>();
             return;
         }
 
-        // Derive orb scale from planet world scale and Inspector percentage
-        float orbScale = 0f;
-        if (spawnedZonePlanet != null)
+        // Derive orb world scale from planet world scale and Inspector percentage
+        float orbScale = planetWorldScale * (orbSizeAsPercentOfPlanet / 100f);
+
+        if (spawnedZonePlanet == null)
         {
-            float planetWorldScale = spawnedZonePlanet.transform.lossyScale.x;
-            orbScale = planetWorldScale * (orbSizeAsPercentOfPlanet / 100f);
-            Debug.Log($"[ConstellationManager] {zone} — planet world scale: {planetWorldScale:F4}, " +
-                      $"orb target scale: {orbScale:F4} ({orbSizeAsPercentOfPlanet}%).");
-        }
-        else
-        {
-            // No planet was spawned — fall back to a reasonable fixed scale
             orbScale = orbSizeAsPercentOfPlanet / 100f;
             Debug.LogWarning($"[ConstellationManager] {zone} — no zone planet to derive scale from. " +
                              $"Using fallback orb scale: {orbScale:F4}.");
         }
+        else
+        {
+            Debug.Log($"[ConstellationManager] {zone} — planet world scale: {planetWorldScale:F4}, " +
+                      $"orb scale: {orbScale:F4} ({orbSizeAsPercentOfPlanet}%).");
+        }
 
-        List<SessionData> sessions = SessionRegistry.Instance.GetByPhobiaZone(zone);
-        List<GameObject>  orbGOs   = new List<GameObject>();
+        // Read the planet collider's local centre — the mesh pivot is offset from
+        // the visual centre (collider centre Y = -9.574 in current prefabs).
+        // Orbs must orbit the visual centre, not the transform origin.
+        Vector3 colliderCentreLocal = Vector3.zero;
+        if (spawnedZonePlanet != null)
+        {
+            SphereCollider sc = spawnedZonePlanet.GetComponentInChildren<SphereCollider>();
+            if (sc != null)
+            {
+                colliderCentreLocal = sc.center;
+                Debug.Log($"[ConstellationManager] {zone} — collider centre local: {colliderCentreLocal}. " +
+                          $"Orbs will orbit this point.");
+            }
+            else
+            {
+                Debug.LogWarning($"[ConstellationManager] {zone} — no SphereCollider found on zone planet. " +
+                                 $"Orbs will orbit transform origin.");
+            }
+        }
+
+        // Orbit radius: planet collider radius + orb radius + padding
+        // Use collider radius if available so radius matches the visible sphere.
+        float orbitRadius;
+        {
+            SphereCollider sc = spawnedZonePlanet != null
+                ? spawnedZonePlanet.GetComponentInChildren<SphereCollider>()
+                : null;
+            float planetRadius = sc != null ? sc.radius * planetWorldScale : planetWorldScale * 0.5f;
+            orbitRadius = planetRadius + (orbScale * 0.5f) + orbOrbitPadding;
+        }
+
+        // Group all sessions for this zone by level — one orb per level
+        List<SessionData> allSessions = SessionRegistry.Instance.GetByPhobiaZone(zone);
+
+        // Build sorted level → pool dictionary
+        var levelPools = new SortedDictionary<int, List<SessionData>>();
+        foreach (var s in allSessions)
+        {
+            if (!levelPools.ContainsKey(s.level))
+                levelPools[s.level] = new List<SessionData>();
+            levelPools[s.level].Add(s);
+        }
+
+        Debug.Log($"[ConstellationManager] {zone} — {allSessions.Count} sessions across " +
+                  $"{levelPools.Count} levels. orbitRadius: {orbitRadius:F4}.");
+
+        List<GameObject> orbGOs = new List<GameObject>();
 
         Transform orbParent = spawnedZonePlanet != null
             ? spawnedZonePlanet.transform
             : clusterRoot;
 
-        for (int i = 0; i < sessions.Count; i++)
+        int total    = levelPools.Count;
+        int orbIndex = 0;
+
+        foreach (var kvp in levelPools)
         {
-            SessionData session = sessions[i];
-            Vector3     localPos = AutoPosition(i, sessions.Count, session.level);
+            int                level = kvp.Key;
+            List<SessionData>  pool  = kvp.Value;
+
+            // Pick a representative session for state display (first in level order)
+            SessionData representative = pool[0];
+
+            Vector3 localPos = OrbitalPosition(orbIndex, total, orbitRadius);
+
+            // Divide world-space orbit vector by parent lossy scale so Unity's
+            // local→world multiply restores the correct world-space separation.
+            // Add collider centre offset so orbs orbit the visual mesh centre,
+            // not the transform pivot (which is offset in AI-generated FBX assets).
+            Vector3 parentScale = orbParent.lossyScale;
+            Vector3 scaledPos   = new Vector3(
+                localPos.x / (parentScale.x != 0f ? parentScale.x : 1f),
+                (localPos.y + colliderCentreLocal.y) / (parentScale.y != 0f ? parentScale.y : 1f),
+                localPos.z / (parentScale.z != 0f ? parentScale.z : 1f));
 
             GameObject orbGO = Instantiate(orbPrefab,
-                                           orbParent.position + localPos,
+                                           orbParent.position,
                                            Quaternion.identity,
                                            orbParent);
-            orbGO.name = session.sessionID;
-
-            // Apply size as % of planet
+            orbGO.transform.localPosition = scaledPos;
+            orbGO.name  = $"{zone}_L{level}";
             orbGO.transform.localScale = Vector3.one * orbScale;
 
             // Start hidden — shown only when zone planet is expanded
@@ -330,42 +402,55 @@ public class ConstellationManager : MonoBehaviour
             ConstellationOrb orb = orbGO.GetComponent<ConstellationOrb>();
             if (orb != null)
             {
-                orb.session = session;
+                // Assign representative session for state/material — actual session
+                // chosen at random from the pool when the orb is selected.
+                orb.session = representative;
+                orb.sessionPool = pool;
                 orb.onSessionSelected.AddListener(OnSessionSelected);
                 orb.RefreshState();
                 _allOrbs.Add(orb);
             }
 
-            // ── Session orb label — displayTitle, fallback to sessionID ───────
-            string labelText = !string.IsNullOrEmpty(session.displayTitle)
-                ? session.displayTitle
-                : session.sessionID;
+            string labelText = $"Level {level}";
+            SpawnLabel(orbGO.transform, labelText, $"Label_{zone}_L{level}");
 
-            // ── Session orb label — orb is inactive at spawn, use SetVisibleImmediate ─
-            SpawnLabel(orbGO.transform, labelText, $"Label_{session.sessionID}",
-                       parentIsActive: false);
-
-            Debug.Log($"[ConstellationManager] Orb spawned: '{session.sessionID}' " +
-                      $"zone={zone} level={session.level} scale={orbScale:F4} " +
-                      $"label='{labelText}'.");
+            Debug.Log($"[ConstellationManager] Level orb spawned: {zone} L{level} " +
+                      $"index={orbIndex}/{total} pool={pool.Count} sessions " +
+                      $"localPos={localPos} scale={orbScale:F4}.");
 
             orbGOs.Add(orbGO);
+            orbIndex++;
         }
 
         _sessionOrbsByZone[zone] = orbGOs;
 
         Debug.Log($"[ConstellationManager] SpawnZone complete: {zone} — " +
-                  $"{orbGOs.Count} session orbs.");
+                  $"{orbGOs.Count} level orbs on orbit radius {orbitRadius:F4}.");
+    }
+
+    /// <summary>
+    /// Positions session orbs evenly around a full 360° circle at orbitRadius
+    /// on the horizontal plane of the planet centre (Y = 0 local space).
+    /// All orbs clear the planet collider — orbit radius accounts for both radii
+    /// plus the Inspector padding value.
+    /// </summary>
+    private Vector3 OrbitalPosition(int index, int total, float orbitRadius)
+    {
+        // Distribute evenly; single orb sits directly in front (angle 0 = +Z)
+        float angle = (360f / Mathf.Max(total, 1)) * index;
+        float rad   = angle * Mathf.Deg2Rad;
+        float x     = Mathf.Sin(rad) * orbitRadius;
+        float z     = Mathf.Cos(rad) * orbitRadius;
+        return new Vector3(x, 0f, z);
     }
 
     /// <summary>
     /// Instantiates the label prefab as a child of parent, sets its text, and makes it visible.
-    /// parentIsActive: true for zone planets (always active — coroutine fade is safe).
-    ///                 false for session orbs (spawned inactive — coroutine would throw;
-    ///                 SetVisibleImmediate sets alpha directly so it is visible when the orb activates).
+    /// Uses SetVisibleImmediate() in all cases — coroutine-based Show() is unsafe when the
+    /// label GameObject may be inactive at the point of instantiation.
     /// No-op if labelPrefab is null.
     /// </summary>
-    private void SpawnLabel(Transform parent, string text, string goName, bool parentIsActive)
+    private void SpawnLabel(Transform parent, string text, string goName)
     {
         if (labelPrefab == null) return;
 
@@ -379,14 +464,9 @@ public class ConstellationManager : MonoBehaviour
         if (label != null)
         {
             label.SetLabel(text);
+            label.SetVisibleImmediate(true);
 
-            if (parentIsActive)
-                label.Show();                    // coroutine fade — safe on active object
-            else
-                label.SetVisibleImmediate(true); // direct alpha set — safe on inactive object
-
-            Debug.Log($"[ConstellationManager] Label spawned: '{goName}' text='{text}' " +
-                      $"parentIsActive={parentIsActive}.");
+            Debug.Log($"[ConstellationManager] Label spawned: '{goName}' text='{text}'.");
         }
         else
         {
@@ -395,29 +475,30 @@ public class ConstellationManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Positions session orbs within an expanded zone cluster.
-    /// L3 = eye level. Lower levels descend, higher levels rise.
-    /// </summary>
-    private Vector3 AutoPosition(int index, int total, int level)
-    {
-        float y     = (level - 3) * 0.6f;
-        float angle = (index / (float)Mathf.Max(total - 1, 1)) * 120f - 60f;
-        float rad   = angle * Mathf.Deg2Rad;
-        float x     = Mathf.Sin(rad) * clusterSpread;
-        float z     = Mathf.Cos(rad) * clusterSpread * 0.5f;
-        return new Vector3(x, y, z);
-    }
-
     private void OnSessionSelected(SessionData session)
     {
         Debug.Log($"[ConstellationManager] Session selected: {session.sessionID}");
 
-        // Route via AntechamberController if present, otherwise direct launch
+        // Route via AntechamberController if present in this scene, otherwise
+        // load the Video scene directly (AntechamberController lives in Video scene).
         if (AntechamberController.Instance != null)
+        {
             AntechamberController.Instance.ShowForSession(session);
+        }
         else
-            SessionLauncher.Instance?.LaunchSession(session);
+        {
+            if (string.IsNullOrEmpty(session.videoURL))
+            {
+                Debug.LogError($"[ConstellationManager] session.videoURL is empty for " +
+                               $"'{session.sessionID}'. Re-import sessions from CSV to populate videoURL.");
+                return;
+            }
+
+            Debug.Log($"[ConstellationManager] Loading Video scene: '{videoSceneName}' " +
+                      $"for session: {session.sessionID}");
+            SessionHandoff.Set(session);
+            SceneManager.LoadScene(videoSceneName);
+        }
     }
 
     // ── Expand / Collapse ─────────────────────────────────────────────────────

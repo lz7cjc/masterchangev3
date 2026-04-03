@@ -5,6 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/MCAssets/Migration/Constellation.unity
+    guid: dad3fb13e697b234a9d84628481312e3
+  - enabled: 1
+    path: Assets/MCAssets/Migration/Video.unity
+    guid: f2fc0799c22e3d1469ff6871ce920b98
+  - enabled: 1
+    path: Assets/MCAssets/Migration/TestVideo.unity
+    guid: 08dc9693ba1ad1240aa2d74fac84e343
   - enabled: 0
     path: Assets/MCAssets/Scenes/2D/pickformat.unity
     guid: c897cdd7ceddafa4983bb32a04e3abde
@@ -74,12 +83,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/StylizedWater2/_Demo/StylizedWaterDemo.unity
     guid: a5038591c0ad967448d7dd84f554169e
-  - enabled: 0
-    path: Assets/MCAssets/Migration/Video.unity
-    guid: f2fc0799c22e3d1469ff6871ce920b98
-  - enabled: 1
-    path: Assets/MCAssets/Migration/Constellation.unity
-    guid: dad3fb13e697b234a9d84628481312e3
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: dc71dac186f3fba41ad1c02d949fdf64, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e4d40cac255e863438fc3792a2d2880b, type: 2}

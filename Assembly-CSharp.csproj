@@ -102,6 +102,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\DualCameraManager.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\DynamicFilmLoading\VideoIntegrationHelper.cs" />
     <Compile Include="Assets\3rdPartyAssets\AAACottage\Model\Scripts\InteractScript.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\TestVideoPlayer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updatePlayerSettings.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkstodb.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\StopButtonSceneLoader.cs" />
@@ -112,6 +113,7 @@
     <Compile Include="Assets\MCAssets\VideoLoader.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\favourites.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSceneDiagnostics.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\SessionHandoff.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\VisualIdentity\VRHUDMaterials.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\V2Scripts\VRPausePlayToggle.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeXRModeController.cs" />
@@ -143,6 +145,7 @@
     <Compile Include="Assets\MCAssets\Migration\Scripts\RirosManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\HUDController\rotateCamerav2.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\WorldSpaceFocusIndicator.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\VideoSceneBootstrap.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeHUDController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\paidOut.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\FPVMovement.cs" />
@@ -164,6 +167,7 @@
     <Compile Include="Assets\MCAssets\Migration\Scripts\RatingButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\drinkReport.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\SpriteBasedFocusIndicator.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\GazeReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\displayFormValues.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\DownloadStatus.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\setRegRiros.cs" />
@@ -221,6 +225,7 @@
     <Compile Include="Assets\3rdPartyAssets\Airport_Terminal_Scene\Scripts\CameraFreeflight.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\feedback.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\BasicCurvedCanvas.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\TestSceneLauncher.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeAutoSetup.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\SceneLoader.cs" />
     <Compile Include="Assets\MCAssets\InputManager\CameraController.cs" />
@@ -278,6 +283,7 @@
     <Compile Include="Assets\MCAssets\Migration\Scripts\ProjectConfig.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\ReticleManager.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\returnToHome.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\TransformWatcher.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateDB.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\bmi.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\updateuserdb.cs" />
@@ -320,7 +326,6 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\AudioDebugger.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\Motion.cs" />
     <Compile Include="Assets\EnhancedVRController.cs" />
-    <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\GazeReticlePointer.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\GazeRotationAdapter.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ReticlePointer\togglingXR.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\habits1.cs" />
@@ -501,7 +506,7 @@
     <None Include="Assets\Packages\Microsoft.IdentityModel.Logging.7.0.3\lib\netstandard2.0\Microsoft.IdentityModel.Logging.xml" />
     <None Include="Assets\Packages\System.Threading.Channels.5.0.0\LICENSE.TXT" />
     <None Include="Assets\StylizedWater2\Shaders\Libraries\Foam.hlsl" />
-    <None Include="Assets\MCAssets\Migration\Shaders\VestibularPlanet.shader" />
+    <None Include="Assets\MCAssets\Migration\Shaders\PlanetShader.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\Packages\System.Threading.Channels.5.0.0\version.txt" />
     <None Include="Assets\MCAssets\Materials\Material_Assignment_Guide.txt" />
@@ -1738,6 +1743,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Mobile.AndroidLogcat.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Mobile.AndroidLogcat.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1814,12 +1823,12 @@
       <HintPath>Library\ScriptAssemblies\Unity.Burst.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Multiplayer.Center.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Google.XR.Cardboard">

@@ -1,41 +1,54 @@
 // ConstellationOrb.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
 //
-// VERSION:  6.1
-// TIMESTAMP: 2026-03-22T00:00:00Z
+// VERSION:  4.1
+// DATE:     2026-04-02
+// TIMESTAMP: 2026-04-02T13:00:00Z
 //
 // CHANGE LOG:
-//   v6.1  2026-03-22  SELECTION FLASH ANIMATION
-//     - Flash on selection is now a proper coroutine: emission ramps up to peak
-//       then fades back to zero, then restores the default material.
-//     - Three new Inspector fields under "Selected State":
-//         flashColor       — colour of the emission flash (default gold #FFDA33)
-//         flashPeakIntensity — emission multiplier at peak (default 6)
-//         flashDuration    — total duration in seconds (default 0.5)
-//     - selectedFallbackColor removed (replaced by flashColor).
-//     - Flash runs whether or not selectedRing is assigned; ring and flash are
-//       now independent — ring shows if assigned, flash always plays.
-//     - SelectAnimation (scale-only coroutine) merged into FlashAnimation so
-//       both effects run in a single coroutine.
+//   v4.1  2026-04-02  SESSION POOL + RANDOM PICK
+//     - sessionPool (List<SessionData>, HideInInspector) added.
+//       ConstellationManager assigns the full level pool at spawn.
+//     - Select() picks a random session from sessionPool when pool count > 1.
+//       Falls back to representative session when pool has 0 or 1 entries.
+//     - onSessionSelected now invokes the randomly chosen session, not the representative.
+//     - Post-MVP: replace random pick in Select() with a session picker UI call.
+//     - OBSOLETE: ConstellationOrb.cs v4.0
+//
 //   v4.0  2026-03-14  PLANET MESH SUPPORT + VISUAL OVERHAUL
+//     - RequireComponent changed from Renderer to nothing — planet models have
+//       Renderers on child meshes, so we locate them via GetComponentInChildren.
+//     - Hover effect: emissive glow + scale increase (replaces simple tint).
+//       Glow is applied by setting _EmissionColor on a material instance.
+//       Works with URP Lit and Standard shaders. Enable emission on planet
+//       materials in the Inspector (it is OFF by default — tick the Emission
+//       checkbox on the material). Inspector field: hoverEmissionColor.
+//     - Selected effect: a child ring GameObject (assign in Inspector) is shown
+//       and coloured green (#2f9e4f) to replace the gold flash. Ring should be
+//       a flat torus or disc mesh, scaled to wrap around the planet's equator.
+//       If no ring is assigned, falls back to the previous gold flash.
+//     - hoverScaleMultiplier: Inspector-tunable. Default 1.15 (15% larger on hover).
+//     - All OrbState references updated to UserProgressService.OrbState.
+//     - Backward-compatible: still works on plain sphere GameObjects if a Renderer
+//       is on the root — GetComponentInChildren finds it.
 //   v3.0  2026-03-09  S4.3 swap — MockUserProgress → UserProgressService.
 //   v2.0  2026-03-07  Three visible states, GazeHoverTrigger wiring, dwell scale.
 //
-// OBSOLETE FILES — DELETE THESE:
-//   ConstellationOrb.cs v4.0 (2026-03-14)
-//   ConstellationOrb.cs v3.0 (2026-03-09)
-//   ConstellationOrb.cs v2.0 (2026-03-07)
+// OBSOLETE: ConstellationOrb.cs v3.0, v2.0
 //
 // SCENE SETUP (planet prefab):
 //   1. Replace sphere with your planet 3D model prefab.
 //   2. Ensure the planet prefab has a Collider (any shape) at the root or on a
 //      child — required for gaze raycast. IsTrigger must be OFF.
-//   3. On each planet material, tick the Emission checkbox (URP: enable in
+//   3. Create a child GameObject called "SelectedRing". Add a torus/disc mesh.
+//      Material: solid green #2f9e4f, no emission needed.
+//      Scale it so it sits just outside the planet surface (e.g. X/Z = 1.3, Y = 0.05).
+//      Assign it to the Selected Ring slot in the Inspector.
+//   4. On each planet material, tick the Emission checkbox (URP: enable in
 //      Material Inspector). The emission intensity is controlled at runtime.
-//   4. Attach ConstellationOrb and GazeHoverTrigger to the root GameObject.
-//   5. Wire GazeHoverTrigger On Enter → ConstellationOrb.OnGazeEnter
+//   5. Attach ConstellationOrb and GazeHoverTrigger to the root GameObject.
+//   6. Wire GazeHoverTrigger On Enter → ConstellationOrb.OnGazeEnter
 //              GazeHoverTrigger On Exit  → ConstellationOrb.OnGazeExit
-//   6. (Optional) Assign a SelectedRing child GameObject — shown alongside flash.
 
 using System.Collections;
 using UnityEngine;
@@ -45,8 +58,16 @@ public class ConstellationOrb : MonoBehaviour
 {
     // ── Session ───────────────────────────────────────────────────────────────
     [Header("Session Reference")]
-    [Tooltip("Drag a SessionData asset here. Assigned automatically by ConstellationManager at runtime.")]
+    [Tooltip("Representative session used for state display. Assigned by ConstellationManager.")]
     public SessionData session;
+
+    /// <summary>
+    /// All sessions in this level's pool. ConstellationManager assigns this at spawn.
+    /// On selection, one session is picked at random from this list.
+    /// If empty or null, falls back to session.
+    /// </summary>
+    [HideInInspector]
+    public System.Collections.Generic.List<SessionData> sessionPool;
 
     // ── Gaze / Dwell ─────────────────────────────────────────────────────────
     [Header("Gaze Settings")]
@@ -70,28 +91,22 @@ public class ConstellationOrb : MonoBehaviour
     [Tooltip("Emissive glow colour applied when gazed at. Cyan #56C2D1 by default.")]
     public Color hoverEmissionColor = new Color(0.34f, 0.76f, 0.82f, 1f); // #56C2D1
 
-    [Tooltip("How much bigger the planet grows on hover. 1.15 = 15% larger. Set to 1 for no change.")]
+    [Tooltip("How much bigger the planet grows on hover. 1.15 = 15% larger.")]
     [Range(1.0f, 1.5f)]
     public float hoverScaleMultiplier = 1.15f;
 
     // ── Selected state ────────────────────────────────────────────────────────
     [Header("Selected State  (dwell complete, session launching)")]
-    [Tooltip("Child ring GameObject shown when selected. Optional — leave empty to skip ring.")]
+    [Tooltip("Child ring GameObject shown when selected. Should be a torus/disc mesh " +
+             "scaled to wrap around the planet. Coloured green at runtime. " +
+             "If not assigned, falls back to a brief gold flash.")]
     public GameObject selectedRing;
 
     [Tooltip("Colour applied to the selected ring. Green #2f9e4f by default.")]
     public Color selectedRingColor = new Color(0.18f, 0.62f, 0.31f, 1f); // #2f9e4f
 
-    [Tooltip("Emission colour of the selection flash. Gold #FFDA33 by default.")]
-    public Color flashColor = new Color(1f, 0.85f, 0.2f, 1f); // #FFDA33
-
-    [Tooltip("Peak emission brightness during the flash. Higher = more intense.")]
-    [Range(1f, 20f)]
-    public float flashPeakIntensity = 6f;
-
-    [Tooltip("Total duration of the flash in seconds. Ramps up then fades out.")]
-    [Range(0.1f, 2f)]
-    public float flashDuration = 0.5f;
+    [Tooltip("Fallback flash colour when no ring is assigned. Gold #FFDA33.")]
+    public Color selectedFallbackColor = new Color(1f, 0.85f, 0.2f, 1f);
 
     // ── Events ────────────────────────────────────────────────────────────────
     [Header("Events")]
@@ -103,7 +118,7 @@ public class ConstellationOrb : MonoBehaviour
     public bool debugLogging = true;
 
     // ── Private ───────────────────────────────────────────────────────────────
-    private Renderer _rend;
+    private Renderer _rend;                    // first renderer found in children
     private Material _defaultMaterial;
     private Material _hoverMaterialInst;
     private UserProgressService.OrbState _currentState;
@@ -118,14 +133,17 @@ public class ConstellationOrb : MonoBehaviour
 
     void Awake()
     {
+        // Planet meshes keep their Renderer on child objects — search entire hierarchy
         _rend = GetComponentInChildren<Renderer>();
         if (_rend == null)
             Debug.LogWarning($"[Orb] {name}: No Renderer found in children — planet mesh not set up correctly.");
 
         _baseScale = transform.localScale;
 
+        // Ensure selected ring starts hidden
         if (selectedRing != null)
         {
+            // Tint the ring material at startup
             var ringRend = selectedRing.GetComponent<Renderer>();
             if (ringRend != null)
             {
@@ -135,8 +153,6 @@ public class ConstellationOrb : MonoBehaviour
             }
             selectedRing.SetActive(false);
         }
-
-        Debug.Log($"[Orb] Awake: {name} — renderer={((_rend != null) ? _rend.name : "MISSING")}");
     }
 
     void Start()
@@ -146,7 +162,6 @@ public class ConstellationOrb : MonoBehaviour
         {
             trigger.onEnter.AddListener(OnGazeEnter);
             trigger.onExit.AddListener(OnGazeExit);
-            Debug.Log($"[Orb] {name}: GazeHoverTrigger wired.");
         }
         else
         {
@@ -169,6 +184,7 @@ public class ConstellationOrb : MonoBehaviour
 
         _gazeTimer += Time.deltaTime;
 
+        // Grow planet as dwell progresses
         float t = _gazeTimer / dwellTime;
         transform.localScale = _baseScale * Mathf.Lerp(1f, hoverScaleMultiplier, t);
 
@@ -187,6 +203,7 @@ public class ConstellationOrb : MonoBehaviour
 
         if (_pulseCoroutine != null) { StopCoroutine(_pulseCoroutine); _pulseCoroutine = null; }
 
+        // Create a material instance and enable emission for glow
         if (_rend != null)
         {
             _hoverMaterialInst = new Material(_rend.material);
@@ -203,6 +220,7 @@ public class ConstellationOrb : MonoBehaviour
         _gazeTimer = 0f;
         transform.localScale = _baseScale;
 
+        // Restore default material (removes glow)
         if (_rend != null && _defaultMaterial != null)
             _rend.material = _defaultMaterial;
 
@@ -220,7 +238,6 @@ public class ConstellationOrb : MonoBehaviour
 
         _currentState = UserProgressService.Instance.GetOrbState(session.sessionID);
         ApplyDefaultMaterial(_currentState);
-        Debug.Log($"[Orb] RefreshState: {session.sessionID} → {_currentState}");
     }
 
     private void ApplyDefaultMaterial(UserProgressService.OrbState state)
@@ -258,73 +275,44 @@ public class ConstellationOrb : MonoBehaviour
         _selected = true;
         _isGazed  = false;
 
-        Debug.Log($"[Orb] Selected: {session?.sessionID} — starting flash (colour={flashColor}, " +
-                  $"peakIntensity={flashPeakIntensity}, duration={flashDuration}s)");
+        // Pick randomly from the level pool; fall back to representative session
+        SessionData chosen = session;
+        if (sessionPool != null && sessionPool.Count > 1)
+        {
+            int pick = UnityEngine.Random.Range(0, sessionPool.Count);
+            chosen = sessionPool[pick];
+            Debug.Log($"[Orb] Random pool pick: {chosen.sessionID} " +
+                      $"({pick + 1} of {sessionPool.Count}) from {session.sessionID} pool.");
+        }
+        else
+        {
+            Debug.Log($"[Orb] Selected (single session): {chosen?.sessionID}");
+        }
 
         if (selectedRing != null)
+        {
             selectedRing.SetActive(true);
+        }
+        else if (_rend != null)
+        {
+            var mat = new Material(_rend.material);
+            SetMaterialColor(mat, selectedFallbackColor);
+            _rend.material = mat;
+        }
 
-        onSessionSelected?.Invoke(session);
-        StartCoroutine(FlashAnimation());
+        onSessionSelected?.Invoke(chosen);
+        StartCoroutine(SelectAnimation());
     }
 
-    /// <summary>
-    /// Emission flash + scale bump on selection.
-    /// First half of flashDuration ramps emission up to flashPeakIntensity.
-    /// Second half fades emission back to zero, then restores default material.
-    /// Scale bumps to 1.5× over the same duration then snaps back.
-    /// </summary>
-    private IEnumerator FlashAnimation()
+    private IEnumerator SelectAnimation()
     {
-        if (_rend == null)
+        float t = 0f;
+        while (t < 0.4f)
         {
-            Debug.LogWarning($"[Orb] FlashAnimation: no renderer on {name} — flash skipped.");
-            yield break;
-        }
-
-        // Create a fresh material instance for the flash so we never dirty the default
-        Material flashMat = new Material(_rend.sharedMaterial != null ? _rend.sharedMaterial : _rend.material);
-        flashMat.EnableKeyword("_EMISSION");
-        _rend.material = flashMat;
-
-        float half    = flashDuration * 0.5f;
-        float elapsed = 0f;
-
-        // Ramp up
-        while (elapsed < half)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / half;
-            float intensity = Mathf.Lerp(0f, flashPeakIntensity, t);
-            if (flashMat.HasProperty("_EmissionColor"))
-                flashMat.SetColor("_EmissionColor", flashColor * intensity);
-            transform.localScale = _baseScale * Mathf.Lerp(1f, 1.5f, t);
+            t += Time.deltaTime;
+            transform.localScale = _baseScale * (1f + (t / 0.4f) * 0.5f);
             yield return null;
         }
-
-        Debug.Log($"[Orb] FlashAnimation: {session?.sessionID} peak reached.");
-
-        elapsed = 0f;
-
-        // Ramp down
-        while (elapsed < half)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / half;
-            float intensity = Mathf.Lerp(flashPeakIntensity, 0f, t);
-            if (flashMat.HasProperty("_EmissionColor"))
-                flashMat.SetColor("_EmissionColor", flashColor * intensity);
-            transform.localScale = _baseScale * Mathf.Lerp(1.5f, 1f, t);
-            yield return null;
-        }
-
-        // Restore default material
-        if (_defaultMaterial != null)
-            _rend.material = _defaultMaterial;
-
-        transform.localScale = _baseScale;
-
-        Debug.Log($"[Orb] FlashAnimation: {session?.sessionID} complete — default material restored.");
     }
 
     // ── Pulse (Recommended state) ─────────────────────────────────────────────
@@ -346,14 +334,20 @@ public class ConstellationOrb : MonoBehaviour
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Enables emission on a material instance and sets the emission colour.
+    /// Works with URP Lit (_EmissionColor + keyword) and Standard (_EmissionColor).
+    /// The planet's base material must have Emission ticked in the Inspector.
+    /// </summary>
     private static void EnableEmission(Material mat, Color color)
     {
         if (mat == null) return;
         mat.EnableKeyword("_EMISSION");
         if (mat.HasProperty("_EmissionColor"))
-            mat.SetColor("_EmissionColor", color * 2f);
+            mat.SetColor("_EmissionColor", color * 2f); // * 2 for visible brightness in linear space
     }
 
+    /// <summary>Sets base colour on URP Lit or Standard shaders.</summary>
     private static void SetMaterialColor(Material mat, Color color)
     {
         if (mat == null) return;

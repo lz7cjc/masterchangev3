@@ -733,7 +733,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   showDebugRay: 1
   showBothDotAndRing: 0
-  hideReticleIn360Mode: 0
+  hideReticleIn360Mode: 1
 --- !u!1 &231985423
 GameObject:
   m_ObjectHideFlags: 0
@@ -5369,6 +5369,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8bc8584658e963f42b1c280fc3a6078f, type: 2}
   - {fileID: 11400000, guid: e5c29efab0846164aac1a421f2307e24, type: 2}
   - {fileID: 11400000, guid: 7679588f3ddee4e459e4c014c0c8cea2, type: 2}
+  - {fileID: 11400000, guid: f7adad4a0cb012c43ba66495d6c8fa11, type: 2}
   - {fileID: 11400000, guid: a64fe92341b6d1548ba2e5a3e0ed2a25, type: 2}
   - {fileID: 11400000, guid: 406af832e6820114aa14775ac074c9bc, type: 2}
   - {fileID: 11400000, guid: 492fa2d23d4c38e4883a036f7ec0295e, type: 2}
@@ -5429,6 +5430,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: daf621b1ffe16c14e85c1c15353887fe, type: 2}
   - {fileID: 11400000, guid: 9921eab3531fb0b43a2a97a4923b3889, type: 2}
   - {fileID: 11400000, guid: e4974607a0bdae44b99b126af9721a94, type: 2}
+  - {fileID: 11400000, guid: d137251b1be0b87438113db1365ba812, type: 2}
   - {fileID: 11400000, guid: 47a24ffe3c597144fbb6688c311d30b6, type: 2}
   - {fileID: 11400000, guid: 694add2c1b78fbf4eb31187cb44caa28, type: 2}
   - {fileID: 11400000, guid: 2d4b8c3071785e742947b57f87be4e34, type: 2}

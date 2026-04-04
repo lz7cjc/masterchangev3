@@ -372,6 +372,7 @@
     <Compile Include="Assets\MCAssets\Scripts\3d\Huds\v8\VRHUD_Scripts\Camera360LookController.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\gethabitsfromscene.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\dbhabitboolentry_b.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\GazeDwellButton.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\sendemail.cs" />
     <Compile Include="Assets\MCAssets\Scripts\3d\ToggleShowVote.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\showhideformat.cs" />

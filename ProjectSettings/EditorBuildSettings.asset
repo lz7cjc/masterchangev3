@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MCAssets/Migration/Video.unity
     guid: f2fc0799c22e3d1469ff6871ce920b98
-  - enabled: 1
+  - enabled: 0
     path: Assets/MCAssets/Migration/TestVideo.unity
     guid: 08dc9693ba1ad1240aa2d74fac84e343
   - enabled: 0

@@ -386,7 +386,9 @@ namespace StylizedWater2
                     GUILayout.FlexibleSpace();
                     if (GUILayout.Button(new GUIContent("Enable", EditorGUIUtility.IconContent("d_tab_next").image), GUILayout.Width(60)))
                     {
-                        GraphicsSettings.GetRenderPipelineSettings<RenderGraphSettings>().enableRenderCompatibilityMode = true;
+#if URP_COMPATIBILITY_MODE
+GraphicsSettings.GetRenderPipelineSettings<RenderGraphSettings>().enableRenderCompatibilityMode = true;
+#endif
 
                         EditorUtility.DisplayDialog($"{AssetInfo.ASSET_NAME} v{AssetInfo.INSTALLED_VERSION}", 
                             "Please note that this fallback option will be removed in a future Unity version, this version of Stylized Water will no longer be completely functional then." +

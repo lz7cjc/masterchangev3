@@ -2,18 +2,41 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.42
+// VERSION:   3.45
 // DATE:      2026-04-18
-// TIMESTAMP: 2026-04-18T22:00:00Z
+// TIMESTAMP: 2026-04-18T23:59:00Z
 //
 // CHANGE LOG:
-//   v3.42 2026-04-18  FIX CS1061 — HARDCODE ORB COUNTS (APPLIED)
-//     - equatorOrbCount and sideOrbCount are now compile-time constants (5 and 3)
-//       in SpawnZone. The v3.40 fix was present in header only — the body still
-//       referenced cfg.equatorOrbCount / cfg.sideOrbCount causing CS1061 errors.
-//       This version correctly replaces both lines with const int declarations.
+//   v3.45 2026-04-18  FIX ORBS MISALIGNED WITH RINGS ON FIRST EXPAND
+//     - SpawnZone: pivot rotation changed from world space (transform.rotation)
+//       to local space (transform.localRotation). Previously Quaternion.Euler(
+//       pivotEuler) was applied in world space, but WriteRingSegments applies
+//       gyroRot in orbParent local space. When orbParent (the planet) has a
+//       non-zero world rotation, the two spaces diverge — orbs spawn rotated
+//       in world space while ring segments rotate in local space, causing the
+//       visible axis mismatch on first expand. Using localRotation keeps both
+//       in the same coordinate space. Level switch appeared to fix it because
+//       SwitchLevel already used localRotation correctly.
 //
-//   v3.41 2026-04-18  FIX ORBS LEAVE RINGS ON LEVEL SWITCH
+//   v3.44 2026-04-18  FIX CS1061 — CONST ORB COUNTS (REAPPLIED)
+//     - equatorOrbCount and sideOrbCount are const int 5 and 3 in SpawnZone.
+//       This fix was previously delivered in v3.40/v3.42 but the project file
+//       was a merge of v3.43 slot fix and the original v3.39 body, so the
+//       cfg.equatorOrbCount / cfg.sideOrbCount references remained on lines
+//       463-464 causing CS1061. Now definitively fixed in a single clean file.
+//
+//   v3.43 2026-04-18  FIX — READ SLOTS FROM CONFIG ON SPAWN, NO REBUILD REQUIRED
+//     - SpawnZone: eqSlots/upSlots/loSlots now prefer cfg.equatorSlots/upperSlots/
+//       lowerSlots when those lists are non-empty. Falls back to mgr.equatorSlots
+//       etc. only when the config lists are empty (first-time auto-fill path).
+//     - Previously all three slot lists always read from the manager's global
+//       fields regardless of what was saved in the config asset. This meant
+//       fine-tuned orb positions were ignored on Play Mode entry and only applied
+//       after a manual Rebuild (which copied cfg slots into mgr slots first).
+//     - Config slot lists are the single source of truth. Manager globals are now
+//       only an auto-fill fallback. No Rebuild needed.
+//
+//   v3.42 2026-04-18  FIX CS1061 — HARDCODE ORB COUNTS (APPLIED)
 //     - SwitchLevel: after resetting pivot.localRotation to savedRot, now also
 //       calls RotateRingSegmentsForZone(zone, savedRot). Rings are orbParent
 //       children — their segment positions are not affected by pivot rotation.
@@ -163,7 +186,9 @@
 //   v3.11–v1    see prior headers
 //
 // OBSOLETE — DELETE:
-//   ConstellationManager.cs v3.41 (2026-04-18)
+//   ConstellationManager.cs v3.44 (2026-04-18)
+//   ConstellationManager.cs v3.43 (2026-04-18)
+//   ConstellationManager.cs v3.42 (2026-04-18)
 //   ConstellationManager.cs v3.40 (2026-04-18)
 //   ConstellationManager.cs v3.39 (2026-04-18)
 //   ConstellationManager.cs v3.37 (2026-04-18)
@@ -447,9 +472,12 @@ public class ConstellationManager : MonoBehaviour
         }
 
         // ── Resolve all values from config or fall back to manager defaults ───
-        List<Vector2> eqSlots  = equatorSlots;
-        List<Vector2> upSlots  = upperSlots;
-        List<Vector2> loSlots  = lowerSlots;
+        // Slots: prefer saved config slots (fine-tuned positions) over manager globals.
+        // Manager globals are only used when config slots are empty — this ensures
+        // a Rebuild is never required to apply saved slot positions on Play Mode entry.
+        List<Vector2> eqSlots  = (cfg != null && cfg.equatorSlots.Count > 0) ? cfg.equatorSlots : equatorSlots;
+        List<Vector2> upSlots  = (cfg != null && cfg.upperSlots.Count   > 0) ? cfg.upperSlots   : upperSlots;
+        List<Vector2> loSlots  = (cfg != null && cfg.lowerSlots.Count   > 0) ? cfg.lowerSlots   : lowerSlots;
         int    orbCount        = cfg != null ? cfg.bandOrbCount            : bandOrbCount;
         const int eqOrbCount   = 5;
         const int sideOrbCount = 3;
@@ -572,8 +600,8 @@ public class ConstellationManager : MonoBehaviour
         // ── OrbPivot ──────────────────────────────────────────────────────────
         GameObject pivotGO = new GameObject($"OrbPivot_{zone}");
         pivotGO.transform.SetParent(orbParent, worldPositionStays: false);
-        pivotGO.transform.position = planetWorldCentre;
-        pivotGO.transform.rotation = Quaternion.Euler(pivotEuler);
+        pivotGO.transform.position      = planetWorldCentre;
+        pivotGO.transform.localRotation = Quaternion.Euler(pivotEuler);
         Transform pivot = pivotGO.transform;
         _orbPivots[zone] = pivot;
 

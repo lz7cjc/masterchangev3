@@ -411,6 +411,7 @@
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Health.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\habits\Food.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\filmvotes2.cs" />
+    <Compile Include="Assets\MCAssets\Migration\Scripts\ZoneNavArrow.cs" />
     <Compile Include="Assets\MCAssets\Scripts\2d\Coefficient.cs" />
     <Compile Include="Assets\MCAssets\MC360Video\Scripts\VideoSphere360Setup.cs" />
     <Compile Include="Assets\MCAssets\Migration\Scripts\VRLauncher.cs" />

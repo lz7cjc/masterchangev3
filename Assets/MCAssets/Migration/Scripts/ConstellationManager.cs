@@ -2,65 +2,160 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.23
-// DATE:      2026-04-06
-// TIMESTAMP: 2026-04-07T00:00:00Z
+// VERSION:   3.42
+// DATE:      2026-04-18
+// TIMESTAMP: 2026-04-18T22:00:00Z
 //
 // CHANGE LOG:
-//   v3.23 2026-04-07  FIX — PER-ZONE SLOT LIST ISOLATION
-//     - SpawnZone: slot lists (equatorSlots/upperSlots/lowerSlots) now read from
-//       the zone's own config asset as fresh local copies, not from the manager's
-//       shared fields. This fixes orb misalignment where Zone 2+ inherited Zone 1's
-//       slot lat values because the shared list was non-empty and EnsureSlotDefaults
-//       was skipped. Each zone now gets independent lists every spawn.
-//     - When cfg is null (no config assigned), manager fields are copied (not
-//       referenced) so EnsureSlotDefaults cannot mutate the manager's shared list.
-//     - RebuildDummyOrbs: before calling SpawnZone, copies non-empty manager slot
-//       lists into the zone's config. This preserves the in-Play editor tuning path
-//       where OrbLayoutEditor writes to mgr.equatorSlots before triggering rebuild.
+//   v3.42 2026-04-18  FIX CS1061 — HARDCODE ORB COUNTS (APPLIED)
+//     - equatorOrbCount and sideOrbCount are now compile-time constants (5 and 3)
+//       in SpawnZone. The v3.40 fix was present in header only — the body still
+//       referenced cfg.equatorOrbCount / cfg.sideOrbCount causing CS1061 errors.
+//       This version correctly replaces both lines with const int declarations.
+//
+//   v3.41 2026-04-18  FIX ORBS LEAVE RINGS ON LEVEL SWITCH
+//     - SwitchLevel: after resetting pivot.localRotation to savedRot, now also
+//       calls RotateRingSegmentsForZone(zone, savedRot). Rings are orbParent
+//       children — their segment positions are not affected by pivot rotation.
+//       When the carousel had been used before SwitchLevel, the pivot was no
+//       longer at savedRot. Resetting the pivot snapped orbs back to spawn
+//       positions but rings remained at their current (post-carousel) positions,
+//       causing visible misalignment. The extra call recomputes ring segments
+//       to match the reset pivot so orbs and rings stay aligned on every switch.
+//
+//   v3.40 2026-04-18  HARDCODE ORB COUNTS — FIX CS1061 COMPILE ERRORS
+//     - UpdateRingAlphasForZone now also sets ring line width in addition to
+//       alpha. Active ring uses ringLineWidth × activeRingLineWidthMultiplier.
+//       Faded rings use ringLineWidth (or per-band override if > 0.001).
+//       Previously only alpha changed on level switch — active ring was
+//       brighter but not thicker. Width is now updated alongside alpha so
+//       the active ring is visually distinct at all times.
+//
+//   v3.38 2026-04-18  SEPARATE ORB COUNTS + SWITCHLEVEL PIVOT FIX
+//     - SpawnZone: reads equatorOrbCount (default 5) and sideOrbCount (default 3)
+//       from config separately. Passes equatorOrbCount for equator slots and
+//       sideOrbCount for upper/lower slots in EnsureSlotDefaults.
+//     - EnsureSlotDefaults: signature updated to accept eqCount and sideCount
+//       separately so equator auto-fills with 5 slots and upper/lower with 3.
+//     - SwitchLevel: pivot reset changed from Quaternion.identity to
+//       Quaternion.Euler(savedPivotEuler). Resetting to identity moved orbs
+//       away from the rings when a non-zero gyro euler was saved — orbs spawn
+//       rotated by pivotEuler so the pivot must return to that same rotation
+//       after a level switch, not to zero.
+//
+//   v3.37 2026-04-18  FIX RING LONGITUDE OFFSET LOST ON GYRO RECOMPUTE
+//     - _liveRings tuple extended with longitudeOffsetDeg (float) — the baked
+//       per-band longitude offset stored at spawn time.
+//     - RotateRingSegmentsForZone now passes the stored longitudeOffsetDeg to
+//       WriteRingSegments instead of 0f. Previously the baked longitude was
+//       discarded on every gyro recompute, so rings spawned at the correct
+//       longitude but moved to lon=0 after gyro was applied, causing orbs and
+//       rings to visually diverge.
+//     - UpdateRingAlphasForZone updated to preserve longitudeOffsetDeg when
+//       writing back the isActive flag.
+//
+//   v3.36 2026-04-18  RESTORE RING POSITIONS FROM SAVED GYRO EULER ON SPAWN
+//     - SpawnZone: after rings are spawned, if pivotEuler is non-zero, calls
+//       RotateRingSegmentsForZone so rings immediately reflect the saved gyro
+//       state without requiring a Rebuild. Previously pivot was rotated but
+//       ring segments were not recomputed, leaving rings at default positions
+//       until a manual Rebuild.
+//     - Removed stale warning about non-zero pivotEuler — this is now the
+//       correct expected state when a gyro value has been saved.
+//
+//   v3.35 2026-04-18  PER-BAND RING ROTATION + GYRO MOVES RINGS
+//     - SpawnZone: reads equatorRingRotation, upperRingRotation, lowerRingRotation
+//       from config (fallback 0). Each is added to longitudeOffsetDeg for that
+//       band's SpawnSlotBand and SpawnOrbitRing calls so orbs and ring rotate
+//       together. globalRingRotation is also read and added to all three bands.
+//     - SpawnOrbitRing: now accepts a longitudeOffsetDeg parameter so the ring
+//       circle can be rotated to match its band's orb offset.
+//     - _liveRings value tuple extended: now stores (LineRenderer lr, bool isActive,
+//       PhobiaZone zone, Transform ringTransform, float orbitRadius, float latitudeDeg,
+//       Vector3 pivotLocalPos) so SetOrbPivotRotation can recompute ring segment
+//       positions when the gyro rotates, keeping rings in sync with orbs.
+//     - SetOrbPivotRotation: after rotating the pivot, iterates _liveRings for
+//       the zone and recomputes each ring's segment positions rotated by the
+//       same quaternion, so gyro moves orbs and rings together without rebuild.
+//
+//   v3.34 2026-04-18  FIX RebuildDummyOrbs BAND VISIBILITY + STALE COMMENT
+//     - FIX: RebuildDummyOrbs was setting all dummies active when the zone
+//       was expanded after a rebuild, showing all three bands simultaneously
+//       (same bug as the original ExpandZone). Now mirrors ExpandZone: shows
+//       pivot+rings only, then active band orbs only.
+//     - FIX: Stale comment in SpawnZone incorrectly stated rings were parented
+//       to pivot. Updated to reflect rings are parented to orbParent.
+//
+//   v3.33 2026-04-18  THREE BUG FIXES
+//     - FIX 1: ExpandZone now shows only Equator band orbs on expand (not all
+//       three bands). Previously allDummy contained all three bands' orbs so
+//       go.SetActive(true) made all bands visible simultaneously, making
+//       SwitchLevel appear to do nothing. Fix: ExpandZone iterates
+//       _bandOrbsByZone to show only the active band (always Equator on
+//       expand since _activeBandByZone resets to 0 on collapse). The pivot
+//       and rings (also in allDummy) are shown via the existing allDummy loop
+//       filtered to exclude band orbs.
+//     - FIX 2: SpawnOrbitRing now parents rings to orbParent (not pivot).
+//       Pivot rotation for carousel was spinning all three rings together with
+//       the orbs. Rings must be static — only orbs should move. Segment
+//       positions are offset by pivot's localPosition within orbParent so
+//       rings remain correctly centred on the planet. useWorldSpace remains
+//       false (local space of orbParent, not pivot).
+//     - FIX 3: SetArrowsForOrbsVisible now applies the ArrowsForOrbs root
+//       transform (arrowsRootPosition/Rotation/Scale) from config to the root
+//       GameObject before activating it. Previously the root landed at its
+//       scene-default position and child arrow local positions were then
+//       applied relative to that wrong root position.
+//
+//   v3.32 2026-04-17  RING REVERT + ARROW INCLUDINACTIVE FIX
+//     - REVERT: SpawnOrbitRing restored to original: parented to pivot,
+//       localPosition=zero, useWorldSpace=false. The v3.31 approach of
+//       parenting rings to orbParent with pivotLocalPos offset was causing
+//       displacement because segment positions with useWorldSpace=false are
+//       in the ring GO's own local space, and orbParent's scale/rotation
+//       affected where they drew. Rings on pivot with localPosition=zero
+//       is the original correct approach — a circle rotated around its own
+//       Y axis is visually identical. Rings will not visibly spin because
+//       the cause of spinning (ZonePlanet gesture code) is already removed.
+//     - FIX: SetArrowsForOrbsVisible was calling GetComponentsInChildren
+//       with includeInactive:false. Individual arrow GameObjects may be
+//       inactive within ArrowsForOrbs. Changed to includeInactive:true so
+//       ApplyTransformFromConfig is called on all arrows regardless.
+//
+//   v3.31 2026-04-16  RINGS DECOUPLED FROM PIVOT (displaced rings — reverted)
+//   v3.30 2026-04-16  REVERT RING AND ORB SPAWN TO WORKING STATE
+//   v3.27 2026-04-16  ARROWSFORORBS SHOW/HIDE
+//   v3.26 2026-04-15  LOCAL ROTATION FOR PIVOT
+//   v3.24 2026-04-14  REMOVE CHEVRONS
+//   v3.23 2026-04-14  SWITCH LEVEL + DUMMY RING CAROUSEL
+//     - FIX: RotateRing / left-right arrow carousel not working.
+//       Root cause: _ringState was only populated from _sessionOrbsByZone
+//       (real session orbs), which is always empty at P1 dummy-orb stage.
+//       Fix: added InitialiseDummyRing(PhobiaZone) that builds OrbRingState
+//       directly from the equator dummy GameObjects (no ConstellationOrb
+//       component required — uses a lightweight index-only ring).
+//       ExpandZone now calls InitialiseDummyRing when _sessionOrbsByZone is
+//       empty. TweenRing now rotates the OrbPivot transform (not ZonePlanet)
+//       so the orbs physically carousel around the planet while the planet
+//       itself stays still.
+//     - ADD: SwitchLevel(PhobiaZone, int direction) — up/down arrow handler.
+//       direction +1 = Upper band, -1 = Lower band, clamped (no wrap).
+//       Tracks active band per zone in _activeBandByZone (0=Equator,+1=Upper,
+//       -1=Lower). On switch: hides orbs of the outgoing band, shows orbs of
+//       the incoming band, re-initialises the dummy ring for the new band,
+//       and updates orbit ring alpha (active/faded). Logs clearly at every step.
+//     - ADD: _bandOrbsByZone — Dictionary<PhobiaZone, Dictionary<string,
+//       List<GameObject>>> — stores per-band orb lists ("Equator","Upper",
+//       "Lower") populated in SpawnZone by capturing all three SpawnSlotBand
+//       return values. Upper and Lower band return values were previously
+//       discarded.
+//     - ADD: _activeBandByZone — Dictionary<PhobiaZone, int> — 0=Equator,
+//       +1=Upper, -1=Lower. Initialised to 0 in SpawnZone, reset to 0 in
+//       CollapseZoneInternal.
+//     - CollapseZoneInternal: resets _activeBandByZone[zone] = 0 on collapse.
 //
 //   v3.22 2026-04-06  PER-BAND ORBIT RADIUS
-//     - SpawnZone now resolves three separate orbit radius values, one per band:
-//         eqOrbitRadius  = colliderRadius × equatorRadiusMultiplier + padding
-//         upOrbitRadius  = colliderRadius × upperRadiusMultiplier   + padding
-//         loOrbitRadius  = colliderRadius × lowerRadiusMultiplier   + padding
-//     - Each SpawnSlotBand and SpawnOrbitRing call receives its own radius.
-//     - Fallback when cfg is null: all three use manager.orbitalRadiusMultiplier
-//       (global default retained for backward compat when no config assigned).
-//     - Global default field orbitalRadiusMultiplier retained on manager.
-//     - OrbLayoutConfig v3.2: equatorRadiusMultiplier / upperRadiusMultiplier /
-//       lowerRadiusMultiplier replace single orbitalRadiusMultiplier.
-//
 //   v3.21 2026-04-06  PER-ZONE CONFIG
-//     - ZoneClusterEntry: added `public OrbLayoutConfig layoutConfig` field.
-//       Each zone now carries its own config asset in the Inspector. All orb
-//       geometry for that zone is driven exclusively by that config when assigned.
-//     - Removed top-level `public OrbLayoutConfig layoutConfig` from
-//       ConstellationManager. The manager-level Inspector fields (orbSize, latitudes,
-//       colours etc.) now serve as global defaults only — used when a zone's
-//       entry.layoutConfig is null.
-//     - SpawnZone(PhobiaZone, Transform, OrbLayoutConfig): config parameter added.
-//       All geometry values (orbSize, latitudes, slots, radius, colours, ring,
-//       chevron, pivot euler) are read from the passed config. Falls back to
-//       manager Inspector fields when config is null.
-//     - BuildConstellation: passes entry.layoutConfig to SpawnZone per entry.
-//     - RebuildDummyOrbs(PhobiaZone): looks up the zone's entry.layoutConfig and
-//       passes it to SpawnZone. This is why orb size now updates on rebuild — the
-//       correct per-zone config is used, not shared manager fields.
-//     - EnsureSlotDefaults(OrbLayoutConfig cfg): takes config parameter; reads
-//       bandOrbCount and lat values from cfg (or manager defaults if null).
-//     - ApplyLiveProperties(PhobiaZone, OrbLayoutConfig): zone-scoped. Only
-//       updates _liveRings and _liveChevrons that belong to the specified zone.
-//       Keyed by zone prefix in ring name (e.g. "Flying_Ring_Equator").
-//     - Ring/chevron names now prefixed with zone: "{zone}_Ring_Equator" etc.
-//       This allows per-zone live updates without touching other zones' renderers.
-//     - _liveRings key changed to "{zone}_{ringName}" format.
-//     - SetOrbPivotRotation(PhobiaZone, Quaternion): unchanged, already zone-scoped.
-//     - SavePlanetTransformToConfig / ApplyPlanetTransformFromConfig: unchanged,
-//       already take explicit cfg parameter.
-//     - SetZoneVisible: unchanged.
-//     - GetConfigForZone(PhobiaZone): new helper returns entry.layoutConfig or null.
-//
 //   v3.20 2026-04-06  ORB PIVOT + MULTI-PLANET PREVIEW + PLANET TRANSFORM
 //   v3.19 2026-04-06  LIVE LAYOUT EDITOR SUPPORT
 //   v3.18 2026-04-05  PHASE 1 VISUAL COMPLETE
@@ -68,8 +163,18 @@
 //   v3.11–v1    see prior headers
 //
 // OBSOLETE — DELETE:
-//   ConstellationManager.cs v3.23 supersedes v3.22
-//   ConstellationManager.cs v3.22 supersedes v3.21
+//   ConstellationManager.cs v3.41 (2026-04-18)
+//   ConstellationManager.cs v3.40 (2026-04-18)
+//   ConstellationManager.cs v3.39 (2026-04-18)
+//   ConstellationManager.cs v3.37 (2026-04-18)
+//   ConstellationManager.cs v3.30 (2026-04-16)
+//   ConstellationManager.cs v3.29 (2026-04-16)
+//   ConstellationManager.cs v3.28 (2026-04-16)
+//   ConstellationManager.cs v3.27 (2026-04-16)
+//   ConstellationManager.cs v3.26 (2026-04-15)
+//   ConstellationManager.cs v3.24 (2026-04-14)
+//   ConstellationManager.cs v3.23 (2026-04-14)
+//   ConstellationManager.cs v3.22 (2026-04-06)
 //   ConstellationManager.cs v3.21 (2026-04-06)
 //   ConstellationManager.cs v3.20 (2026-04-06)
 //   ConstellationManager.cs v3.19 (2026-04-06)
@@ -89,7 +194,7 @@
 //   SessionRegistry.cs             GetByPhobiaZone(), GetCrossovers()
 //   UserProgressService.cs v2.2.0  IsCompleted(), IsLoaded
 //   ZonePlanet.cs                  ExpandZone/Collapse callbacks
-//   ConstellationOrb.cs v4.1       SetTier() [Phase 2+]
+//   ConstellationOrb.cs v4.4       SetTier() [Phase 2+]
 //   ZoneLabelController.cs         SetLabel(), Show(), SetVisibleImmediate()
 //   SessionLauncher.cs             LaunchSession()
 //   AntechamberController.cs       ShowForSession()
@@ -213,15 +318,25 @@ public class ConstellationManager : MonoBehaviour
     private class OrbRingState
     {
         public List<ConstellationOrb> orderedOrbs;
+        public List<GameObject>       dummyOrbs;   // used when orderedOrbs is empty (P1 dummy stage)
         public int frontIndex;
         public OrbRingState(List<ConstellationOrb> orbs, int front)
-        { orderedOrbs = orbs; frontIndex = front; }
+        { orderedOrbs = orbs; dummyOrbs = null; frontIndex = front; }
+        public OrbRingState(List<GameObject> dummies, int front)
+        { orderedOrbs = new List<ConstellationOrb>(); dummyOrbs = dummies; frontIndex = front; }
+        public int Count => orderedOrbs.Count > 0 ? orderedOrbs.Count
+                                                   : (dummyOrbs != null ? dummyOrbs.Count : 0);
     }
 
     // ── Live-update targets ───────────────────────────────────────────────────
     // Key: "{zone}_{ringName}" e.g. "Flying_Ring_Equator"
-    private Dictionary<string, (LineRenderer lr, bool isActive, PhobiaZone zone)> _liveRings
-        = new Dictionary<string, (LineRenderer, bool, PhobiaZone)>();
+    // Tuple stores: LineRenderer, isActive flag, zone, orbitRadius, latitudeDeg,
+    // longitudeOffsetDeg (baked at spawn), pivot local position at spawn time —
+    // all needed to recompute segments correctly when gyro rotates.
+    private Dictionary<string, (LineRenderer lr, bool isActive, PhobiaZone zone,
+                                 float orbitRadius, float latitudeDeg,
+                                 float longitudeOffsetDeg, Vector3 pivotLocalPos)> _liveRings
+        = new Dictionary<string, (LineRenderer, bool, PhobiaZone, float, float, float, Vector3)>();
 
     private List<(LineRenderer lr, PhobiaZone zone)> _liveChevrons
         = new List<(LineRenderer, PhobiaZone)>();
@@ -237,6 +352,15 @@ public class ConstellationManager : MonoBehaviour
     private Dictionary<PhobiaZone, List<GameObject>> _dummyOrbsByZone     = new Dictionary<PhobiaZone, List<GameObject>>();
     private Dictionary<PhobiaZone, OrbRingState>     _ringState           = new Dictionary<PhobiaZone, OrbRingState>();
     private Dictionary<PhobiaZone, Coroutine>        _ringTweenCoroutines = new Dictionary<PhobiaZone, Coroutine>();
+
+    // Per-zone per-band orb lists — "Equator", "Upper", "Lower"
+    private Dictionary<PhobiaZone, Dictionary<string, List<GameObject>>> _bandOrbsByZone
+        = new Dictionary<PhobiaZone, Dictionary<string, List<GameObject>>>();
+
+    // Active band per zone: 0 = Equator, +1 = Upper, -1 = Lower
+    private Dictionary<PhobiaZone, int> _activeBandByZone
+        = new Dictionary<PhobiaZone, int>();
+
     private PhobiaZone _expandedZone = PhobiaZone.None;
 
     public int ZoneClusterCount
@@ -323,21 +447,12 @@ public class ConstellationManager : MonoBehaviour
         }
 
         // ── Resolve all values from config or fall back to manager defaults ───
-        // Slot lists: read from the zone's own config asset. Each zone gets fresh
-        // local lists so zones never share or corrupt each other's slot data.
-        // Manager-level equatorSlots/upperSlots/lowerSlots are only used as a
-        // fallback when no config is assigned, and are copied (not referenced) so
-        // the manager's list is not mutated by EnsureSlotDefaults.
-        List<Vector2> eqSlots = cfg != null
-            ? new List<Vector2>(cfg.equatorSlots)
-            : new List<Vector2>(equatorSlots);
-        List<Vector2> upSlots = cfg != null
-            ? new List<Vector2>(cfg.upperSlots)
-            : new List<Vector2>(upperSlots);
-        List<Vector2> loSlots = cfg != null
-            ? new List<Vector2>(cfg.lowerSlots)
-            : new List<Vector2>(lowerSlots);
+        List<Vector2> eqSlots  = equatorSlots;
+        List<Vector2> upSlots  = upperSlots;
+        List<Vector2> loSlots  = lowerSlots;
         int    orbCount        = cfg != null ? cfg.bandOrbCount            : bandOrbCount;
+        const int eqOrbCount   = 5;
+        const int sideOrbCount = 3;
         bool   moveTogther     = cfg != null ? cfg.moveBandAndOrbsTogether : moveBandAndOrbsTogether;
         float  eqLat           = cfg != null ? cfg.equatorLatDeg           : equatorLatDeg;
         float  upLat           = cfg != null ? cfg.upperLatDeg             : upperLatDeg;
@@ -349,7 +464,6 @@ public class ConstellationManager : MonoBehaviour
         float  frontScale      = cfg != null ? cfg.orbFrontScale           : orbFrontScale;
         float  sideScale       = cfg != null ? cfg.orbSideScale            : orbSideScale;
         float  orbitPadding    = cfg != null ? cfg.orbOrbitPadding         : orbOrbitPadding;
-        // Per-band radius: each ring has an independent multiplier for visual variety
         float  eqRadiusMult    = cfg != null ? cfg.equatorRadiusMultiplier : orbitalRadiusMultiplier;
         float  upRadiusMult    = cfg != null ? cfg.upperRadiusMultiplier   : orbitalRadiusMultiplier;
         float  loRadiusMult    = cfg != null ? cfg.lowerRadiusMultiplier   : orbitalRadiusMultiplier;
@@ -362,6 +476,10 @@ public class ConstellationManager : MonoBehaviour
         float  chWidth         = cfg != null ? cfg.chevronWidth            : chevronWidth;
         float  chFraction      = cfg != null ? cfg.chevronSizeFraction     : chevronSizeFraction;
         Vector3 pivotEuler     = cfg != null ? cfg.orbPivotEuler           : Vector3.zero;
+        float   globalRot      = cfg != null ? cfg.globalRingRotation      : 0f;
+        float   eqRot          = cfg != null ? cfg.equatorRingRotation     : 0f;
+        float   upRot          = cfg != null ? cfg.upperRingRotation       : 0f;
+        float   loRot          = cfg != null ? cfg.lowerRingRotation       : 0f;
 
         Debug.Log($"[ConstellationManager] SpawnZone {zone}: " +
                   $"orbSize={orbSize:F1}% eqR={eqRadiusMult:F2} upR={upRadiusMult:F2} loR={loRadiusMult:F2} " +
@@ -425,9 +543,12 @@ public class ConstellationManager : MonoBehaviour
         Transform orbParent     = spawnedZonePlanet != null ? spawnedZonePlanet.transform : clusterRoot;
 
         // ── Slot defaults ─────────────────────────────────────────────────────
-        EnsureSlotDefaults(eqSlots, upSlots, loSlots, orbCount, eqLat, upLat, loLat, zone);
+        EnsureSlotDefaults(eqSlots, upSlots, loSlots, eqOrbCount, sideOrbCount, eqLat, upLat, loLat, zone);
 
         // ── Camera-facing longitude offset ────────────────────────────────────
+        // Orbs spawn facing the camera. The offset is computed from camera
+        // position at spawn time and added to each slot's longitude. Slot y
+        // values do NOT bake this in — they are relative offsets from camera-facing 0°.
         float longitudeOffsetDeg = 0f;
         if (Camera.main != null)
         {
@@ -456,8 +577,7 @@ public class ConstellationManager : MonoBehaviour
         Transform pivot = pivotGO.transform;
         _orbPivots[zone] = pivot;
 
-        Debug.Log($"[ConstellationManager] OrbPivot_{zone} at {planetWorldCentre:F3} " +
-                  $"euler={pivotEuler:F1}.");
+        Debug.Log($"[ConstellationManager] OrbPivot_{zone} at {planetWorldCentre:F3} euler={pivotEuler:F1}.");
 
         // ── Materials ─────────────────────────────────────────────────────────
         Shader   urpUnlit  = Shader.Find("Universal Render Pipeline/Unlit");
@@ -472,31 +592,58 @@ public class ConstellationManager : MonoBehaviour
 
         List<GameObject> equatorOrbs = SpawnSlotBand(zone, pivot, eqOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            eqLat, eqSlots, longitudeOffsetDeg, matEquator, "Equator", ref allDummy);
+            eqLat, eqSlots, longitudeOffsetDeg + globalRot + eqRot, matEquator, "Equator", ref allDummy);
 
-        SpawnSlotBand(zone, pivot, upOrbitRadius,
+        List<GameObject> upperOrbs = SpawnSlotBand(zone, pivot, upOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            upLat, upSlots, longitudeOffsetDeg, matUpper, "Upper", ref allDummy);
+            upLat, upSlots, longitudeOffsetDeg + globalRot + upRot, matUpper, "Upper", ref allDummy);
 
-        SpawnSlotBand(zone, pivot, loOrbitRadius,
+        List<GameObject> lowerOrbs = SpawnSlotBand(zone, pivot, loOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            loLat, loSlots, longitudeOffsetDeg, matLower, "Lower", ref allDummy);
+            loLat, loSlots, longitudeOffsetDeg + globalRot + loRot, matLower, "Lower", ref allDummy);
+
+        // ── Store per-band orb lists ──────────────────────────────────────────
+        _bandOrbsByZone[zone] = new Dictionary<string, List<GameObject>>
+        {
+            { "Equator", equatorOrbs },
+            { "Upper",   upperOrbs  },
+            { "Lower",   lowerOrbs  }
+        };
+        _activeBandByZone[zone] = 0; // always start on Equator
+
+        Debug.Log($"[ConstellationManager] {zone} band orb counts: " +
+                  $"Equator={equatorOrbs.Count} Upper={upperOrbs.Count} Lower={lowerOrbs.Count}.");
 
         // ── Spawn rings ───────────────────────────────────────────────────────
-        SpawnOrbitRing(zone, pivot, eqOrbitRadius, eqLat, rAlphaActive,
-                       matRing, rColour, rWidth, rSegments, "Ring_Equator", isActive: true, ref allDummy);
-        SpawnOrbitRing(zone, pivot, upOrbitRadius, upLat, rAlphaFaded,
-                       matRing, rColour, rWidth, rSegments, "Ring_Upper", isActive: false, ref allDummy);
-        SpawnOrbitRing(zone, pivot, loOrbitRadius, loLat, rAlphaFaded,
-                       matRing, rColour, rWidth, rSegments, "Ring_Lower", isActive: false, ref allDummy);
+        // Rings parented to orbParent (not pivot) so they do not rotate when the
+        // carousel fires. Segment positions are offset by the pivot's localPosition
+        // within orbParent so rings are correctly centred on the planet.
+        float widthMult     = cfg != null ? cfg.activeRingLineWidthMultiplier : 1f;
+        float eqSpawnWidth  = cfg != null && cfg.ringLineWidthEquator > 0.001f
+                              ? cfg.ringLineWidthEquator * widthMult : rWidth * widthMult;
+        float upSpawnWidth  = cfg != null && cfg.ringLineWidthUpper > 0.001f
+                              ? cfg.ringLineWidthUpper : rWidth;
+        float loSpawnWidth  = cfg != null && cfg.ringLineWidthLower > 0.001f
+                              ? cfg.ringLineWidthLower : rWidth;
 
-        // ── Chevrons ──────────────────────────────────────────────────────────
-        if (equatorOrbs.Count >= 3)
+        SpawnOrbitRing(zone, pivot, orbParent, eqOrbitRadius, eqLat, longitudeOffsetDeg + globalRot + eqRot,
+                       rAlphaActive, matRing, rColour, eqSpawnWidth, rSegments, "Ring_Equator", isActive: true, ref allDummy);
+        SpawnOrbitRing(zone, pivot, orbParent, upOrbitRadius, upLat, longitudeOffsetDeg + globalRot + upRot,
+                       rAlphaFaded, matRing, rColour, upSpawnWidth, rSegments, "Ring_Upper", isActive: false, ref allDummy);
+        SpawnOrbitRing(zone, pivot, orbParent, loOrbitRadius, loLat, longitudeOffsetDeg + globalRot + loRot,
+                       rAlphaFaded, matRing, rColour, loSpawnWidth, rSegments, "Ring_Lower", isActive: false, ref allDummy);
+
+        // ── Chevrons superseded by ZoneNavArrow system — not spawned ─────────
+        // SpawnChevron() method retained but must not be called.
+
+        // ── Restore gyro rotation to rings ────────────────────────────────────
+        // pivotEuler is already applied to the pivot transform above so orbs
+        // spawn at the correct rotation. Rings are orbParent children and their
+        // segments must be explicitly recomputed to match the saved gyro state.
+        if (pivotEuler != Vector3.zero)
         {
-            SpawnChevron(zone, equatorOrbs[1], +1f, chColour, chWidth, chFraction,
-                         "Chevron_Right", ref allDummy);
-            SpawnChevron(zone, equatorOrbs[equatorOrbs.Count - 1], -1f, chColour, chWidth, chFraction,
-                         "Chevron_Left", ref allDummy);
+            RotateRingSegmentsForZone(zone, Quaternion.Euler(pivotEuler));
+            Debug.Log($"[ConstellationManager] SpawnZone {zone}: ring segments restored for saved euler={pivotEuler:F1}.");
         }
 
         _dummyOrbsByZone[zone]   = allDummy;
@@ -506,32 +653,32 @@ public class ConstellationManager : MonoBehaviour
             if (go != null && go != pivotGO) go.SetActive(false);
 
         Debug.Log($"[ConstellationManager] SpawnZone complete: {zone} — " +
-                  $"{allDummy.Count} objects (pivot + orbs + rings + chevrons).");
+                  $"{allDummy.Count} objects (pivot + orbs + rings).");
     }
 
     // ── Slot defaults ─────────────────────────────────────────────────────────
 
     private void EnsureSlotDefaults(List<Vector2> eqSlots, List<Vector2> upSlots,
-                                    List<Vector2> loSlots, int count,
+                                    List<Vector2> loSlots, int eqCount, int sideCount,
                                     float eqLat, float upLat, float loLat, PhobiaZone zone)
     {
         if (eqSlots.Count == 0)
         {
-            for (int i = 0; i < count; i++)
-                eqSlots.Add(new Vector2(eqLat, (360f / count) * i));
-            Debug.Log($"[ConstellationManager] {zone} equatorSlots auto-filled: {count} slots.");
+            for (int i = 0; i < eqCount; i++)
+                eqSlots.Add(new Vector2(eqLat, (360f / eqCount) * i));
+            Debug.Log($"[ConstellationManager] {zone} equatorSlots auto-filled: {eqCount} slots.");
         }
         if (upSlots.Count == 0)
         {
-            for (int i = 0; i < count; i++)
-                upSlots.Add(new Vector2(upLat, (360f / count) * i));
-            Debug.Log($"[ConstellationManager] {zone} upperSlots auto-filled: {count} slots.");
+            for (int i = 0; i < sideCount; i++)
+                upSlots.Add(new Vector2(upLat, (360f / sideCount) * i));
+            Debug.Log($"[ConstellationManager] {zone} upperSlots auto-filled: {sideCount} slots.");
         }
         if (loSlots.Count == 0)
         {
-            for (int i = 0; i < count; i++)
-                loSlots.Add(new Vector2(loLat, (360f / count) * i));
-            Debug.Log($"[ConstellationManager] {zone} lowerSlots auto-filled: {count} slots.");
+            for (int i = 0; i < sideCount; i++)
+                loSlots.Add(new Vector2(loLat, (360f / sideCount) * i));
+            Debug.Log($"[ConstellationManager] {zone} lowerSlots auto-filled: {sideCount} slots.");
         }
     }
 
@@ -583,19 +730,16 @@ public class ConstellationManager : MonoBehaviour
 
             Vector3 localOffset = OrbitalPositionOnSphere(orbitRadius, latDeg, lonDeg);
 
-            float perspScale = baseOrbScale;
-            if (Camera.main != null)
-            {
-                Vector3 toCam = (Camera.main.transform.position - pivot.position).normalized;
-                float   dot   = Mathf.Abs(Vector3.Dot(localOffset.normalized, toCam));
-                perspScale    = baseOrbScale * Mathf.Lerp(sideSc, frontSc, dot);
-            }
+            // Uniform scale — camera-dependent perspective scaling removed.
+            // It produced different orb sizes on every Play Mode entry and
+            // is post-MVP visual polish that can be revisited later.
+            float orbScale = baseOrbScale;
 
             GameObject dummy = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             dummy.name = $"P1_{zone}_{bandName}_{i}";
             dummy.transform.SetParent(pivot, worldPositionStays: false);
             dummy.transform.localPosition = localOffset;
-            dummy.transform.localScale    = Vector3.one * perspScale;
+            dummy.transform.localScale    = Vector3.one * orbScale;
 
             Renderer rend = dummy.GetComponent<Renderer>();
             if (rend != null && bandMaterial != null) rend.sharedMaterial = bandMaterial;
@@ -607,7 +751,7 @@ public class ConstellationManager : MonoBehaviour
             collector.Add(dummy);
 
             Debug.Log($"[ConstellationManager] {zone} {bandName}[{i}]: " +
-                      $"lat={latDeg:F1}° lon={lonDeg:F1}° scale={perspScale:F3}.");
+                      $"lat={latDeg:F1}° lon={lonDeg:F1}° scale={orbScale:F3}.");
         }
 
         Debug.Log($"[ConstellationManager] {zone} Band {bandName}: {spawned.Count} orbs. " +
@@ -617,15 +761,22 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Orbit ring LineRenderer ───────────────────────────────────────────────
 
-    private void SpawnOrbitRing(PhobiaZone zone, Transform pivot,
-                                float orbitRadius, float latitudeDeg, float alpha,
+    // Rings are parented to orbParent (not the pivot) so they do not rotate
+    // when the carousel fires. Segment positions are offset by the pivot's
+    // localPosition within orbParent so rings are correctly centred on the planet.
+    // longitudeOffsetDeg rotates the ring to match its band's orb offset.
+    // Geometry data (orbitRadius, latitudeDeg, pivotLocalPos) is stored in
+    // _liveRings so SetOrbPivotRotation can recompute segments when gyro rotates.
+    private void SpawnOrbitRing(PhobiaZone zone, Transform pivot, Transform orbParent,
+                                float orbitRadius, float latitudeDeg, float longitudeOffsetDeg,
+                                float alpha,
                                 Material ringMaterial, Color rColour, float rWidth, int rSegs,
                                 string ringName, bool isActive, ref List<GameObject> collector)
     {
         if (ringMaterial == null) return;
 
         GameObject ringGO = new GameObject(ringName);
-        ringGO.transform.SetParent(pivot, worldPositionStays: false);
+        ringGO.transform.SetParent(orbParent, worldPositionStays: false);
         ringGO.transform.localPosition = Vector3.zero;
         ringGO.transform.localRotation = Quaternion.identity;
 
@@ -641,22 +792,41 @@ public class ConstellationManager : MonoBehaviour
         lr.startColor = c;
         lr.endColor   = c;
 
+        Vector3 centre = pivot.localPosition;
+        WriteRingSegments(lr, centre, orbitRadius, latitudeDeg, longitudeOffsetDeg, rSegs);
+
+        string key = $"{zone}_{ringName}";
+        _liveRings[key] = (lr, isActive, zone, orbitRadius, latitudeDeg, longitudeOffsetDeg, centre);
+
+        collector.Add(ringGO);
+        Debug.Log($"[ConstellationManager] {zone} Ring {ringName}: lat={latitudeDeg}° " +
+                  $"lonOffset={longitudeOffsetDeg:F1}° alpha={alpha:F2} centre={centre:F3}.");
+    }
+
+    /// <summary>
+    /// Writes ring segment positions to a LineRenderer.
+    /// centre: pivot local position within orbParent (ring is centred here).
+    /// gyroRot: optional additional rotation applied to each segment position
+    /// around the centre — used by SetOrbPivotRotation to keep rings aligned with orbs.
+    /// </summary>
+    private void WriteRingSegments(LineRenderer lr, Vector3 centre,
+                                   float orbitRadius, float latitudeDeg,
+                                   float longitudeOffsetDeg, int rSegs,
+                                   Quaternion? gyroRot = null)
+    {
         float latRad = latitudeDeg * Mathf.Deg2Rad;
         float y = orbitRadius * Mathf.Sin(latRad);
         float r = orbitRadius * Mathf.Cos(latRad);
+        float lonOffsetRad = longitudeOffsetDeg * Mathf.Deg2Rad;
 
         for (int i = 0; i < rSegs; i++)
         {
-            float lonRad = (360f / rSegs) * i * Mathf.Deg2Rad;
-            lr.SetPosition(i, new Vector3(Mathf.Sin(lonRad) * r, y, Mathf.Cos(lonRad) * r));
+            float lonRad = (360f / rSegs) * i * Mathf.Deg2Rad + lonOffsetRad;
+            Vector3 seg  = new Vector3(Mathf.Sin(lonRad) * r, y, Mathf.Cos(lonRad) * r);
+            if (gyroRot.HasValue)
+                seg = gyroRot.Value * seg;
+            lr.SetPosition(i, centre + seg);
         }
-
-        // Key includes zone prefix so live updates are zone-scoped
-        string key = $"{zone}_{ringName}";
-        _liveRings[key] = (lr, isActive, zone);
-
-        collector.Add(ringGO);
-        Debug.Log($"[ConstellationManager] {zone} Ring {ringName}: lat={latitudeDeg}° alpha={alpha:F2}.");
     }
 
     // ── Chevron affordance ────────────────────────────────────────────────────
@@ -750,8 +920,9 @@ public class ConstellationManager : MonoBehaviour
     {
         if (_orbPivots.TryGetValue(zone, out Transform pivot) && pivot != null)
         {
-            pivot.rotation = rotation;
-            Debug.Log($"[ConstellationManager] SetOrbPivotRotation: {zone} euler={rotation.eulerAngles:F1}.");
+            pivot.localRotation = rotation;
+            Debug.Log($"[ConstellationManager] SetOrbPivotRotation: {zone} localEuler={rotation.eulerAngles:F1}.");
+            RotateRingSegmentsForZone(zone, rotation);
         }
         else
             Debug.LogWarning($"[ConstellationManager] SetOrbPivotRotation: no pivot for {zone}.");
@@ -761,14 +932,40 @@ public class ConstellationManager : MonoBehaviour
     {
         int count = 0;
         foreach (var kvp in _orbPivots)
-            if (kvp.Value != null) { kvp.Value.rotation = rotation; count++; }
-        Debug.Log($"[ConstellationManager] SetAllOrbPivotRotation: euler={rotation.eulerAngles:F1} × {count} pivots.");
+        {
+            if (kvp.Value != null)
+            {
+                kvp.Value.localRotation = rotation;
+                RotateRingSegmentsForZone(kvp.Key, rotation);
+                count++;
+            }
+        }
+        Debug.Log($"[ConstellationManager] SetAllOrbPivotRotation: localEuler={rotation.eulerAngles:F1} × {count} pivots.");
+    }
+
+    /// <summary>
+    /// Recomputes all ring segment positions for a zone using the supplied gyro rotation.
+    /// Called by SetOrbPivotRotation so rings stay in sync with orbs when gyro changes.
+    /// </summary>
+    private void RotateRingSegmentsForZone(PhobiaZone zone, Quaternion gyroRot)
+    {
+        OrbLayoutConfig cfg = GetConfigForZone(zone);
+        int rSegs = cfg != null ? cfg.ringSegments : ringSegments;
+
+        foreach (var kvp in _liveRings)
+        {
+            if (kvp.Value.zone != zone) continue;
+            var (lr, _, _, orbitRadius, latitudeDeg, longitudeOffsetDeg, pivotLocalPos) = kvp.Value;
+            if (lr == null) continue;
+            WriteRingSegments(lr, pivotLocalPos, orbitRadius, latitudeDeg, longitudeOffsetDeg, rSegs, gyroRot);
+            Debug.Log($"[ConstellationManager] RotateRingSegments: {kvp.Key} recomputed lonOffset={longitudeOffsetDeg:F1}° gyro={gyroRot.eulerAngles:F1}.");
+        }
     }
 
     public Vector3 GetOrbPivotEuler(PhobiaZone zone)
     {
         if (_orbPivots.TryGetValue(zone, out Transform pivot) && pivot != null)
-            return pivot.rotation.eulerAngles;
+            return pivot.localRotation.eulerAngles;
         return Vector3.zero;
     }
 
@@ -817,10 +1014,6 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Live property update (zone-scoped) ────────────────────────────────────
 
-    /// <summary>
-    /// Applies colour/width changes to rings and chevrons belonging to a specific zone only.
-    /// Called by OrbLayoutEditor when the active edit zone's live properties change.
-    /// </summary>
     public void ApplyLiveProperties(PhobiaZone zone, OrbLayoutConfig cfg)
     {
         if (cfg == null) { Debug.LogWarning("[ConstellationManager] ApplyLiveProperties: cfg null."); return; }
@@ -881,13 +1074,14 @@ public class ConstellationManager : MonoBehaviour
             return;
         }
 
-        // Remove live targets for this zone only
         var keysToRemove = new List<string>();
         foreach (var kvp in _liveRings)
             if (kvp.Value.zone == zone) keysToRemove.Add(kvp.Key);
         foreach (var k in keysToRemove) _liveRings.Remove(k);
         _liveChevrons.RemoveAll(t => t.zone == zone);
         _orbPivots.Remove(zone);
+        _bandOrbsByZone.Remove(zone);
+        _activeBandByZone.Remove(zone);
 
         if (_dummyOrbsByZone.TryGetValue(zone, out List<GameObject> existing))
         {
@@ -902,20 +1096,27 @@ public class ConstellationManager : MonoBehaviour
             Debug.Log($"[ConstellationManager] RebuildDummyOrbs: {zone} " +
                       $"config={(entry.layoutConfig != null ? entry.layoutConfig.name : "null (defaults)")}.");
 
-            // If the editor populated the manager's slot lists (for in-Play tuning),
-            // copy them into the config before spawning so SpawnZone reads them.
-            // Only copy when non-empty — empty means "auto-fill from lat values".
-            var zoneCfg = entry.layoutConfig;
-            if (zoneCfg != null)
-            {
-                if (equatorSlots.Count > 0) zoneCfg.equatorSlots = new List<Vector2>(equatorSlots);
-                if (upperSlots.Count   > 0) zoneCfg.upperSlots   = new List<Vector2>(upperSlots);
-                if (lowerSlots.Count   > 0) zoneCfg.lowerSlots   = new List<Vector2>(lowerSlots);
-            }
-            SpawnZone(zone, entry.clusterRoot, zoneCfg);
+            SpawnZone(zone, entry.clusterRoot, entry.layoutConfig);
 
             if (_expandedZone == zone && _dummyOrbsByZone.TryGetValue(zone, out var newOrbs))
-                foreach (var go in newOrbs) if (go != null) go.SetActive(true);
+            {
+                // Mirror ExpandZone: show pivot+rings only, then active band orbs only.
+                var allBandOrbsRebuild = new HashSet<GameObject>();
+                if (_bandOrbsByZone.TryGetValue(zone, out var rebuildBands))
+                    foreach (var kvp in rebuildBands)
+                        foreach (var go in kvp.Value)
+                            if (go != null) allBandOrbsRebuild.Add(go);
+
+                foreach (var go in newOrbs)
+                    if (go != null && !allBandOrbsRebuild.Contains(go))
+                        go.SetActive(true);
+
+                string activeBandRebuild = ActiveBandName(zone);
+                if (rebuildBands != null && rebuildBands.TryGetValue(activeBandRebuild, out var activeOrbsRebuild))
+                    foreach (var go in activeOrbsRebuild) if (go != null) go.SetActive(true);
+
+                Debug.Log($"[ConstellationManager] RebuildDummyOrbs: {zone} re-shown, active band={activeBandRebuild}.");
+            }
 
             Debug.Log($"[ConstellationManager] RebuildDummyOrbs complete: {zone}. " +
                       $"Pivots={_orbPivots.Count} Rings={_liveRings.Count} Chevrons={_liveChevrons.Count}.");
@@ -934,14 +1135,47 @@ public class ConstellationManager : MonoBehaviour
 
         _expandedZone = zone;
 
+        // Show pivot and rings (non-band objects in allDummy) plus only the
+        // active band's orbs. All three bands were hidden at spawn — showing
+        // all dummies would make all bands visible simultaneously, breaking SwitchLevel.
         if (_dummyOrbsByZone.TryGetValue(zone, out List<GameObject> dummies))
         {
-            foreach (var go in dummies) if (go != null) go.SetActive(true);
-            Debug.Log($"[ConstellationManager] Expanded {zone}: {dummies.Count} objects shown.");
+            // Collect all band orb GameObjects so we can exclude them from the bulk show
+            var allBandOrbs = new HashSet<GameObject>();
+            if (_bandOrbsByZone.TryGetValue(zone, out var bands))
+                foreach (var kvp in bands)
+                    foreach (var go in kvp.Value)
+                        if (go != null) allBandOrbs.Add(go);
+
+            // Show pivot and rings
+            foreach (var go in dummies)
+                if (go != null && !allBandOrbs.Contains(go))
+                    go.SetActive(true);
+
+            // Show only the active band (always Equator on first expand)
+            string activeBand = ActiveBandName(zone);
+            if (bands != null && bands.TryGetValue(activeBand, out var activeOrbs))
+            {
+                foreach (var go in activeOrbs) if (go != null) go.SetActive(true);
+                Debug.Log($"[ConstellationManager] ExpandZone {zone}: showing {activeOrbs.Count} {activeBand} orbs.");
+            }
+
+            Debug.Log($"[ConstellationManager] Expanded {zone}: pivot+rings shown, active band={activeBand}.");
         }
 
+        // Show the ArrowsForOrbs root for this zone.
+        SetArrowsForOrbsVisible(zone, true);
+
+        // Initialise ring from real session orbs if available, otherwise from dummy equator orbs.
         if (_sessionOrbsByZone.TryGetValue(zone, out List<GameObject> realOrbs) && realOrbs.Count > 0)
+        {
             InitialiseRing(zone);
+            Debug.Log($"[ConstellationManager] ExpandZone {zone}: ring initialised from {realOrbs.Count} real orbs.");
+        }
+        else
+        {
+            InitialiseDummyRing(zone);
+        }
 
         if (!_dummyOrbsByZone.ContainsKey(zone) && !_sessionOrbsByZone.ContainsKey(zone))
             Debug.LogWarning($"[ConstellationManager] ExpandZone: no orbs for {zone}.");
@@ -959,13 +1193,71 @@ public class ConstellationManager : MonoBehaviour
         if (_sessionOrbsByZone.TryGetValue(zone, out List<GameObject> realOrbs))
             foreach (var go in realOrbs) if (go != null) go.SetActive(false);
 
+        // Hide the ArrowsForOrbs root for this zone.
+        SetArrowsForOrbsVisible(zone, false);
+
         _ringState.Remove(zone);
+        _activeBandByZone[zone] = 0; // reset to Equator on collapse
 
         if (notifyZonePlanet && _allZonePlanets.TryGetValue(zone, out ZonePlanet zp))
             zp.Collapse();
 
         if (_expandedZone == zone) _expandedZone = PhobiaZone.None;
         Debug.Log($"[ConstellationManager] Collapsed: {zone}.");
+    }
+
+    /// <summary>
+    /// Finds the ArrowsForOrbs root GameObject under the zone's cluster root
+    /// and shows or hides it. When showing, applies saved transforms from the
+    /// zone's OrbLayoutConfig to each ZoneNavArrow child so positions are
+    /// correct on the first expand without needing a manual Apply press.
+    /// </summary>
+    private void SetArrowsForOrbsVisible(PhobiaZone zone, bool visible)
+    {
+        foreach (var entry in zoneClusterEntries)
+        {
+            if (entry.zone != zone || entry.clusterRoot == null) continue;
+
+            foreach (Transform t in entry.clusterRoot.GetComponentsInChildren<Transform>(includeInactive: true))
+            {
+                if (t == entry.clusterRoot) continue;
+                if (string.Equals(t.name, "ArrowsForOrbs", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (visible)
+                    {
+                        // Apply root transform from config BEFORE activating so the
+                        // root lands at its saved position, not its scene-default position.
+                        OrbLayoutConfig cfg = GetConfigForZone(zone);
+                        if (cfg != null)
+                        {
+                            if (cfg.arrowsRootPosition != Vector3.zero)
+                                t.localPosition    = cfg.arrowsRootPosition;
+                            if (cfg.arrowsRootRotation != Vector3.zero)
+                                t.localEulerAngles = cfg.arrowsRootRotation;
+                            if (cfg.arrowsRootScale != Vector3.one)
+                                t.localScale       = cfg.arrowsRootScale;
+                            Debug.Log($"[ConstellationManager] SetArrowsForOrbsVisible: {zone} root transform applied " +
+                                      $"pos={cfg.arrowsRootPosition} rot={cfg.arrowsRootRotation} scale={cfg.arrowsRootScale}.");
+
+                            // Apply individual arrow transforms
+                            foreach (var arrow in t.GetComponentsInChildren<ZoneNavArrow>(includeInactive: true))
+                                arrow.ApplyTransformFromConfig(cfg);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[ConstellationManager] SetArrowsForOrbsVisible: no config for {zone} — transforms not applied.");
+                        }
+                    }
+
+                    t.gameObject.SetActive(visible);
+                    Debug.Log($"[ConstellationManager] SetArrowsForOrbsVisible: {zone} → {visible}.");
+                    return;
+                }
+            }
+
+            Debug.LogWarning($"[ConstellationManager] SetArrowsForOrbsVisible: 'ArrowsForOrbs' not found under {entry.clusterRoot.name}.");
+            return;
+        }
     }
 
     // ── Ring management (Phase 3+) ────────────────────────────────────────────
@@ -975,7 +1267,7 @@ public class ConstellationManager : MonoBehaviour
         if (!_sessionOrbsByZone.TryGetValue(zone, out List<GameObject> orbGOs)) return;
         var orbs = new List<ConstellationOrb>();
         foreach (var go in orbGOs) { if (go == null) continue; var o = go.GetComponent<ConstellationOrb>(); if (o != null) orbs.Add(o); }
-        if (orbs.Count == 0) { Debug.LogWarning($"[ConstellationManager] InitialiseRing: no orbs for {zone}. (Phase 2+)"); return; }
+        if (orbs.Count == 0) { Debug.LogWarning($"[ConstellationManager] InitialiseRing: no ConstellationOrb components for {zone}."); return; }
 
         int front = 0;
         for (int i = 0; i < orbs.Count; i++)
@@ -985,57 +1277,247 @@ public class ConstellationManager : MonoBehaviour
         }
         _ringState[zone] = new OrbRingState(orbs, front);
         ApplyRingTiers(zone);
-        Debug.Log($"[ConstellationManager] Ring initialised: {zone} front={front}/{orbs.Count}.");
+        Debug.Log($"[ConstellationManager] InitialiseRing: {zone} front={front}/{orbs.Count}.");
+    }
+
+    /// <summary>
+    /// Builds a lightweight ring state from the dummy orbs of the currently active band.
+    /// Used at P1 stage when real session orbs are not yet loaded. No ConstellationOrb
+    /// component required — the tween rotates the OrbPivot physically.
+    /// </summary>
+    private void InitialiseDummyRing(PhobiaZone zone)
+    {
+        if (!_bandOrbsByZone.TryGetValue(zone, out var bands))
+        {
+            Debug.LogWarning($"[ConstellationManager] InitialiseDummyRing: no band data for {zone}.");
+            return;
+        }
+
+        string activeBand = ActiveBandName(zone);
+        if (!bands.TryGetValue(activeBand, out List<GameObject> orbGOs) || orbGOs.Count == 0)
+        {
+            Debug.LogWarning($"[ConstellationManager] InitialiseDummyRing: no dummy orbs for {zone} band={activeBand}.");
+            return;
+        }
+
+        _ringState[zone] = new OrbRingState(orbGOs, front: 0);
+        Debug.Log($"[ConstellationManager] InitialiseDummyRing: {zone} band={activeBand} orbs={orbGOs.Count}.");
     }
 
     private void ApplyRingTiers(PhobiaZone zone)
     {
         if (!_ringState.TryGetValue(zone, out OrbRingState ring)) return;
-        int count = ring.orderedOrbs.Count;
-        for (int i = 0; i < count; i++)
+
+        // Real ConstellationOrb path (Phase 2+)
+        if (ring.orderedOrbs.Count > 0)
         {
-            var orb = ring.orderedOrbs[i]; if (orb == null) continue;
-            int offset = i - ring.frontIndex;
-            while (offset >  count / 2) offset -= count;
-            while (offset < -count / 2) offset += count;
-            int abs = Mathf.Abs(offset);
-            orb.SetTier(abs == 0 ? ConstellationOrb.OrbTier.Front   :
-                        abs == 1 ? ConstellationOrb.OrbTier.SideNear :
-                        abs == 2 ? ConstellationOrb.OrbTier.SideFar  :
-                                   ConstellationOrb.OrbTier.Hidden);
+            int count = ring.orderedOrbs.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var orb = ring.orderedOrbs[i]; if (orb == null) continue;
+                int offset = i - ring.frontIndex;
+                while (offset >  count / 2) offset -= count;
+                while (offset < -count / 2) offset += count;
+                int abs = Mathf.Abs(offset);
+                orb.SetTier(abs == 0 ? ConstellationOrb.OrbTier.Front   :
+                            abs == 1 ? ConstellationOrb.OrbTier.SideNear :
+                            abs == 2 ? ConstellationOrb.OrbTier.SideFar  :
+                                       ConstellationOrb.OrbTier.Hidden);
+            }
         }
+        // Dummy orb path (Phase 1) — no tier system, all dummies stay visible; tween handles visual
     }
 
     public void RotateRing(PhobiaZone zone, int direction)
     {
         if (!_ringState.TryGetValue(zone, out OrbRingState ring))
-        { Debug.LogWarning($"[ConstellationManager] RotateRing: no state for {zone}."); return; }
-        int count = ring.orderedOrbs.Count; if (count <= 1) return;
+        {
+            Debug.LogWarning($"[ConstellationManager] RotateRing: no ring state for {zone}. " +
+                             $"Zone expanded={_expandedZone} — was ExpandZone called?");
+            return;
+        }
+
+        int count = ring.Count;
+        if (count <= 1)
+        {
+            Debug.Log($"[ConstellationManager] RotateRing: {zone} only {count} orb(s) — nothing to rotate.");
+            return;
+        }
+
         if (_ringTweenCoroutines.TryGetValue(zone, out Coroutine ex) && ex != null) StopCoroutine(ex);
+
         int newFront = (ring.frontIndex + direction + count) % count;
         ring.frontIndex = newFront;
+
+        // Step angle: positive direction = orbs move left (pivot rotates right).
         float stepAngle = 360f / count * -direction;
+
         _ringTweenCoroutines[zone] = StartCoroutine(TweenRing(zone, stepAngle));
-        Debug.Log($"[ConstellationManager] RotateRing: {zone} dir={direction} front→{newFront}.");
+        Debug.Log($"[ConstellationManager] RotateRing: {zone} dir={direction} front→{newFront} " +
+                  $"stepAngle={stepAngle:F1}° count={count}.");
     }
 
     private IEnumerator TweenRing(PhobiaZone zone, float stepAngle)
     {
-        if (!_allZonePlanets.TryGetValue(zone, out ZonePlanet zp)) yield break;
-        Transform t = zp.transform;
-        Quaternion startRot = t.rotation;
-        Quaternion endRot   = Quaternion.AngleAxis(stepAngle, Vector3.up) * startRot;
+        // Rotate the OrbPivot in LOCAL space — orbs orbit around the planet.
+        // Using world rotation (pivot.rotation) would swing orbs around the
+        // world origin when the planet is not at (0,0,0).
+        if (!_orbPivots.TryGetValue(zone, out Transform pivot) || pivot == null)
+        {
+            Debug.LogWarning($"[ConstellationManager] TweenRing: no OrbPivot for {zone}.");
+            yield break;
+        }
+
+        Quaternion startRot = pivot.localRotation;
+        // Rotate around the pivot's local Y axis — keeps the ring horizontal.
+        Quaternion stepRot  = Quaternion.AngleAxis(stepAngle, Vector3.up);
+        Quaternion endRot   = startRot * stepRot;
         float elapsed = 0f;
+
+        Debug.Log($"[ConstellationManager] TweenRing start: {zone} pivot={pivot.name} " +
+                  $"localFrom={startRot.eulerAngles:F1} stepAngle={stepAngle:F1}°.");
+
         while (elapsed < ringTweenDuration)
         {
             elapsed += Time.deltaTime;
             float tt = Mathf.Clamp01(elapsed / ringTweenDuration);
-            t.rotation = Quaternion.Slerp(startRot, endRot, tt * tt * (3f - 2f * tt));
+            // Smoothstep easing
+            pivot.localRotation = Quaternion.Slerp(startRot, endRot, tt * tt * (3f - 2f * tt));
             yield return null;
         }
-        t.rotation = endRot;
+
+        pivot.localRotation = endRot;
         ApplyRingTiers(zone);
         _ringTweenCoroutines[zone] = null;
+
+        Debug.Log($"[ConstellationManager] TweenRing complete: {zone} localRot={pivot.localRotation.eulerAngles:F1}.");
+    }
+
+    // ── Level switching (up/down arrows) ─────────────────────────────────────
+
+    /// <summary>
+    /// Switches the active band for the given zone.
+    /// direction +1 = move up to Upper band.
+    /// direction -1 = move down to Lower band.
+    /// Clamped: Upper is the ceiling, Lower is the floor — no wrap.
+    /// Called by ZonePlanet (vertical gaze gesture) and ZoneNavArrow (up/down arrows).
+    /// </summary>
+    public void SwitchLevel(PhobiaZone zone, int direction)
+    {
+        if (!_bandOrbsByZone.TryGetValue(zone, out var bands))
+        {
+            Debug.LogWarning($"[ConstellationManager] SwitchLevel: no band data for {zone}.");
+            return;
+        }
+
+        int current = _activeBandByZone.TryGetValue(zone, out int v) ? v : 0;
+        int desired = Mathf.Clamp(current + direction, -1, 1);
+
+        if (desired == current)
+        {
+            Debug.Log($"[ConstellationManager] SwitchLevel: {zone} already at " +
+                      $"{ActiveBandName(zone)} — clamped, no change.");
+            return;
+        }
+
+        string fromBand = ActiveBandName(zone);
+        _activeBandByZone[zone] = desired;
+        string toBand = ActiveBandName(zone);
+
+        Debug.Log($"[ConstellationManager] SwitchLevel: {zone} {fromBand} → {toBand} " +
+                  $"(dir={direction} current={current} desired={desired}).");
+
+        // ── Hide outgoing band orbs ───────────────────────────────────────────
+        if (bands.TryGetValue(fromBand, out var outOrbs))
+        {
+            foreach (var go in outOrbs) if (go != null) go.SetActive(false);
+            Debug.Log($"[ConstellationManager] SwitchLevel: hidden {outOrbs.Count} {fromBand} orbs.");
+        }
+
+        // ── Show incoming band orbs ───────────────────────────────────────────
+        if (bands.TryGetValue(toBand, out var inOrbs))
+        {
+            foreach (var go in inOrbs) if (go != null) go.SetActive(true);
+            Debug.Log($"[ConstellationManager] SwitchLevel: shown {inOrbs.Count} {toBand} orbs.");
+        }
+        else
+        {
+            Debug.LogWarning($"[ConstellationManager] SwitchLevel: no orbs found for band {toBand} on {zone}.");
+        }
+
+        // ── Re-initialise ring for new active band ────────────────────────────
+        // Reset the pivot rotation to the saved gyro euler so orbs return to
+        // their spawn positions relative to the rings. Using Quaternion.identity
+        // would move orbs away from the rings when a non-zero gyro is saved.
+        if (_orbPivots.TryGetValue(zone, out Transform pivot) && pivot != null)
+        {
+            OrbLayoutConfig cfg = GetConfigForZone(zone);
+            Quaternion savedRot = cfg != null ? Quaternion.Euler(cfg.orbPivotEuler) : Quaternion.identity;
+            pivot.localRotation = savedRot;
+            RotateRingSegmentsForZone(zone, savedRot);
+            Debug.Log($"[ConstellationManager] SwitchLevel: pivot reset to saved euler={savedRot.eulerAngles:F1} for {zone}.");
+        }
+
+        _ringState.Remove(zone);
+        InitialiseDummyRing(zone);
+
+        // ── Update orbit ring alpha to reflect active/faded state ─────────────
+        UpdateRingAlphasForZone(zone);
+    }
+
+    /// <summary>
+    /// Updates the alpha of all three orbit rings for a zone to reflect
+    /// which band is currently active (full alpha) vs faded.
+    /// </summary>
+    private void UpdateRingAlphasForZone(PhobiaZone zone)
+    {
+        string activeBand = ActiveBandName(zone);
+        OrbLayoutConfig cfg = GetConfigForZone(zone);
+        float activeAlpha  = cfg != null ? cfg.ringAlphaActive              : ringAlphaActive;
+        float fadedAlpha   = cfg != null ? cfg.ringAlphaFaded               : ringAlphaFaded;
+        float baseWidth    = cfg != null ? cfg.ringLineWidth                 : ringLineWidth;
+        float widthMult    = cfg != null ? cfg.activeRingLineWidthMultiplier : 1f;
+
+        // Per-band width overrides (use base if override <= 0.001)
+        float eqWidth  = cfg != null && cfg.ringLineWidthEquator > 0.001f ? cfg.ringLineWidthEquator : baseWidth;
+        float upWidth  = cfg != null && cfg.ringLineWidthUpper   > 0.001f ? cfg.ringLineWidthUpper   : baseWidth;
+        float loWidth  = cfg != null && cfg.ringLineWidthLower   > 0.001f ? cfg.ringLineWidthLower   : baseWidth;
+
+        string[] ringNames  = { "Ring_Equator", "Ring_Upper", "Ring_Lower" };
+        string[] bands      = { "Equator",      "Upper",      "Lower"      };
+        float[]  bandWidths = { eqWidth,         upWidth,      loWidth      };
+
+        for (int i = 0; i < ringNames.Length; i++)
+        {
+            string key = $"{zone}_{ringNames[i]}";
+            if (!_liveRings.TryGetValue(key, out var entry)) continue;
+
+            bool isActive  = bands[i] == activeBand;
+            float alpha    = isActive ? activeAlpha : fadedAlpha;
+            float width    = isActive ? bandWidths[i] * widthMult : bandWidths[i];
+
+            LineRenderer lr = entry.lr;
+            if (lr == null) continue;
+
+            Color c = lr.startColor;
+            c.a = alpha;
+            lr.startColor = c;
+            lr.endColor   = c;
+            lr.startWidth = width;
+            lr.endWidth   = width;
+
+            _liveRings[key] = (lr, isActive, zone, entry.orbitRadius, entry.latitudeDeg, entry.longitudeOffsetDeg, entry.pivotLocalPos);
+
+            Debug.Log($"[ConstellationManager] UpdateRingAlphasForZone: {zone} {ringNames[i]} " +
+                      $"active={isActive} alpha={alpha:F2} width={width:F4}.");
+        }
+    }
+
+    /// <summary>Returns the band name for the current active level of a zone.</summary>
+    private string ActiveBandName(PhobiaZone zone)
+    {
+        int v = _activeBandByZone.TryGetValue(zone, out int val) ? val : 0;
+        return v == 0 ? "Equator" : v > 0 ? "Upper" : "Lower";
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

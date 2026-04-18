@@ -102,6 +102,7 @@
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\DeprecatedAarDetector.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\BundletoolConfig.cs" />
     <Compile Include="Assets\Editor\Scripts\RevertEventTriggersToPrefa.cs" />
+    <Compile Include="Assets\Editor\ArrowLayoutEditor.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\BuildTools\AndroidSdk.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\GoogleMenuItems.cs" />
     <Compile Include="Assets\GooglePlayPlugins\com.google.android.appbundle\Editor\Scripts\Internal\AssetPacks\AssetPackFolderState.cs" />

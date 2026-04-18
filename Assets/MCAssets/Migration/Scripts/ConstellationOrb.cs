@@ -1,35 +1,50 @@
 // ConstellationOrb.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
 //
-// VERSION:   4.2
-// DATE:      2026-04-07
-// TIMESTAMP: 2026-04-07T12:00:00Z
+// VERSION:   4.4
+// DATE:      2026-04-12
+// TIMESTAMP: 2026-04-12T12:00:00Z
 //
 // CHANGE LOG:
+//   v4.4  2026-04-12  FIX — NULL onEnter/onExit IN Start()
+//     - GazeHoverTrigger has no Awake(). Unity does not auto-initialise public
+//       UnityEvent fields for components added via AddComponent() at runtime —
+//       they remain null, causing NullReferenceException when Start() calls
+//       trigger.onEnter.AddListener(). Fix: null-guard both fields in Start()
+//       before calling AddListener, initialising them as new UnityEvent() if null.
+//     - GazeHoverTrigger.cs is unchanged (linchpin — not to be modified).
+//     - Fix is safe for both pre-placed (serialised, non-null) and runtime usage.
+//
+//   v4.3  2026-04-12  SYNC WITH ConstellationManager v3.27 — LABEL + BAND + AWAKE GUARDS
+//     - Added public string bandName field. ConstellationManager sets "Equator"/"Upper"/"Lower"
+//       at spawn. Guards side-orb dwell so only Equator orbs can rotate the ring.
+//     - Added _levelLabel / _titleLabel private fields (ZoneLabelController).
+//     - Added SetLevelLabel(ZoneLabelController) — wires level label ("L1", "L2" etc).
+//       Always shown when orb is active (not tier-gated).
+//     - Added SetTitleLabel(ZoneLabelController) — wires session title label.
+//       Shown on Front tier only, hidden on SideNear/SideFar/Hidden.
+//     - SetTier() updated: _levelLabel shown whenever tier != Hidden;
+//       _titleLabel shown on Front only, hidden on all others.
+//       Legacy _label field (SetLabelController) retained for backward compat.
+//     - Awake() now explicitly initialises onSideOrbSelected and onSessionSelected
+//       as new UnityEvent instances. Unity does not initialise UnityEvent fields
+//       for runtime AddComponent — leaving them null causes NullReferenceException
+//       when ConstellationManager calls AddListener before Start() runs.
+//     - OnGazeEnter() now uses OrbVisuals.CreateHoverInstance() instead of inline
+//       EnableEmission() — consistent with ZonePlanet.cs.
+//     - Start() no longer warns when session is null — valid for dummy equatorial
+//       orbs that have no session assigned yet.
+//     - SetTier(Hidden): hides both _levelLabel and _titleLabel before deactivating.
+//
 //   v4.2  2026-04-07  PHASE 3 — SIDE ORB RING ROTATION
-//     - Added _isFront flag, set true by SetTier(Front), false by all other tiers.
-//     - Added sideOrbDwellTime Inspector field (default 1.0s, range 0.3–3.0).
-//       Separate from dwellTime (session launch dwell). Side orbs respond faster.
-//     - Update() now branches on _isFront:
-//         Front orb  — existing behaviour: full dwellTime → Select() → session launch.
-//         Side orb   — sideOrbDwellTime → fires onSideOrbSelected (no session launch).
-//     - Added onSideOrbSelected UnityEvent. ConstellationManager subscribes at
-//       spawn time and calls RotateRingToOrb(zone, orbIndex) on fire.
-//     - _orbIndex set by ConstellationManager at spawn so the event carries the
-//       correct ring position without searching.
-//     - SetTier() now also sets _isFront so the dwell branch is always in sync
-//       with the current tier state.
-//     - No changes to Select(), session launch, pulse, material, or gaze callbacks.
-//
-//   v4.1  2026-04-04  ORB TIER SYSTEM — ring navigation support
-//     - OrbTier enum: Front, SideNear, SideFar, Hidden.
-//     - SetTier(), SetLabelController(), sessionPool, _tierScale.
-//
+//   v4.1  2026-04-04  ORB TIER SYSTEM
 //   v4.0  2026-03-14  Planet mesh support + visual overhaul.
 //   v3.0  2026-03-09  MockUserProgress → UserProgressService.
 //   v2.0  2026-03-07  Three visible states, GazeHoverTrigger wiring, dwell scale.
 //
 // OBSOLETE FILES — DELETE THESE:
+//   ConstellationOrb.cs v4.3 (2026-04-12)
+//   ConstellationOrb.cs v4.2 (2026-04-07)
 //   ConstellationOrb.cs v4.1 (2026-04-04)
 //   ConstellationOrb.cs v4.0 (2026-03-14)
 //   ConstellationOrb.cs v3.0 (2026-03-09)
@@ -39,19 +54,13 @@
 //   UserProgressService.cs v2.2.0  — OrbState enum, GetOrbState()
 //   SessionData.cs                 — sessionID, displayTitle, PhobiaZone enum
 //   GazeHoverTrigger.cs            — OnGazeEnter / OnGazeExit callbacks
-//   ZoneLabelController.cs         — SetLabel(), Show(), Hide(), SetVisibleImmediate()
-//   OrbVisuals.cs                  — EnableEmission() static helper
-//   ConstellationManager.cs v3.24  — RotateRingToOrb() subscriber
+//   ZoneLabelController.cs v1.1    — SetLabel(), Show(), Hide(), SetVisibleImmediate()
+//   OrbVisuals.cs v1.0             — CreateHoverInstance(), EnableEmission()
+//   ConstellationManager.cs v3.27  — RotateRingToOrb() subscriber, SetLevelLabel/SetTitleLabel
 //
 // SCENE SETUP:
-//   1. Attach ConstellationOrb and GazeHoverTrigger to the orb prefab root.
-//   2. Wire GazeHoverTrigger On Enter → ConstellationOrb.OnGazeEnter
-//                             On Exit  → ConstellationOrb.OnGazeExit
-//   3. Assign state materials in Inspector (matAvailable, matRecommended,
-//      matCompleted, matLocked).
-//   4. Optionally assign selectedRing child GameObject.
-//   5. session, sessionPool, _orbIndex and onSideOrbSelected listener are all
-//      assigned at runtime by ConstellationManager — no manual wiring needed.
+//   All wiring is done at runtime by ConstellationManager — no manual Inspector setup needed.
+//   State materials (matAvailable etc.) remain optional Inspector slots for future use.
 // ═══════════════════════════════════════════════════════════════════════════
 
 using System.Collections;
@@ -64,13 +73,17 @@ public class ConstellationOrb : MonoBehaviour
     // ── Tier ──────────────────────────────────────────────────────────────────
     public enum OrbTier { Front, SideNear, SideFar, Hidden }
 
+    // ── Band identity ─────────────────────────────────────────────────────────
+    [Header("Band Identity")]
+    [Tooltip("Set at runtime by ConstellationManager: 'Equator', 'Upper', or 'Lower'.")]
+    public string bandName = "Equator";
+
     // ── Session ───────────────────────────────────────────────────────────────
     [Header("Session Reference")]
     [Tooltip("Representative session — assigned by ConstellationManager. Drives state/material.")]
     public SessionData session;
 
-    [Tooltip("Full session pool for this level — orb picks randomly at select time. " +
-             "Assigned by ConstellationManager. May contain one or more sessions.")]
+    [Tooltip("Full session pool for this level — orb picks randomly at select time.")]
     public List<SessionData> sessionPool = new List<SessionData>();
 
     // ── Gaze / Dwell ─────────────────────────────────────────────────────────
@@ -80,12 +93,11 @@ public class ConstellationOrb : MonoBehaviour
     public float dwellTime = 3f;
 
     [Range(0.3f, 3f)]
-    [Tooltip("Seconds a side orb must be gazed at before ring rotates to bring it front. " +
-             "Shorter than dwellTime — rotation should feel responsive.")]
+    [Tooltip("Seconds a side orb must be gazed at before ring rotates to bring it front.")]
     public float sideOrbDwellTime = 1.0f;
 
     // ── Default state materials ───────────────────────────────────────────────
-    [Header("Default State Materials  (drag from Assets/Materials/Orbs/)")]
+    [Header("Default State Materials")]
     public Material matAvailable;
     public Material matRecommended;
     public Material matCompleted;
@@ -102,11 +114,9 @@ public class ConstellationOrb : MonoBehaviour
 
     // ── Tier scale ────────────────────────────────────────────────────────────
     [Header("Tier Scale Multipliers")]
-    [Tooltip("Front orb scale multiplier relative to base. Default 1.1 = 10% larger.")]
     [Range(1.0f, 1.5f)]
     public float frontScaleMultiplier = 1.1f;
 
-    [Tooltip("Far side orb scale multiplier relative to base. Default 0.9 = 10% smaller.")]
     [Range(0.5f, 1.0f)]
     public float sideFarScaleMultiplier = 0.9f;
 
@@ -123,11 +133,10 @@ public class ConstellationOrb : MonoBehaviour
 
     // ── Events ────────────────────────────────────────────────────────────────
     [Header("Events")]
-    [Tooltip("Fired when front orb dwell completes — carries chosen SessionData to ConstellationManager.")]
+    [Tooltip("Fired when front orb dwell completes — carries chosen SessionData.")]
     public UnityEvent<SessionData> onSessionSelected;
 
-    [Tooltip("Fired when a side orb dwell completes — carries this orb's ring index. " +
-             "ConstellationManager subscribes at spawn to call RotateRingToOrb().")]
+    [Tooltip("Fired when a side orb dwell completes — carries ring index.")]
     public UnityEvent<int> onSideOrbSelected;
 
     // ── Debug ─────────────────────────────────────────────────────────────────
@@ -135,19 +144,23 @@ public class ConstellationOrb : MonoBehaviour
     public bool debugLogging = true;
 
     // ── Private ───────────────────────────────────────────────────────────────
-    private Renderer                    _rend;
-    private Material                    _defaultMaterial;
-    private Material                    _hoverMaterialInst;
+    private Renderer                     _rend;
+    private Material                     _defaultMaterial;
+    private Material                     _hoverMaterialInst;
     private UserProgressService.OrbState _currentState;
-    private ZoneLabelController         _label;
 
-    private bool    _isGazed;
-    private float   _gazeTimer;
-    private bool    _selected;
-    private bool    _isFront;       // true = front orb (session launch), false = side orb (rotate ring)
-    private int     _orbIndex;      // position in the ring — set by ConstellationManager at spawn
-    private Vector3 _baseScale;
-    private Vector3 _tierScale;
+    // Label controllers — all three wired independently by ConstellationManager
+    private ZoneLabelController _label;        // legacy single-label (backward compat)
+    private ZoneLabelController _levelLabel;   // "L1", "L2" — shown whenever active
+    private ZoneLabelController _titleLabel;   // session.displayTitle — front only
+
+    private bool      _isGazed;
+    private float     _gazeTimer;
+    private bool      _selected;
+    private bool      _isFront;
+    private int       _orbIndex;
+    private Vector3   _baseScale;
+    private Vector3   _tierScale;
     private Coroutine _pulseCoroutine;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -161,17 +174,28 @@ public class ConstellationOrb : MonoBehaviour
         _baseScale = transform.localScale;
         _tierScale = _baseScale;
 
+        // Explicitly initialise UnityEvent fields.
+        // Unity does NOT initialise them for runtime AddComponent calls — they
+        // remain null until after Awake/Start, causing NullReferenceException
+        // when ConstellationManager calls AddListener before Start() runs.
+        if (onSideOrbSelected == null)
+            onSideOrbSelected = new UnityEvent<int>();
+        if (onSessionSelected == null)
+            onSessionSelected = new UnityEvent<SessionData>();
+
         if (selectedRing != null)
         {
             var ringRend = selectedRing.GetComponent<Renderer>();
             if (ringRend != null)
             {
                 var ringMat = new Material(ringRend.sharedMaterial);
-                SetMaterialColor(ringMat, selectedRingColor);
+                OrbVisuals.SetBaseColor(ringMat, selectedRingColor);
                 ringRend.material = ringMat;
             }
             selectedRing.SetActive(false);
         }
+
+        Debug.Log($"[Orb] Awake: {name} band={bandName}");
     }
 
     void Start()
@@ -179,18 +203,25 @@ public class ConstellationOrb : MonoBehaviour
         var trigger = GetComponent<GazeHoverTrigger>();
         if (trigger != null)
         {
+            // GazeHoverTrigger has no Awake(). For runtime AddComponent usage Unity does
+            // not auto-initialise public UnityEvent fields — they remain null until an
+            // Awake() runs. Guard both fields here so wiring is safe regardless of
+            // whether the trigger was pre-placed in the scene or added at runtime.
+            if (trigger.onEnter == null) trigger.onEnter = new UnityEvent();
+            if (trigger.onExit  == null) trigger.onExit  = new UnityEvent();
             trigger.onEnter.AddListener(OnGazeEnter);
             trigger.onExit.AddListener(OnGazeExit);
+            Debug.Log($"[Orb] {name}: GazeHoverTrigger wired in Start().");
         }
         else
         {
-            Debug.LogWarning($"[Orb] {name}: GazeHoverTrigger missing.");
+            Debug.LogWarning($"[Orb] {name}: GazeHoverTrigger missing — gaze will not fire.");
         }
 
         if (session != null)
-            Debug.Log($"[Orb] {name} loaded session: {session.sessionID} pool={sessionPool.Count}");
+            Debug.Log($"[Orb] {name}: session={session.sessionID} pool={sessionPool.Count}");
         else
-            Debug.LogWarning($"[Orb] {name} has no SessionData assigned!");
+            Debug.Log($"[Orb] {name}: no session assigned (dummy orb — OK until level loads).");
 
         RefreshState();
     }
@@ -203,7 +234,6 @@ public class ConstellationOrb : MonoBehaviour
 
         _gazeTimer += Time.deltaTime;
 
-        // Hover scale relative to tier scale, not base
         float targetDwell = _isFront ? dwellTime : sideOrbDwellTime;
         float t = _gazeTimer / targetDwell;
         transform.localScale = _tierScale * Mathf.Lerp(1f, hoverScaleMultiplier, t);
@@ -216,14 +246,16 @@ public class ConstellationOrb : MonoBehaviour
             }
             else
             {
-                // Side orb — rotate ring to bring this orb front
+                // Side orb — fire ring rotation only if this is an Equator orb.
+                // Upper/lower band orbs have no CollisionOrb interaction.
                 _isGazed   = false;
                 _gazeTimer = 0f;
                 transform.localScale = _tierScale;
                 if (_rend != null && _defaultMaterial != null)
                     _rend.material = _defaultMaterial;
 
-                Debug.Log($"[Orb] Side orb dwell FIRE: index={_orbIndex} session={session?.sessionID}.");
+                Debug.Log($"[Orb] Side orb dwell FIRE: index={_orbIndex} band={bandName} " +
+                          $"session={session?.sessionID}.");
                 onSideOrbSelected?.Invoke(_orbIndex);
             }
         }
@@ -234,15 +266,19 @@ public class ConstellationOrb : MonoBehaviour
     /// <summary>
     /// Called by ConstellationManager when the ring rotates or a zone expands.
     /// Drives scale, label visibility, and _isFront flag.
-    /// Hidden tier = SetActive(false).
+    /// Hidden tier deactivates the GameObject.
     /// </summary>
     public void SetTier(OrbTier tier)
     {
         if (tier == OrbTier.Hidden)
         {
             _isFront = false;
+            // Hide all labels before deactivating so they don't reappear on re-activate
+            _levelLabel?.SetVisibleImmediate(false);
+            _titleLabel?.SetVisibleImmediate(false);
+            if (_label != null) _label.SetVisibleImmediate(false);
             gameObject.SetActive(false);
-            Debug.Log($"[Orb] {session?.sessionID} tier=Hidden → deactivated.");
+            Debug.Log($"[Orb] {name} tier=Hidden → deactivated.");
             return;
         }
 
@@ -254,18 +290,27 @@ public class ConstellationOrb : MonoBehaviour
             case OrbTier.Front:
                 _isFront   = true;
                 _tierScale = _baseScale * frontScaleMultiplier;
+                // Level label always visible when active
+                _levelLabel?.Show();
+                // Title label visible on front only
+                _titleLabel?.Show();
+                // Legacy single label
                 if (_label != null) _label.Show();
                 break;
 
             case OrbTier.SideNear:
                 _isFront   = false;
                 _tierScale = _baseScale;
+                _levelLabel?.Show();
+                _titleLabel?.Hide();
                 if (_label != null) _label.Hide();
                 break;
 
             case OrbTier.SideFar:
                 _isFront   = false;
                 _tierScale = _baseScale * sideFarScaleMultiplier;
+                _levelLabel?.Show();
+                _titleLabel?.Hide();
                 if (_label != null) _label.Hide();
                 break;
         }
@@ -273,26 +318,54 @@ public class ConstellationOrb : MonoBehaviour
         if (!_isGazed)
             transform.localScale = _tierScale;
 
-        Debug.Log($"[Orb] {session?.sessionID} tier={tier} isFront={_isFront} scale={_tierScale}.");
+        Debug.Log($"[Orb] {name} tier={tier} isFront={_isFront} scale={_tierScale.x:F3}.");
+    }
+
+    // ── Label API ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Wires the level label ("L1", "L2" etc).
+    /// Shown whenever the orb is active (not Hidden).
+    /// Called by ConstellationManager at spawn.
+    /// </summary>
+    public void SetLevelLabel(ZoneLabelController label)
+    {
+        _levelLabel = label;
+        if (label != null) label.SetVisibleImmediate(false);
+        Debug.Log($"[Orb] {name}: level label assigned → {label?.gameObject.name ?? "null"}.");
     }
 
     /// <summary>
-    /// Called by ConstellationManager immediately after SpawnLabel().
-    /// Caches the label reference so SetTier can show/hide it.
+    /// Wires the session title label.
+    /// Shown on Front tier only.
+    /// Called by ConstellationManager at spawn.
+    /// </summary>
+    public void SetTitleLabel(ZoneLabelController label)
+    {
+        _titleLabel = label;
+        if (label != null) label.SetVisibleImmediate(false);
+        Debug.Log($"[Orb] {name}: title label assigned → {label?.gameObject.name ?? "null"}.");
+    }
+
+    /// <summary>
+    /// Legacy single-label API retained for backward compatibility.
+    /// Prefer SetLevelLabel / SetTitleLabel for new wiring.
     /// </summary>
     public void SetLabelController(ZoneLabelController label)
     {
         _label = label;
-        Debug.Log($"[Orb] {session?.sessionID} label controller assigned: {label?.gameObject.name ?? "null"}.");
+        Debug.Log($"[Orb] {name}: legacy label controller assigned → " +
+                  $"{label?.gameObject.name ?? "null"}.");
     }
 
     /// <summary>
-    /// Called by ConstellationManager at spawn to record this orb's position in the ring.
+    /// Records this orb's position in the ring.
     /// Used by onSideOrbSelected so ConstellationManager knows which orb to rotate to.
     /// </summary>
     public void SetOrbIndex(int index)
     {
         _orbIndex = index;
+        Debug.Log($"[Orb] {name}: orbIndex={index}.");
     }
 
     // ── Gaze callbacks ────────────────────────────────────────────────────────
@@ -306,14 +379,12 @@ public class ConstellationOrb : MonoBehaviour
 
         if (_pulseCoroutine != null) { StopCoroutine(_pulseCoroutine); _pulseCoroutine = null; }
 
+        // Use OrbVisuals helper — consistent with ZonePlanet hover behaviour
         if (_rend != null)
-        {
-            _hoverMaterialInst = new Material(_rend.material);
-            EnableEmission(_hoverMaterialInst, hoverEmissionColor);
-            _rend.material = _hoverMaterialInst;
-        }
+            _hoverMaterialInst = OrbVisuals.CreateHoverInstance(_rend, hoverEmissionColor);
 
-        if (debugLogging) Debug.Log($"[Orb] Gaze enter: {session?.sessionID} isFront={_isFront}");
+        if (debugLogging)
+            Debug.Log($"[Orb] Gaze enter: {name} session={session?.sessionID} isFront={_isFront}");
     }
 
     public void OnGazeExit()
@@ -329,7 +400,8 @@ public class ConstellationOrb : MonoBehaviour
         if (_currentState == UserProgressService.OrbState.Recommended && _pulseCoroutine == null)
             _pulseCoroutine = StartCoroutine(PulseLoop());
 
-        if (debugLogging) Debug.Log($"[Orb] Gaze exit: {session?.sessionID}");
+        if (debugLogging)
+            Debug.Log($"[Orb] Gaze exit: {name} session={session?.sessionID}");
     }
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -355,11 +427,12 @@ public class ConstellationOrb : MonoBehaviour
                 break;
             case UserProgressService.OrbState.Recommended:
                 _defaultMaterial = matRecommended;
-                _pulseCoroutine  = StartCoroutine(PulseLoop());
+                if (gameObject.activeInHierarchy)
+                    _pulseCoroutine = StartCoroutine(PulseLoop());
                 break;
             case UserProgressService.OrbState.Completed:
                 _defaultMaterial = matCompleted;
-                _tierScale = _baseScale * 0.85f;
+                _tierScale       = _baseScale * 0.85f;
                 transform.localScale = _tierScale;
                 break;
             case UserProgressService.OrbState.Locked:
@@ -393,12 +466,13 @@ public class ConstellationOrb : MonoBehaviour
         else if (_rend != null)
         {
             var mat = new Material(_rend.material);
-            SetMaterialColor(mat, selectedFallbackColor);
+            OrbVisuals.SetBaseColor(mat, selectedFallbackColor);
             _rend.material = mat;
         }
 
         onSessionSelected?.Invoke(chosen);
-        StartCoroutine(SelectAnimation());
+        if (gameObject.activeInHierarchy)
+            StartCoroutine(SelectAnimation());
     }
 
     private IEnumerator SelectAnimation()
@@ -429,23 +503,6 @@ public class ConstellationOrb : MonoBehaviour
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static void EnableEmission(Material mat, Color color)
-    {
-        if (mat == null) return;
-        mat.EnableKeyword("_EMISSION");
-        if (mat.HasProperty("_EmissionColor"))
-            mat.SetColor("_EmissionColor", color * 2f);
-    }
-
-    private static void SetMaterialColor(Material mat, Color color)
-    {
-        if (mat == null) return;
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-        else if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
-    }
-
     // ── Editor gizmo ──────────────────────────────────────────────────────────
 
     void OnDrawGizmos()
@@ -454,7 +511,8 @@ public class ConstellationOrb : MonoBehaviour
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, 0.05f);
 #if UNITY_EDITOR
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.15f, session.sessionID);
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.15f,
+            $"{session.sessionID}\n[{bandName}]");
 #endif
     }
 }

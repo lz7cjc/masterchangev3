@@ -1,11 +1,27 @@
 // ConstellationOrb.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
 //
-// VERSION:   4.4
-// DATE:      2026-04-12
-// TIMESTAMP: 2026-04-12T12:00:00Z
+// VERSION:   4.5
+// DATE:      2026-04-19
+// TIMESTAMP: 2026-04-19T09:00:00Z
 //
 // CHANGE LOG:
+//   v4.5  2026-04-19  FIX — BASESCALE ZERO WHEN SetTier CALLED BEFORE Start()
+//     - _baseScale and _tierScale removed from Awake(). SpawnSlotBand calls
+//       SetTier (via InitialiseRing/ApplyRingTiers) before Unity fires Start()
+//       on freshly instantiated orbs. At that point _baseScale was still zero,
+//       so _tierScale was zero, so all orbs appeared invisible and then snapped
+//       to zero on any hover or tier change.
+//     - Added public Init(Vector3 spawnedScale) method. SpawnSlotBand calls
+//       this immediately after setting go.transform.localScale. Init captures
+//       _baseScale and _tierScale from the argument, not from the transform,
+//       guaranteeing the correct value regardless of Unity lifecycle order.
+//     - Start() no longer touches _baseScale/_tierScale — Init() is the
+//       single authoritative point of scale capture.
+//
+// OBSOLETE FILES — DELETE THESE:
+//   ConstellationOrb.cs v4.4 (2026-04-12)
+//
 //   v4.4  2026-04-12  FIX — NULL onEnter/onExit IN Start()
 //     - GazeHoverTrigger has no Awake(). Unity does not auto-initialise public
 //       UnityEvent fields for components added via AddComponent() at runtime —
@@ -171,8 +187,11 @@ public class ConstellationOrb : MonoBehaviour
         if (_rend == null)
             Debug.LogWarning($"[Orb] {name}: No Renderer found in children.");
 
-        _baseScale = transform.localScale;
-        _tierScale = _baseScale;
+        // _baseScale intentionally NOT captured here.
+        // SpawnSlotBand sets localScale after Instantiate() — Awake() runs during
+        // Instantiate() and would capture the prefab baked scale (0.5,0.5,0.5).
+        // SpawnSlotBand calls Init(spawnedScale) immediately after setting localScale.
+        // SetTier() is safe to call only after Init() has been called.
 
         // Explicitly initialise UnityEvent fields.
         // Unity does NOT initialise them for runtime AddComponent calls — they
@@ -265,6 +284,18 @@ public class ConstellationOrb : MonoBehaviour
 
     /// <summary>
     /// Called by ConstellationManager when the ring rotates or a zone expands.
+    /// <summary>
+    /// Called by SpawnSlotBand immediately after setting go.transform.localScale.
+    /// Captures the correct runtime spawn scale before any SetTier() call can
+    /// overwrite it. Must be called before SetTier() or the scale will be zero.
+    /// </summary>
+    public void Init(Vector3 spawnedScale)
+    {
+        _baseScale = spawnedScale;
+        _tierScale = _baseScale;
+        Debug.Log($"[Orb] {name}: Init baseScale={_baseScale.x:F4}.");
+    }
+
     /// Drives scale, label visibility, and _isFront flag.
     /// Hidden tier deactivates the GameObject.
     /// </summary>

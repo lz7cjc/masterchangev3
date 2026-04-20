@@ -2,12 +2,41 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.45
-// DATE:      2026-04-18
-// TIMESTAMP: 2026-04-18T23:59:00Z
+// VERSION:   3.48
+// DATE:      2026-04-19
+// TIMESTAMP: 2026-04-19T17:00:00Z
 //
 // CHANGE LOG:
-//   v3.45 2026-04-18  FIX ORBS MISALIGNED WITH RINGS ON FIRST EXPAND
+//   v3.48 2026-04-19  FIX — OnSessionSelected BODY NEVER UPDATED IN v3.47
+//     - v3.47 changelog claimed OnSessionSelected() was fixed to call
+//       SessionHandoff.Set(session) then SceneManager.LoadScene("Video"),
+//       and that using UnityEngine.SceneManagement was added. Neither change
+//       was present in the actual file body. Both are applied here.
+//     - OnSessionSelected() now: logs session ID, calls SessionHandoff.Set(),
+//       calls SceneManager.LoadScene("Video"). AntechamberController/
+//       SessionLauncher null-conditional calls removed — both are null in
+//       the Constellation scene (they live in the Video scene).
+//     - Added using UnityEngine.SceneManagement.
+//
+// OBSOLETE FILES — DELETE THESE:
+//   ConstellationManager.cs v3.47 (2026-04-19)
+//   ConstellationManager.cs v3.46 (2026-04-18)
+//
+//   v3.46 2026-04-18  REAL SESSION ORBS — REPLACE DUMMY SPHERES
+//     - SpawnSlotBand now accepts a List<SessionData> parameter.
+//     - When sessions are provided and orbPrefab is assigned: instantiates
+//       orbPrefab at each slot position (wrapping sessions if count > slots),
+//       assigns SessionData to ConstellationOrb.session, calls RefreshState(),
+//       wires OnSessionSelected callback.
+//     - When sessions is null/empty or orbPrefab is null: falls back to
+//       CreatePrimitive (existing Phase 1 dummy behaviour unchanged).
+//     - SpawnZone fetches sessions via SessionRegistry.GetByPhobiaZone(),
+//       sorts by level, splits evenly across Equator/Upper/Lower bands,
+//       passes each band's session slice to SpawnSlotBand.
+//     - _sessionOrbsByZone[zone] populated with all real ConstellationOrb GOs.
+//     - SwitchLevel calls InitialiseRing (real orbs) instead of
+//       InitialiseDummyRing when _sessionOrbsByZone has entries.
+//     - All other behaviour unchanged.
 //     - SpawnZone: pivot rotation changed from world space (transform.rotation)
 //       to local space (transform.localRotation). Previously Quaternion.Euler(
 //       pivotEuler) was applied in world space, but WriteRingSegments applies
@@ -186,6 +215,7 @@
 //   v3.11–v1    see prior headers
 //
 // OBSOLETE — DELETE:
+//   ConstellationManager.cs v3.45 (2026-04-18)
 //   ConstellationManager.cs v3.44 (2026-04-18)
 //   ConstellationManager.cs v3.43 (2026-04-18)
 //   ConstellationManager.cs v3.42 (2026-04-18)
@@ -231,6 +261,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class ZoneClusterEntry
@@ -614,21 +645,51 @@ public class ConstellationManager : MonoBehaviour
         Material matLower   = MakeBandMaterial(urpUnlit, cPrev,    "Lower");
         Material matRing    = MakeRingMaterial(urpUnlit, rColour);
 
+        // ── Fetch and distribute sessions across bands ────────────────────────
+        // Sessions sorted by level. Split into three groups: lower third → Lower
+        // band, middle third → Equator, upper third → Upper. If orbPrefab is null
+        // all three calls fall back to dummy primitive behaviour automatically.
+        List<SessionData> allSessions = SessionRegistry.Instance != null
+            ? SessionRegistry.Instance.GetByPhobiaZone(zone)
+                  .OrderBy(s => s.level).ToList()
+            : new List<SessionData>();
+
+        List<SessionData> eqSessions, upSessions, loSessions;
+        if (allSessions.Count == 0)
+        {
+            eqSessions = upSessions = loSessions = null;
+            Debug.LogWarning($"[ConstellationManager] {zone}: no sessions in registry — using dummy orbs.");
+        }
+        else
+        {
+            int total    = allSessions.Count;
+            int loEnd    = total / 3;
+            int eqEnd    = loEnd + (total - loEnd * 2);   // middle gets any remainder
+            loSessions   = allSessions.GetRange(0,     loEnd);
+            eqSessions   = allSessions.GetRange(loEnd, eqEnd);
+            upSessions   = allSessions.GetRange(loEnd + eqEnd, total - loEnd - eqEnd);
+            Debug.Log($"[ConstellationManager] {zone}: {total} sessions → " +
+                      $"Lower={loSessions.Count} Equator={eqSessions.Count} Upper={upSessions.Count}.");
+        }
+
         // ── Spawn bands ───────────────────────────────────────────────────────
         List<GameObject> allDummy = new List<GameObject>();
         allDummy.Add(pivotGO);
 
         List<GameObject> equatorOrbs = SpawnSlotBand(zone, pivot, eqOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            eqLat, eqSlots, longitudeOffsetDeg + globalRot + eqRot, matEquator, "Equator", ref allDummy);
+            eqLat, eqSlots, longitudeOffsetDeg + globalRot + eqRot, matEquator, "Equator", ref allDummy,
+            eqSessions);
 
         List<GameObject> upperOrbs = SpawnSlotBand(zone, pivot, upOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            upLat, upSlots, longitudeOffsetDeg + globalRot + upRot, matUpper, "Upper", ref allDummy);
+            upLat, upSlots, longitudeOffsetDeg + globalRot + upRot, matUpper, "Upper", ref allDummy,
+            upSessions);
 
         List<GameObject> lowerOrbs = SpawnSlotBand(zone, pivot, loOrbitRadius,
             planetVisualDiameter, orbSize, frontScale, sideScale,
-            loLat, loSlots, longitudeOffsetDeg + globalRot + loRot, matLower, "Lower", ref allDummy);
+            loLat, loSlots, longitudeOffsetDeg + globalRot + loRot, matLower, "Lower", ref allDummy,
+            loSessions);
 
         // ── Store per-band orb lists ──────────────────────────────────────────
         _bandOrbsByZone[zone] = new Dictionary<string, List<GameObject>>
@@ -674,11 +735,35 @@ public class ConstellationManager : MonoBehaviour
             Debug.Log($"[ConstellationManager] SpawnZone {zone}: ring segments restored for saved euler={pivotEuler:F1}.");
         }
 
-        _dummyOrbsByZone[zone]   = allDummy;
-        _sessionOrbsByZone[zone] = new List<GameObject>();
+        _dummyOrbsByZone[zone] = allDummy;
 
+        // Collect all real ConstellationOrb GOs across all three bands.
+        // These are used by InitialiseRing and ExpandZone to drive the carousel.
+        var realOrbGOs = new List<GameObject>();
+        foreach (var go in equatorOrbs.Concat(upperOrbs).Concat(lowerOrbs))
+        {
+            if (go != null && go.GetComponent<ConstellationOrb>() != null)
+                realOrbGOs.Add(go);
+        }
+        _sessionOrbsByZone[zone] = realOrbGOs;
+
+        if (realOrbGOs.Count > 0)
+            Debug.Log($"[ConstellationManager] {zone}: {realOrbGOs.Count} real session orbs registered.");
+        else
+            Debug.Log($"[ConstellationManager] {zone}: no real orbs — dummy mode active.");
+
+        // Hide dummies (rings + pivotGO children). Real session orbs are hidden
+        // separately by ExpandZone/CollapseZone via _bandOrbsByZone show/hide.
+        // Do NOT hide real orb GOs here — they start inactive and are shown by
+        // ExpandZone when the zone is first opened.
+        var realOrbSet = new HashSet<GameObject>(realOrbGOs);
         foreach (var go in allDummy)
-            if (go != null && go != pivotGO) go.SetActive(false);
+            if (go != null && go != pivotGO && !realOrbSet.Contains(go))
+                go.SetActive(false);
+
+        // Real orbs also start hidden — shown only when zone expands.
+        foreach (var go in realOrbGOs)
+            if (go != null) go.SetActive(false);
 
         Debug.Log($"[ConstellationManager] SpawnZone complete: {zone} — " +
                   $"{allDummy.Count} objects (pivot + orbs + rings).");
@@ -735,6 +820,11 @@ public class ConstellationManager : MonoBehaviour
     }
 
     // ── Slot-based band spawn ─────────────────────────────────────────────────
+    // sessions: when non-null and orbPrefab is assigned, real ConstellationOrb
+    // prefabs are instantiated and SessionData assigned. When null or orbPrefab
+    // is missing, falls back to Phase 1 dummy primitive behaviour.
+    // Sessions wrap around slots — if sessions.Count > slots.Count the extra
+    // sessions repeat slot positions (carousel overflow, hidden until ring rotates).
 
     private List<GameObject> SpawnSlotBand(PhobiaZone zone, Transform pivot,
                                            float orbitRadius,
@@ -743,47 +833,85 @@ public class ConstellationManager : MonoBehaviour
                                            float defaultLatDeg,
                                            List<Vector2> slots, float longitudeOffsetDeg,
                                            Material bandMaterial, string bandName,
-                                           ref List<GameObject> collector)
+                                           ref List<GameObject> collector,
+                                           List<SessionData> sessions = null)
     {
         float baseOrbScale = planetVisualDiameter * (orbSizePct / 100f);
         var spawned = new List<GameObject>();
 
-        for (int i = 0; i < slots.Count; i++)
-        {
-            float latDeg = defaultLatDeg;
-            float lonDeg = slots[i].y + longitudeOffsetDeg;
+        bool useRealOrbs = sessions != null && sessions.Count > 0 && orbPrefab != null;
+        int spawnCount   = useRealOrbs ? sessions.Count : slots.Count;
 
-            if (bandName != "Equator" && Mathf.Abs(slots[i].x) > 0.01f)
-                latDeg = slots[i].x;
+        for (int i = 0; i < spawnCount; i++)
+        {
+            // Slot position wraps — sessions beyond slot count reuse slot positions.
+            int slotIndex = i % slots.Count;
+
+            float latDeg = defaultLatDeg;
+            float lonDeg = slots[slotIndex].y + longitudeOffsetDeg;
+
+            if (bandName != "Equator" && Mathf.Abs(slots[slotIndex].x) > 0.01f)
+                latDeg = slots[slotIndex].x;
 
             Vector3 localOffset = OrbitalPositionOnSphere(orbitRadius, latDeg, lonDeg);
+            float   orbScale    = baseOrbScale;
 
-            // Uniform scale — camera-dependent perspective scaling removed.
-            // It produced different orb sizes on every Play Mode entry and
-            // is post-MVP visual polish that can be revisited later.
-            float orbScale = baseOrbScale;
+            GameObject go;
 
-            GameObject dummy = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            dummy.name = $"P1_{zone}_{bandName}_{i}";
-            dummy.transform.SetParent(pivot, worldPositionStays: false);
-            dummy.transform.localPosition = localOffset;
-            dummy.transform.localScale    = Vector3.one * orbScale;
+            if (useRealOrbs)
+            {
+                // ── Real session orb ─────────────────────────────────────────
+                SessionData sd = sessions[i];
+                go = Instantiate(orbPrefab, Vector3.zero, Quaternion.identity, pivot);
+                go.name = sd.sessionID;
+                go.transform.localPosition = localOffset;
+                go.transform.localScale    = Vector3.one * orbScale;
 
-            Renderer rend = dummy.GetComponent<Renderer>();
-            if (rend != null && bandMaterial != null) rend.sharedMaterial = bandMaterial;
+                ConstellationOrb orb = go.GetComponent<ConstellationOrb>();
+                if (orb != null)
+                {
+                    // Init must be called before SetTier (via InitialiseRing/ApplyRingTiers).
+                    // It captures the runtime spawn scale so _baseScale is correct.
+                    orb.Init(Vector3.one * orbScale);
+                    orb.session = sd;
+                    orb.onSessionSelected.RemoveAllListeners();
+                    orb.onSessionSelected.AddListener((_) => OnSessionSelected(sd));
+                    orb.RefreshState();
+                    _allOrbs.Add(orb);
+                    Debug.Log($"[ConstellationManager] {zone} {bandName}[{i}]: " +
+                              $"session={sd.sessionID} lat={latDeg:F1}° lon={lonDeg:F1}°.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[ConstellationManager] {zone} {bandName}[{i}]: " +
+                                     $"orbPrefab missing ConstellationOrb component — session not wired.");
+                }
+            }
+            else
+            {
+                // ── Phase 1 dummy fallback ────────────────────────────────────
+                go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = $"P1_{zone}_{bandName}_{i}";
+                go.transform.SetParent(pivot, worldPositionStays: false);
+                go.transform.localPosition = localOffset;
+                go.transform.localScale    = Vector3.one * orbScale;
 
-            Collider col = dummy.GetComponent<Collider>();
-            if (col != null) Destroy(col);
+                Renderer rend = go.GetComponent<Renderer>();
+                if (rend != null && bandMaterial != null) rend.sharedMaterial = bandMaterial;
 
-            spawned.Add(dummy);
-            collector.Add(dummy);
+                Collider col = go.GetComponent<Collider>();
+                if (col != null) Destroy(col);
 
-            Debug.Log($"[ConstellationManager] {zone} {bandName}[{i}]: " +
-                      $"lat={latDeg:F1}° lon={lonDeg:F1}° scale={orbScale:F3}.");
+                Debug.Log($"[ConstellationManager] {zone} {bandName}[{i}] DUMMY: " +
+                          $"lat={latDeg:F1}° lon={lonDeg:F1}° scale={orbScale:F3}.");
+            }
+
+            spawned.Add(go);
+            collector.Add(go);
         }
 
-        Debug.Log($"[ConstellationManager] {zone} Band {bandName}: {spawned.Count} orbs. " +
-                  $"orbSize={orbSizePct:F1}% baseScale={baseOrbScale:F4}.");
+        Debug.Log($"[ConstellationManager] {zone} Band {bandName}: {spawned.Count} orbs " +
+                  $"({(useRealOrbs ? "real" : "dummy")}) orbSize={orbSizePct:F1}% baseScale={baseOrbScale:F4}.");
         return spawned;
     }
 
@@ -1487,7 +1615,10 @@ public class ConstellationManager : MonoBehaviour
         }
 
         _ringState.Remove(zone);
-        InitialiseDummyRing(zone);
+        if (_sessionOrbsByZone.TryGetValue(zone, out var realOrbs) && realOrbs.Count > 0)
+            InitialiseRing(zone);
+        else
+            InitialiseDummyRing(zone);
 
         // ── Update orbit ring alpha to reflect active/faded state ─────────────
         UpdateRingAlphasForZone(zone);
@@ -1560,8 +1691,9 @@ public class ConstellationManager : MonoBehaviour
 
     private void OnSessionSelected(SessionData session)
     {
-        if (AntechamberController.Instance != null) AntechamberController.Instance.ShowForSession(session);
-        else SessionLauncher.Instance?.LaunchSession(session);
+        Debug.Log($"[ConstellationManager] OnSessionSelected: {session?.sessionID}");
+        SessionHandoff.Set(session);
+        SceneManager.LoadScene("Video");
     }
 
     // ── Startup camera ────────────────────────────────────────────────────────

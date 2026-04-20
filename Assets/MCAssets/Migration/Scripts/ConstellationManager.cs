@@ -2,11 +2,56 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.48
-// DATE:      2026-04-19
-// TIMESTAMP: 2026-04-19T17:00:00Z
+// VERSION:   3.52
+// DATE:      2026-04-20
+// TIMESTAMP: 2026-04-20T00:00:00Z
 //
 // CHANGE LOG:
+//   v3.52 2026-04-20  ACTIVE BAND INTERACTIVITY — ALL ORBS ON ACTIVE RING SELECTABLE
+//     - Added SetBandInteractive(List<GameObject>, bool) helper: calls
+//       ConstellationOrb.SetInteractive() on every orb in a band list.
+//     - ExpandZone: calls SetBandInteractive(activeOrbs, true) after showing
+//       active band. Calls SetBandInteractive(false) on all other bands.
+//     - SwitchLevel: calls SetBandInteractive(false) on outgoing band before
+//       hiding, SetBandInteractive(true) on incoming band after showing.
+//     - CollapseZoneInternal: calls SetBandInteractive(false) on all bands
+//       so no orb responds to gaze after zone collapses.
+//     - OBSOLETE: ConstellationManager.cs v3.51
+//
+//   v3.51 2026-04-20  FILTER urlVerified — SKIP SESSIONS WITHOUT VERIFIED GCS FILE
+//     - SpawnZone(): allSessions query now filters out sessions where
+//       urlVerified == false before sorting and distributing across bands.
+//     - urlVerified is set by SessionScanner on import from the URLVerified
+//       column in session_registry.csv. Sessions without a confirmed GCS file
+//       have URLVerified=false and will not spawn orbs.
+//     - Added LogWarning listing excluded session IDs per zone so nothing
+//       is silently dropped — filter by "excluded — URLVerified=false" in console.
+//     - When a file is uploaded and URLVerified flipped to true in the CSV,
+//       re-running Import Sessions from CSV will set urlVerified=true on the
+//       asset and the orb will appear on next Play.
+//     - No other behaviour changed.
+//
+//   v3.50 2026-04-20  FIX — BAND SESSION SPLIT BY LEVEL NOT BY COUNT
+//     - SpawnZone: replaced count-based third split with level-grouped split.
+//       Previous logic divided allSessions.Count into thirds by index, causing
+//       multiple levels to land in the same band (e.g. L4,L5,L6,L7 all in Equator).
+//     - New logic: groups sessions by distinct level integer, assigns three
+//       consecutive distinct levels to Lower/Equator/Upper in ascending order.
+//       Each band now contains exactly one level's worth of sessions.
+//     - If fewer than 3 distinct levels exist, unused bands get empty lists.
+//     - If more than 3 distinct levels exist, levels beyond index 2 are not
+//       displayed and a LogWarning lists them explicitly.
+//     - BAND LEVELS audit log updated to show level integer and session count
+//       per band: Lower=[L1] (2 sessions) | Equator=[L2] (3 sessions) | Upper=[L3] (2 sessions)
+//
+//   v3.49 2026-04-20  DEBUG — BAND LEVEL AUDIT LOG
+//     - Added Debug.Log after session split in SpawnZone that outputs the
+//       distinct level integers assigned to each ring band:
+//       [ConstellationManager] BAND LEVELS {zone}: Lower=[L1] Equator=[L2] Upper=[L3]
+//     - Filter console by "BAND LEVELS" to see all 12 zones at a glance, or
+//       "BAND LEVELS Heights" to isolate a single zone.
+//     - No behaviour change. Surgical addition only.
+//
 //   v3.48 2026-04-19  FIX — OnSessionSelected BODY NEVER UPDATED IN v3.47
 //     - v3.47 changelog claimed OnSessionSelected() was fixed to call
 //       SessionHandoff.Set(session) then SceneManager.LoadScene("Video"),
@@ -19,8 +64,9 @@
 //     - Added using UnityEngine.SceneManagement.
 //
 // OBSOLETE FILES — DELETE THESE:
+//   ConstellationManager.cs v3.51 (2026-04-20)
+//   ConstellationManager.cs v3.50 (2026-04-20)
 //   ConstellationManager.cs v3.47 (2026-04-19)
-//   ConstellationManager.cs v3.46 (2026-04-18)
 //
 //   v3.46 2026-04-18  REAL SESSION ORBS — REPLACE DUMMY SPHERES
 //     - SpawnSlotBand now accepts a List<SessionData> parameter.
@@ -651,8 +697,19 @@ public class ConstellationManager : MonoBehaviour
         // all three calls fall back to dummy primitive behaviour automatically.
         List<SessionData> allSessions = SessionRegistry.Instance != null
             ? SessionRegistry.Instance.GetByPhobiaZone(zone)
+                  .Where(s => s.urlVerified)
                   .OrderBy(s => s.level).ToList()
             : new List<SessionData>();
+
+        // Log any sessions filtered out so missing GCS files are visible in console.
+        if (SessionRegistry.Instance != null)
+        {
+            var unverified = SessionRegistry.Instance.GetByPhobiaZone(zone)
+                .Where(s => !s.urlVerified).ToList();
+            if (unverified.Count > 0)
+                Debug.LogWarning($"[ConstellationManager] {zone}: {unverified.Count} session(s) excluded — " +
+                                 $"URLVerified=false: {string.Join(", ", unverified.Select(s => s.sessionID))}");
+        }
 
         List<SessionData> eqSessions, upSessions, loSessions;
         if (allSessions.Count == 0)
@@ -662,13 +719,37 @@ public class ConstellationManager : MonoBehaviour
         }
         else
         {
-            int total    = allSessions.Count;
-            int loEnd    = total / 3;
-            int eqEnd    = loEnd + (total - loEnd * 2);   // middle gets any remainder
-            loSessions   = allSessions.GetRange(0,     loEnd);
-            eqSessions   = allSessions.GetRange(loEnd, eqEnd);
-            upSessions   = allSessions.GetRange(loEnd + eqEnd, total - loEnd - eqEnd);
-            Debug.Log($"[ConstellationManager] {zone}: {total} sessions → " +
+            // ── Group sessions by level, assign three consecutive levels to bands ──
+            // Each band must contain exactly one level's worth of sessions.
+            // Sessions are already sorted by level from GetByPhobiaZone().
+            // Distinct levels in ascending order → index 0=Lower, 1=Equator, 2=Upper.
+            // If fewer than 3 distinct levels exist, unused bands get empty lists.
+            List<int> distinctLevels = allSessions.Select(s => s.level).Distinct().OrderBy(l => l).ToList();
+
+            int loLevel = distinctLevels.Count > 0 ? distinctLevels[0] : -1;
+            int eqLevel = distinctLevels.Count > 1 ? distinctLevels[1] : -1;
+            int upLevel = distinctLevels.Count > 2 ? distinctLevels[2] : -1;
+
+            loSessions = loLevel >= 0 ? allSessions.Where(s => s.level == loLevel).ToList() : new List<SessionData>();
+            eqSessions = eqLevel >= 0 ? allSessions.Where(s => s.level == eqLevel).ToList() : new List<SessionData>();
+            upSessions = upLevel >= 0 ? allSessions.Where(s => s.level == upLevel).ToList() : new List<SessionData>();
+
+            // Sessions at levels beyond index 2 are not displayed — log them so
+            // nothing is silently dropped without warning.
+            if (distinctLevels.Count > 3)
+            {
+                var overflow = distinctLevels.Skip(3).Select(l => $"L{l}");
+                Debug.LogWarning($"[ConstellationManager] {zone}: {distinctLevels.Count} distinct levels found — " +
+                                 $"only 3 bands available. Levels not shown: {string.Join(",", overflow)}.");
+            }
+
+            // ── Band→Level audit log ──────────────────────────────────────────
+            Debug.Log($"[ConstellationManager] BAND LEVELS {zone}: " +
+                      $"Lower=[{(loLevel >= 0 ? $"L{loLevel}" : "none")}] ({loSessions.Count} sessions) | " +
+                      $"Equator=[{(eqLevel >= 0 ? $"L{eqLevel}" : "none")}] ({eqSessions.Count} sessions) | " +
+                      $"Upper=[{(upLevel >= 0 ? $"L{upLevel}" : "none")}] ({upSessions.Count} sessions)");
+
+            Debug.Log($"[ConstellationManager] {zone}: {allSessions.Count} sessions → " +
                       $"Lower={loSessions.Count} Equator={eqSessions.Count} Upper={upSessions.Count}.");
         }
 
@@ -1313,8 +1394,15 @@ public class ConstellationManager : MonoBehaviour
             if (bands != null && bands.TryGetValue(activeBand, out var activeOrbs))
             {
                 foreach (var go in activeOrbs) if (go != null) go.SetActive(true);
+                SetBandInteractive(activeOrbs, true);
                 Debug.Log($"[ConstellationManager] ExpandZone {zone}: showing {activeOrbs.Count} {activeBand} orbs.");
             }
+
+            // Ensure inactive bands are non-interactive
+            if (bands != null)
+                foreach (var kvp in bands)
+                    if (kvp.Key != activeBand)
+                        SetBandInteractive(kvp.Value, false);
 
             Debug.Log($"[ConstellationManager] Expanded {zone}: pivot+rings shown, active band={activeBand}.");
         }
@@ -1348,6 +1436,11 @@ public class ConstellationManager : MonoBehaviour
             foreach (var go in dummies) if (go != null) go.SetActive(false);
         if (_sessionOrbsByZone.TryGetValue(zone, out List<GameObject> realOrbs))
             foreach (var go in realOrbs) if (go != null) go.SetActive(false);
+
+        // Disable interactivity on all bands so no orb responds to gaze after collapse.
+        if (_bandOrbsByZone.TryGetValue(zone, out var collapseBands))
+            foreach (var kvp in collapseBands)
+                SetBandInteractive(kvp.Value, false);
 
         // Hide the ArrowsForOrbs root for this zone.
         SetArrowsForOrbsVisible(zone, false);
@@ -1586,6 +1679,7 @@ public class ConstellationManager : MonoBehaviour
         // ── Hide outgoing band orbs ───────────────────────────────────────────
         if (bands.TryGetValue(fromBand, out var outOrbs))
         {
+            SetBandInteractive(outOrbs, false);
             foreach (var go in outOrbs) if (go != null) go.SetActive(false);
             Debug.Log($"[ConstellationManager] SwitchLevel: hidden {outOrbs.Count} {fromBand} orbs.");
         }
@@ -1594,6 +1688,7 @@ public class ConstellationManager : MonoBehaviour
         if (bands.TryGetValue(toBand, out var inOrbs))
         {
             foreach (var go in inOrbs) if (go != null) go.SetActive(true);
+            SetBandInteractive(inOrbs, true);
             Debug.Log($"[ConstellationManager] SwitchLevel: shown {inOrbs.Count} {toBand} orbs.");
         }
         else
@@ -1680,6 +1775,21 @@ public class ConstellationManager : MonoBehaviour
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sets interactive state on all ConstellationOrb components in a band's orb list.
+    /// Active band = true (all orbs selectable). Inactive band = false (no gaze response).
+    /// </summary>
+    private void SetBandInteractive(List<GameObject> orbs, bool interactive)
+    {
+        if (orbs == null) return;
+        foreach (var go in orbs)
+        {
+            if (go == null) continue;
+            var orb = go.GetComponent<ConstellationOrb>();
+            if (orb != null) orb.SetInteractive(interactive);
+        }
+    }
 
     public void RefreshAllOrbs() { foreach (var orb in _allOrbs) orb.RefreshState(); UpdateCrossoverConnectors(); }
 

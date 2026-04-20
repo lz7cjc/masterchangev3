@@ -2,9 +2,9 @@
 // SessionScanner.cs
 // Assets/Editor/SessionScanner.cs
 //
-// VERSION:  v12
-// DATE:     2026-03-31
-// TIMESTAMP: 2026-03-31T00:00:00Z
+// VERSION:  v13
+// DATE:     2026-04-20
+// TIMESTAMP: 2026-04-20T00:00:00Z
 //
 // ████████████████████████████████████████████████████████████████████████
 // THIS IS THE BASELINE. ALL PREVIOUS VERSIONS ARE OBSOLETE.
@@ -12,6 +12,15 @@
 // ████████████████████████████████████████████████████████████████████████
 //
 // CHANGE LOG:
+//   v13  2026-04-20  FIX URLVerified PARSING
+//     - ImportFromCsv(): URLVerified column was parsed with strict "true"
+//       equality check. gcs_uploader.py writes the GCS filename into this
+//       column (not "true") when a file is confirmed on GCS, causing all
+//       assets to have urlVerified=false and no orbs to spawn.
+//     - Fix: any non-empty value that is not "false" is now treated as
+//       verified. Accepts "true", a GCS filename, or any other truthy string.
+//     - OBSOLETE: SessionScanner.cs v12
+//
 //   v12  2026-03-31  FIX videoURL CONSTRUCTION
 //     - GCS_BASE_URL corrected: "Phobias" → "App".
 //       All new session files live in gs://masterchange/App/ not Phobias/.
@@ -353,8 +362,12 @@ public class SessionScanner
             if (string.IsNullOrEmpty(sd.videoURL) && !string.IsNullOrEmpty(sd.gcsFilename))
                 sd.videoURL = GCS_BASE_URL + "/" + sd.gcsFilename;
 
-            sd.urlVerified = GetCol(cols, colIndex, "URLVerified")
-                .Equals("true", System.StringComparison.OrdinalIgnoreCase);
+            // URLVerified column may contain: "true", "false", or a GCS filename
+            // (written by gcs_uploader.py when the file is confirmed on GCS).
+            // Any non-empty value that is not "false" is treated as verified.
+            string urlVerifiedRaw = GetCol(cols, colIndex, "URLVerified");
+            sd.urlVerified = !string.IsNullOrEmpty(urlVerifiedRaw)
+                             && !urlVerifiedRaw.Equals("false", System.StringComparison.OrdinalIgnoreCase);
 
             if (int.TryParse(GetCol(cols, colIndex, "Level"), out int level))
                 sd.level = level;

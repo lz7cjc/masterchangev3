@@ -1,11 +1,21 @@
 // ConstellationOrb.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
 //
-// VERSION:   4.5
-// DATE:      2026-04-19
-// TIMESTAMP: 2026-04-19T09:00:00Z
+// VERSION:   4.6
+// DATE:      2026-04-20
+// TIMESTAMP: 2026-04-20T00:00:00Z
 //
 // CHANGE LOG:
+//   v4.6  2026-04-20  ALL ACTIVE BAND ORBS SELECTABLE — INACTIVE BAND NON-INTERACTIVE
+//     - Added _interactive bool field. ConstellationManager sets true on active
+//       band orbs via SetInteractive(), false on inactive band orbs.
+//     - Update(): replaced _isFront check with _interactive guard. All orbs on
+//       the active band select on dwell. Inactive orbs ignore gaze entirely.
+//     - OnGazeEnter(): added _interactive guard.
+//     - Added SetInteractive(bool): cancels in-progress gaze when set false.
+//     - Removed sideOrbDwellTime path — all active orbs use dwellTime.
+//     - OBSOLETE: ConstellationOrb.cs v4.5
+//
 //   v4.5  2026-04-19  FIX — BASESCALE ZERO WHEN SetTier CALLED BEFORE Start()
 //     - _baseScale and _tierScale removed from Awake(). SpawnSlotBand calls
 //       SetTier (via InitialiseRing/ApplyRingTiers) before Unity fires Start()
@@ -174,6 +184,7 @@ public class ConstellationOrb : MonoBehaviour
     private float     _gazeTimer;
     private bool      _selected;
     private bool      _isFront;
+    private bool      _interactive;   // set by ConstellationManager — true on active band only
     private int       _orbIndex;
     private Vector3   _baseScale;
     private Vector3   _tierScale;
@@ -248,35 +259,18 @@ public class ConstellationOrb : MonoBehaviour
     void Update()
     {
         if (_selected) return;
+        if (!_interactive) return;   // inactive band — no gaze response
         if (_currentState == UserProgressService.OrbState.Locked) return;
         if (!_isGazed) return;
 
         _gazeTimer += Time.deltaTime;
 
-        float targetDwell = _isFront ? dwellTime : sideOrbDwellTime;
-        float t = _gazeTimer / targetDwell;
+        float t = _gazeTimer / dwellTime;
         transform.localScale = _tierScale * Mathf.Lerp(1f, hoverScaleMultiplier, t);
 
-        if (_gazeTimer >= targetDwell)
+        if (_gazeTimer >= dwellTime)
         {
-            if (_isFront)
-            {
-                Select();
-            }
-            else
-            {
-                // Side orb — fire ring rotation only if this is an Equator orb.
-                // Upper/lower band orbs have no CollisionOrb interaction.
-                _isGazed   = false;
-                _gazeTimer = 0f;
-                transform.localScale = _tierScale;
-                if (_rend != null && _defaultMaterial != null)
-                    _rend.material = _defaultMaterial;
-
-                Debug.Log($"[Orb] Side orb dwell FIRE: index={_orbIndex} band={bandName} " +
-                          $"session={session?.sessionID}.");
-                onSideOrbSelected?.Invoke(_orbIndex);
-            }
+            Select();
         }
     }
 
@@ -294,6 +288,25 @@ public class ConstellationOrb : MonoBehaviour
         _baseScale = spawnedScale;
         _tierScale = _baseScale;
         Debug.Log($"[Orb] {name}: Init baseScale={_baseScale.x:F4}.");
+    }
+
+    /// <summary>
+    /// Called by ConstellationManager when the active band changes.
+    /// True = this orb is on the active ring and responds to gaze.
+    /// False = inactive ring — gaze is completely ignored.
+    /// </summary>
+    public void SetInteractive(bool interactive)
+    {
+        _interactive = interactive;
+        if (!interactive)
+        {
+            // Cancel any in-progress gaze so the orb doesn't select on reactivation
+            _isGazed   = false;
+            _gazeTimer = 0f;
+            transform.localScale = _tierScale;
+            if (_rend != null && _defaultMaterial != null)
+                _rend.material = _defaultMaterial;
+        }
     }
 
     /// Drives scale, label visibility, and _isFront flag.
@@ -403,7 +416,7 @@ public class ConstellationOrb : MonoBehaviour
 
     public void OnGazeEnter()
     {
-        if (_selected || _currentState == UserProgressService.OrbState.Locked) return;
+        if (_selected || !_interactive || _currentState == UserProgressService.OrbState.Locked) return;
 
         _isGazed   = true;
         _gazeTimer = 0f;
@@ -415,7 +428,7 @@ public class ConstellationOrb : MonoBehaviour
             _hoverMaterialInst = OrbVisuals.CreateHoverInstance(_rend, hoverEmissionColor);
 
         if (debugLogging)
-            Debug.Log($"[Orb] Gaze enter: {name} session={session?.sessionID} isFront={_isFront}");
+            Debug.Log($"[Orb] Gaze enter: {name} session={session?.sessionID} interactive={_interactive}");
     }
 
     public void OnGazeExit()

@@ -1,11 +1,28 @@
 // ConstellationOrb.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationOrb.cs
 //
-// VERSION:   4.6
-// DATE:      2026-04-20
-// TIMESTAMP: 2026-04-20T00:00:00Z
+// VERSION:   4.7
+// DATE:      2026-04-21
+// TIMESTAMP: 2026-04-21T00:00:00Z
 //
 // CHANGE LOG:
+//   v4.7  2026-04-21  INACTIVE ORB ALPHA + GazeHoverTrigger DISABLE ON INACTIVE
+//     - Added [Range(0,1)] public float inactiveOrbAlpha = 0.25f Inspector field.
+//       Fallback used when ConstellationManager has no config alpha available.
+//       ConstellationManager passes the per-zone config value via SetInteractive(bool, float).
+//     - SetInteractive(bool): original single-arg overload now delegates to the
+//       new two-arg overload using inactiveOrbAlpha as fallback.
+//     - SetInteractive(bool interactive, float alpha): new two-arg overload.
+//       When inactive: disables the GazeHoverTrigger component on this GameObject
+//       so the physics raycast finds no trigger — reticle stays as a dot without
+//       any change to GazeReticlePointer. Also dims the renderer to alpha using a
+//       new material instance (does not touch the shared asset). When active:
+//       re-enables GazeHoverTrigger and restores _defaultMaterial at full opacity.
+//       If _defaultMaterial is null (dummy orb), restores alpha to 1 on current material.
+//     - OnGazeExit: material restore guarded by _interactive check. An inactive orb
+//       that receives OnGazeExit edge-case will not wipe the dim material.
+//     - OBSOLETE: ConstellationOrb.cs v4.6
+//
 //   v4.6  2026-04-20  ALL ACTIVE BAND ORBS SELECTABLE — INACTIVE BAND NON-INTERACTIVE
 //     - Added _interactive bool field. ConstellationManager sets true on active
 //       band orbs via SetInteractive(), false on inactive band orbs.
@@ -17,51 +34,8 @@
 //     - OBSOLETE: ConstellationOrb.cs v4.5
 //
 //   v4.5  2026-04-19  FIX — BASESCALE ZERO WHEN SetTier CALLED BEFORE Start()
-//     - _baseScale and _tierScale removed from Awake(). SpawnSlotBand calls
-//       SetTier (via InitialiseRing/ApplyRingTiers) before Unity fires Start()
-//       on freshly instantiated orbs. At that point _baseScale was still zero,
-//       so _tierScale was zero, so all orbs appeared invisible and then snapped
-//       to zero on any hover or tier change.
-//     - Added public Init(Vector3 spawnedScale) method. SpawnSlotBand calls
-//       this immediately after setting go.transform.localScale. Init captures
-//       _baseScale and _tierScale from the argument, not from the transform,
-//       guaranteeing the correct value regardless of Unity lifecycle order.
-//     - Start() no longer touches _baseScale/_tierScale — Init() is the
-//       single authoritative point of scale capture.
-//
-// OBSOLETE FILES — DELETE THESE:
-//   ConstellationOrb.cs v4.4 (2026-04-12)
-//
 //   v4.4  2026-04-12  FIX — NULL onEnter/onExit IN Start()
-//     - GazeHoverTrigger has no Awake(). Unity does not auto-initialise public
-//       UnityEvent fields for components added via AddComponent() at runtime —
-//       they remain null, causing NullReferenceException when Start() calls
-//       trigger.onEnter.AddListener(). Fix: null-guard both fields in Start()
-//       before calling AddListener, initialising them as new UnityEvent() if null.
-//     - GazeHoverTrigger.cs is unchanged (linchpin — not to be modified).
-//     - Fix is safe for both pre-placed (serialised, non-null) and runtime usage.
-//
 //   v4.3  2026-04-12  SYNC WITH ConstellationManager v3.27 — LABEL + BAND + AWAKE GUARDS
-//     - Added public string bandName field. ConstellationManager sets "Equator"/"Upper"/"Lower"
-//       at spawn. Guards side-orb dwell so only Equator orbs can rotate the ring.
-//     - Added _levelLabel / _titleLabel private fields (ZoneLabelController).
-//     - Added SetLevelLabel(ZoneLabelController) — wires level label ("L1", "L2" etc).
-//       Always shown when orb is active (not tier-gated).
-//     - Added SetTitleLabel(ZoneLabelController) — wires session title label.
-//       Shown on Front tier only, hidden on SideNear/SideFar/Hidden.
-//     - SetTier() updated: _levelLabel shown whenever tier != Hidden;
-//       _titleLabel shown on Front only, hidden on all others.
-//       Legacy _label field (SetLabelController) retained for backward compat.
-//     - Awake() now explicitly initialises onSideOrbSelected and onSessionSelected
-//       as new UnityEvent instances. Unity does not initialise UnityEvent fields
-//       for runtime AddComponent — leaving them null causes NullReferenceException
-//       when ConstellationManager calls AddListener before Start() runs.
-//     - OnGazeEnter() now uses OrbVisuals.CreateHoverInstance() instead of inline
-//       EnableEmission() — consistent with ZonePlanet.cs.
-//     - Start() no longer warns when session is null — valid for dummy equatorial
-//       orbs that have no session assigned yet.
-//     - SetTier(Hidden): hides both _levelLabel and _titleLabel before deactivating.
-//
 //   v4.2  2026-04-07  PHASE 3 — SIDE ORB RING ROTATION
 //   v4.1  2026-04-04  ORB TIER SYSTEM
 //   v4.0  2026-03-14  Planet mesh support + visual overhaul.
@@ -69,6 +43,9 @@
 //   v2.0  2026-03-07  Three visible states, GazeHoverTrigger wiring, dwell scale.
 //
 // OBSOLETE FILES — DELETE THESE:
+//   ConstellationOrb.cs v4.6 (2026-04-20)
+//   ConstellationOrb.cs v4.5 (2026-04-19)
+//   ConstellationOrb.cs v4.4 (2026-04-12)
 //   ConstellationOrb.cs v4.3 (2026-04-12)
 //   ConstellationOrb.cs v4.2 (2026-04-07)
 //   ConstellationOrb.cs v4.1 (2026-04-04)
@@ -82,7 +59,7 @@
 //   GazeHoverTrigger.cs            — OnGazeEnter / OnGazeExit callbacks
 //   ZoneLabelController.cs v1.1    — SetLabel(), Show(), Hide(), SetVisibleImmediate()
 //   OrbVisuals.cs v1.0             — CreateHoverInstance(), EnableEmission()
-//   ConstellationManager.cs v3.27  — RotateRingToOrb() subscriber, SetLevelLabel/SetTitleLabel
+//   ConstellationManager.cs v3.53  — SetBandInteractive(), SetLevelLabel/SetTitleLabel
 //
 // SCENE SETUP:
 //   All wiring is done at runtime by ConstellationManager — no manual Inspector setup needed.
@@ -145,6 +122,14 @@ public class ConstellationOrb : MonoBehaviour
 
     [Range(0.5f, 1.0f)]
     public float sideFarScaleMultiplier = 0.9f;
+
+    // ── Inactive band visual ──────────────────────────────────────────────────
+    [Header("Inactive Band Visual")]
+    [Tooltip("Alpha applied to this orb's renderer when it is on a non-active ring. " +
+             "ConstellationManager passes the per-zone config value at runtime — " +
+             "this field is the fallback if no config value is available.")]
+    [Range(0f, 1f)]
+    public float inactiveOrbAlpha = 0.25f;
 
     // ── Selected state ────────────────────────────────────────────────────────
     [Header("Selected State")]
@@ -277,8 +262,6 @@ public class ConstellationOrb : MonoBehaviour
     // ── Tier API ──────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Called by ConstellationManager when the ring rotates or a zone expands.
-    /// <summary>
     /// Called by SpawnSlotBand immediately after setting go.transform.localScale.
     /// Captures the correct runtime spawn scale before any SetTier() call can
     /// overwrite it. Must be called before SetTier() or the scale will be zero.
@@ -292,23 +275,101 @@ public class ConstellationOrb : MonoBehaviour
 
     /// <summary>
     /// Called by ConstellationManager when the active band changes.
-    /// True = this orb is on the active ring and responds to gaze.
-    /// False = inactive ring — gaze is completely ignored.
+    /// Delegates to the two-arg overload using the Inspector inactiveOrbAlpha field.
     /// </summary>
     public void SetInteractive(bool interactive)
     {
+        SetInteractive(interactive, inactiveOrbAlpha);
+    }
+
+    /// <summary>
+    /// Called by ConstellationManager with the per-zone config alpha value.
+    ///
+    /// interactive=false:
+    ///   - Disables the GazeHoverTrigger component so the physics raycast finds no
+    ///     trigger on this orb — the reticle stays as a dot without any modification
+    ///     to GazeReticlePointer.
+    ///   - Dims the renderer to the given alpha via a new material instance.
+    ///   - Cancels any in-progress gaze.
+    ///
+    /// interactive=true:
+    ///   - Re-enables the GazeHoverTrigger component.
+    ///   - Restores _defaultMaterial at full opacity. If _defaultMaterial is null
+    ///     (dummy orb not yet state-assigned), restores alpha to 1 on current material.
+    /// </summary>
+    public void SetInteractive(bool interactive, float alpha)
+    {
         _interactive = interactive;
+
+        // ── Enable/disable GazeHoverTrigger ───────────────────────────────────
+        // Disabling the component means the raycast in GazeReticlePointer finds
+        // no GazeHoverTrigger on this GameObject and treats it as a plain hit
+        // with no hover response — reticle remains a dot.
+        var trigger = GetComponent<GazeHoverTrigger>();
+        if (trigger != null)
+        {
+            trigger.enabled = interactive;
+            Debug.Log($"[Orb] {name}: GazeHoverTrigger enabled={interactive}.");
+        }
+
         if (!interactive)
         {
-            // Cancel any in-progress gaze so the orb doesn't select on reactivation
+            // Cancel any in-progress gaze so the orb doesn't select on reactivation.
             _isGazed   = false;
             _gazeTimer = 0f;
             transform.localScale = _tierScale;
+
+            // Restore state material first so we dim from the correct base colour,
+            // then apply alpha. This handles the case where a hover material was active.
             if (_rend != null && _defaultMaterial != null)
                 _rend.material = _defaultMaterial;
+
+            // Dim via a new material instance — does not touch the shared asset.
+            // Also handles dummy orbs where _defaultMaterial is null: dim the
+            // current material (which may be a primitive default material).
+            if (_rend != null && _rend.material != null)
+            {
+                var dimMat = new Material(_rend.material);
+                Color c = dimMat.HasProperty("_BaseColor")
+                    ? dimMat.GetColor("_BaseColor")
+                    : dimMat.color;
+                c.a = alpha;
+                if (dimMat.HasProperty("_BaseColor")) dimMat.SetColor("_BaseColor", c);
+                else dimMat.color = c;
+                _rend.material = dimMat;
+            }
+
+            Debug.Log($"[Orb] {name}: SetInteractive=false alpha={alpha:F2}.");
+        }
+        else
+        {
+            // Restore full-opacity state material.
+            if (_rend != null)
+            {
+                if (_defaultMaterial != null)
+                {
+                    _rend.material = _defaultMaterial;
+                    Debug.Log($"[Orb] {name}: SetInteractive=true — _defaultMaterial restored.");
+                }
+                else
+                {
+                    // Dummy orb with no state material — just restore alpha to 1.
+                    var mat = _rend.material;
+                    if (mat != null)
+                    {
+                        Color c = mat.HasProperty("_BaseColor") ? mat.GetColor("_BaseColor") : mat.color;
+                        c.a = 1f;
+                        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", c);
+                        else mat.color = c;
+                    }
+                    Debug.Log($"[Orb] {name}: SetInteractive=true — no _defaultMaterial, alpha restored.");
+                }
+            }
         }
     }
 
+    /// <summary>
+    /// Called by ConstellationManager when the ring rotates or a zone expands.
     /// Drives scale, label visibility, and _isFront flag.
     /// Hidden tier deactivates the GameObject.
     /// </summary>
@@ -438,7 +499,10 @@ public class ConstellationOrb : MonoBehaviour
 
         transform.localScale = _tierScale;
 
-        if (_rend != null && _defaultMaterial != null)
+        // Only restore the state material if this orb is on the active band.
+        // An inactive orb that receives OnGazeExit (edge case — GazeHoverTrigger is
+        // disabled, but belt-and-braces) must not wipe the dim material.
+        if (_interactive && _rend != null && _defaultMaterial != null)
             _rend.material = _defaultMaterial;
 
         if (_currentState == UserProgressService.OrbState.Recommended && _pulseCoroutine == null)

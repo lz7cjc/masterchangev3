@@ -466,7 +466,6 @@
     <None Include="Assets\Packages\System.Text.Encodings.Web.4.7.2\LICENSE.TXT" />
     <None Include="Assets\Packages\supabase-core.0.0.3\lib\netstandard2.0\Supabase.Core.xml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
-    <None Include="Assets\TextMesh Pro\Glyph Report.txt" />
     <None Include="Assets\Packages\System.Threading.Channels.5.0.0\lib\netstandard2.1\System.Threading.Channels.xml" />
     <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\version.txt" />
     <None Include="Assets\Packages\MimeMapping.2.0.0\lib\netstandard2.0\MimeMapping.xml" />

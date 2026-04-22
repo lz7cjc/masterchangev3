@@ -1,11 +1,23 @@
 // ZoneLabelController.cs
 // Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
 //
-// VERSION : 1.8
+// VERSION : 1.9
 // DATE    : 2026-04-22
 // TIMESTAMP: 2026-04-22T00:00:00Z
 //
 // CHANGE LOG:
+//   v1.9  2026-04-22  PER-ZONE LABEL OFFSET FROM CONFIG
+//     - Added SetLabelOffset(Vector3): called by ConstellationManager.SpawnLabel()
+//       with the value from OrbLayoutConfig.labelOffset. Overrides _localOffset.
+//     - Added GetLabelOffset(): returns current _localOffset for OrbLayoutEditor
+//       to read the live value and save it.
+//     - _radiusMultiplier and radius-based positioning removed. Position is now
+//       driven entirely by _localOffset (world-space offset from planet centre).
+//     - LateUpdate: transform.position = parent.position + _localOffset.
+//     - _localOffset exposed as [SerializeField] so it is visible and adjustable
+//       on the Label_ child in the Hierarchy during Play Mode.
+//     - SetPlanetRadius retained as no-op for backward compatibility.
+//
 //   v1.8  2026-04-22  USE WORLD-SPACE POSITION NOT LOCAL
 //     - LateUpdate: switched from localPosition to world-space position.
 //       localPosition Y on a rotated planet moves along the planet's local
@@ -104,15 +116,14 @@ public class ZoneLabelController : MonoBehaviour
     [SerializeField] private float _fadeOutDuration = 0.6f;
 
     [Header("Position")]
-    [Tooltip("Label Y offset = planet radius × this value. Tune in Play Mode, set on prefab on exit.")]
-    [SerializeField] private float _radiusMultiplier = 1.4f;
+    [Tooltip("World-space offset from planet centre. Adjust X/Y/Z in Play Mode on this component, then Save All in Orb Layout Editor.")]
+    [SerializeField] private Vector3 _localOffset = new Vector3(0f, 1f, 0f);
 
     // -- Private --------------------------------------------------------------
     private CanvasGroup  _canvasGroup;
     private string       _labelText;
     private bool         _visible;
     private Coroutine    _fadeCoroutine;
-    private float        _planetRadius = 1f;
 
     // -- Lifecycle ------------------------------------------------------------
 
@@ -125,18 +136,16 @@ public class ZoneLabelController : MonoBehaviour
 
     void Start()
     {
-        Debug.Log($"[ZoneLabelController] '{gameObject.name}' Start — radius={_planetRadius:F3} multiplier={_radiusMultiplier:F2}.");
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' Start — localOffset={_localOffset}.");
     }
 
     void LateUpdate()
     {
-        // Position above planet in world space — ignores planet rotation so
-        // the label is always above regardless of how the planet is oriented.
+        // Position in world space: planet centre + offset. Ignores planet rotation
+        // so label is always at the configured world-space position regardless of
+        // how the planet mesh is oriented.
         if (transform.parent != null)
-        {
-            transform.position = transform.parent.position
-                                 + Vector3.up * (_planetRadius * _radiusMultiplier);
-        }
+            transform.position = transform.parent.position + _localOffset;
 
         // Face camera. TMP 3D meshes render on negative-Z, so Rotate 180° on Y.
         if (Camera.main != null)
@@ -165,15 +174,26 @@ public class ZoneLabelController : MonoBehaviour
     // -- Public API -----------------------------------------------------------
 
     /// <summary>
-    /// Called by ConstellationManager.SpawnLabel() immediately after instantiation.
-    /// Provides the planet's world-space collider radius so localPosition Y
-    /// scales correctly for each planet regardless of its scale.
+    /// Called by ConstellationManager.SpawnLabel() with the value from
+    /// OrbLayoutConfig.labelOffset. Sets the world-space offset from planet centre.
     /// </summary>
-    public void SetPlanetRadius(float radius)
+    public void SetLabelOffset(Vector3 offset)
     {
-        _planetRadius = radius;
-        Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetPlanetRadius={radius:F3}.");
+        _localOffset = offset;
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetLabelOffset={offset}.");
     }
+
+    /// <summary>
+    /// Returns the current world-space offset. Read by OrbLayoutEditor to save
+    /// the live value adjusted in Play Mode.
+    /// </summary>
+    public Vector3 GetLabelOffset()
+    {
+        return _localOffset;
+    }
+
+    /// <summary>Retained for backward compatibility — no longer used.</summary>
+    public void SetPlanetRadius(float radius) { }
 
     /// <summary>
     /// Set the display text. Called by ConstellationManager after instantiation.

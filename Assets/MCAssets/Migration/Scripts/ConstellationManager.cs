@@ -2,11 +2,22 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.57
+// VERSION:   3.59
 // DATE:      2026-04-22
 // TIMESTAMP: 2026-04-22T00:00:00Z
 //
 // CHANGE LOG:
+//   v3.59 2026-04-22  FIX DUPLICATE LABELS ON REBUILD
+//     - RebuildDummyOrbs: destroys existing Label_{zone} child before calling
+//       SpawnZone. Without this, every rebuild spawned an additional label
+//       without removing the previous one.
+//
+//   v3.58 2026-04-22  PER-ZONE LABEL OFFSET FROM CONFIG
+//     - SpawnLabel: added labelOffset Vector3 parameter. Passes cfg.labelOffset
+//       from OrbLayoutConfig to ZoneLabelController.SetLabelOffset().
+//       Falls back to (0,1,0) when cfg is null.
+//     - SpawnLabel call site reads cfg.labelOffset and logs it.
+//
 //   v3.57 2026-04-22  FIX: PLANET LABELS NOT APPEARING
 //     - SpawnLabel was inside the else-if (zonePlanetPrefab != null) branch only.
 //       All planets are pre-placed, so that branch never executed and no labels
@@ -706,11 +717,13 @@ public class ConstellationManager : MonoBehaviour
         // Spawn planet label — after colliderRadius is computed so radius can be passed in.
         if (spawnedZonePlanet != null)
         {
+            Vector3 cfgLabelOffset = cfg != null ? cfg.labelOffset : new Vector3(0f, 1f, 0f);
             ZoneLabelController lbl = SpawnLabel(spawnedZonePlanet.transform,
                        zoneConfig != null ? zoneConfig.GetDisplayName(zone) : zone.ToString(),
                        $"Label_{zone}", parentIsActive: spawnedZonePlanet.gameObject.activeInHierarchy,
-                       planetRadius: colliderRadius);
-            Debug.Log($"[ConstellationManager] SpawnLabel: {zone} radius={colliderRadius:F3} parentIsActive={spawnedZonePlanet.gameObject.activeInHierarchy}.");
+                       planetRadius: colliderRadius,
+                       labelOffset: cfgLabelOffset);
+            Debug.Log($"[ConstellationManager] SpawnLabel: {zone} labelOffset={cfgLabelOffset} parentIsActive={spawnedZonePlanet.gameObject.activeInHierarchy}.");
         }
         else
         {
@@ -1376,6 +1389,14 @@ public class ConstellationManager : MonoBehaviour
             Debug.Log($"[ConstellationManager] RebuildDummyOrbs: {zone} " +
                       $"config={(entry.layoutConfig != null ? entry.layoutConfig.name : "null (defaults)")}.");
 
+            // Destroy existing label before respawn to prevent duplicates.
+            ZonePlanet existingPlanet = entry.clusterRoot.GetComponentInChildren<ZonePlanet>(includeInactive: true);
+            if (existingPlanet != null)
+            {
+                Transform existingLabel = existingPlanet.transform.Find($"Label_{zone}");
+                if (existingLabel != null) DestroyImmediate(existingLabel.gameObject);
+            }
+
             SpawnZone(zone, entry.clusterRoot, entry.layoutConfig);
 
             if (_expandedZone == zone && _dummyOrbsByZone.TryGetValue(zone, out var newOrbs))
@@ -1963,7 +1984,7 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Label spawn ───────────────────────────────────────────────────────────
 
-    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive, float planetRadius = 1f)
+    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive, float planetRadius = 1f, Vector3 labelOffset = default)
     {
         if (labelPrefab == null) return null;
         GameObject go = Instantiate(labelPrefab, parent.position, Quaternion.identity, parent);
@@ -1972,6 +1993,7 @@ public class ConstellationManager : MonoBehaviour
         if (label != null)
         {
             label.SetPlanetRadius(planetRadius);
+            label.SetLabelOffset(labelOffset == default ? new Vector3(0f, 1f, 0f) : labelOffset);
             label.SetLabel(text);
             if (parentIsActive) label.Show(); else label.SetVisibleImmediate(false);
         }

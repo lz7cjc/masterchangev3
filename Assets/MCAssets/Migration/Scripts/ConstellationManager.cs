@@ -2,11 +2,18 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.56
-// DATE:      2026-04-21
-// TIMESTAMP: 2026-04-21T20:00:00Z
+// VERSION:   3.57
+// DATE:      2026-04-22
+// TIMESTAMP: 2026-04-22T00:00:00Z
 //
 // CHANGE LOG:
+//   v3.57 2026-04-22  FIX: PLANET LABELS NOT APPEARING
+//     - SpawnLabel was inside the else-if (zonePlanetPrefab != null) branch only.
+//       All planets are pre-placed, so that branch never executed and no labels
+//       were ever spawned. Moved SpawnLabel call to after the if/else-if block
+//       so it runs for pre-placed planets. Guard: only called when
+//       spawnedZonePlanet != null.
+//
 //   v3.56 2026-04-21  SIMPLIFY RING COLOUR + REMOVE CHEVRON
 //     - UpdateRingAlphasForZone: removed colourCurrent/Next/Prev multi-colour logic.
 //       All three bands now use single ringColour from config. Active ring is
@@ -671,9 +678,6 @@ public class ConstellationManager : MonoBehaviour
                 planetWorldScale      = planetGO.transform.lossyScale.x;
                 Debug.Log($"[ConstellationManager] Planet instantiated: {zone} scale={planetWorldScale:F4}.");
             }
-            SpawnLabel(planetGO.transform,
-                       zoneConfig != null ? zoneConfig.GetDisplayName(zone) : zone.ToString(),
-                       $"Label_{zone}", parentIsActive: true);
         }
         else
         {
@@ -698,6 +702,20 @@ public class ConstellationManager : MonoBehaviour
         float     upOrbitRadius = (colliderRadius * upRadiusMult) + orbitPadding;
         float     loOrbitRadius = (colliderRadius * loRadiusMult) + orbitPadding;
         Transform orbParent     = spawnedZonePlanet != null ? spawnedZonePlanet.transform : clusterRoot;
+
+        // Spawn planet label — after colliderRadius is computed so radius can be passed in.
+        if (spawnedZonePlanet != null)
+        {
+            ZoneLabelController lbl = SpawnLabel(spawnedZonePlanet.transform,
+                       zoneConfig != null ? zoneConfig.GetDisplayName(zone) : zone.ToString(),
+                       $"Label_{zone}", parentIsActive: spawnedZonePlanet.gameObject.activeInHierarchy,
+                       planetRadius: colliderRadius);
+            Debug.Log($"[ConstellationManager] SpawnLabel: {zone} radius={colliderRadius:F3} parentIsActive={spawnedZonePlanet.gameObject.activeInHierarchy}.");
+        }
+        else
+        {
+            Debug.LogWarning($"[ConstellationManager] SpawnLabel skipped for {zone} — no planet resolved.");
+        }
 
         // ── Slot defaults ─────────────────────────────────────────────────────
         EnsureSlotDefaults(eqSlots, upSlots, loSlots, eqOrbCount, sideOrbCount, eqLat, upLat, loLat, zone);
@@ -1945,13 +1963,18 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Label spawn ───────────────────────────────────────────────────────────
 
-    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive)
+    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive, float planetRadius = 1f)
     {
         if (labelPrefab == null) return null;
-        GameObject go = Instantiate(labelPrefab, parent.position + Vector3.up * labelOffset, Quaternion.identity, parent);
+        GameObject go = Instantiate(labelPrefab, parent.position, Quaternion.identity, parent);
         go.name = goName;
         ZoneLabelController label = go.GetComponent<ZoneLabelController>();
-        if (label != null) { label.SetLabel(text); if (parentIsActive) label.Show(); else label.SetVisibleImmediate(false); }
+        if (label != null)
+        {
+            label.SetPlanetRadius(planetRadius);
+            label.SetLabel(text);
+            if (parentIsActive) label.Show(); else label.SetVisibleImmediate(false);
+        }
         else Debug.LogWarning($"[ConstellationManager] labelPrefab missing ZoneLabelController on '{goName}'.");
         return label;
     }

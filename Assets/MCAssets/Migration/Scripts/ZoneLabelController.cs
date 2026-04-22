@@ -1,11 +1,50 @@
 // ZoneLabelController.cs
 // Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
 //
-// VERSION : 1.1
-// DATE    : 2026-03-22
-// TIMESTAMP: 2026-03-22T12:00:00Z
+// VERSION : 1.8
+// DATE    : 2026-04-22
+// TIMESTAMP: 2026-04-22T00:00:00Z
 //
 // CHANGE LOG:
+//   v1.8  2026-04-22  USE WORLD-SPACE POSITION NOT LOCAL
+//     - LateUpdate: switched from localPosition to world-space position.
+//       localPosition Y on a rotated planet moves along the planet's local
+//       Y axis — which points downward on Mindfulness (rotation Z:-29 etc).
+//       World-space position ignores planet rotation entirely, so the label
+//       always appears above the planet in world space regardless of how
+//       the planet is rotated.
+//     - Offset = planet world position + Vector3.up * (planetRadius * multiplier).
+//       planetRadius is already world-space (radius * lossyScale) so no
+//       further scale correction needed.
+//     - Removed parentScale division (was compensating for wrong approach).
+//
+//   v1.7  2026-04-22  DIVIDE LOCAL OFFSET BY PARENT SCALE
+//     - SetPlanetRadius(float): receives world-space collider radius from
+//       ConstellationManager.SpawnLabel(). Stored as _planetRadius.
+//     - LateUpdate: localPosition Y = _planetRadius * _radiusMultiplier.
+//       This scales the offset proportionally per planet so Heights (r~0.75),
+//       WaterWorld (r~0.5), Sharks (r~0.25) all position correctly.
+//     - _localOffset Vector3 removed — replaced by _radiusMultiplier float.
+//     - Start() no longer reads SphereCollider — radius comes from ConstellationManager.
+//
+//   v1.5  2026-04-22  SIMPLIFY TO LOCAL POSITION OFFSET
+//   v1.4  2026-04-22  BIAS LABEL TOWARD WORLD-UP
+//   v1.3  2026-04-22  CAMERA-FACING POSITION ABOVE PLANET
+//   v1.2  2026-04-22  FIX MIRRORED TEXT + LIVE OFFSET
+//   v1.1  2026-03-22  NULL-SAFE _canvasGroup IN SetVisibleImmediate
+//     - Start(): caches SphereCollider from parent to get planet radius.
+//       Falls back to lossyScale.x * 0.5f if no collider found.
+//     - LateUpdate: positions label along the vector from planet centre
+//       toward camera, at distance (radius * _radiusMultiplier). This
+//       ensures the label always appears above the visible top of the
+//       planet from the camera's POV regardless of planet rotation.
+//     - Removed world-space Vector3.up offset — that was wrong for
+//       arbitrarily-rotated planets.
+//     - _heightOffset replaced by _radiusMultiplier (default 1.3).
+//       Increase to push label further from planet surface.
+//
+//   v1.2  2026-04-22  FIX MIRRORED TEXT + LIVE OFFSET
+//
 //   v1.1  2026-03-22  NULL-SAFE _canvasGroup IN SetVisibleImmediate
 //     - Awake() does not fire on inactive GameObjects in Unity.
 //     - Session orb labels are children of inactive orbs at spawn time,
@@ -64,11 +103,16 @@ public class ZoneLabelController : MonoBehaviour
     [Tooltip("Seconds to fade out when becoming hidden")]
     [SerializeField] private float _fadeOutDuration = 0.6f;
 
+    [Header("Position")]
+    [Tooltip("Label Y offset = planet radius × this value. Tune in Play Mode, set on prefab on exit.")]
+    [SerializeField] private float _radiusMultiplier = 1.4f;
+
     // -- Private --------------------------------------------------------------
     private CanvasGroup  _canvasGroup;
     private string       _labelText;
     private bool         _visible;
     private Coroutine    _fadeCoroutine;
+    private float        _planetRadius = 1f;
 
     // -- Lifecycle ------------------------------------------------------------
 
@@ -79,11 +123,27 @@ public class ZoneLabelController : MonoBehaviour
         Debug.Log($"[ZoneLabelController] Awake on '{gameObject.name}' — CanvasGroup resolved.");
     }
 
+    void Start()
+    {
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' Start — radius={_planetRadius:F3} multiplier={_radiusMultiplier:F2}.");
+    }
+
     void LateUpdate()
     {
-        // Always face the camera so the label is readable from any direction.
+        // Position above planet in world space — ignores planet rotation so
+        // the label is always above regardless of how the planet is oriented.
+        if (transform.parent != null)
+        {
+            transform.position = transform.parent.position
+                                 + Vector3.up * (_planetRadius * _radiusMultiplier);
+        }
+
+        // Face camera. TMP 3D meshes render on negative-Z, so Rotate 180° on Y.
         if (Camera.main != null)
+        {
             transform.LookAt(Camera.main.transform);
+            transform.Rotate(0f, 180f, 0f);
+        }
     }
 
     // -- Helpers (private) ----------------------------------------------------
@@ -103,6 +163,17 @@ public class ZoneLabelController : MonoBehaviour
     }
 
     // -- Public API -----------------------------------------------------------
+
+    /// <summary>
+    /// Called by ConstellationManager.SpawnLabel() immediately after instantiation.
+    /// Provides the planet's world-space collider radius so localPosition Y
+    /// scales correctly for each planet regardless of its scale.
+    /// </summary>
+    public void SetPlanetRadius(float radius)
+    {
+        _planetRadius = radius;
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetPlanetRadius={radius:F3}.");
+    }
 
     /// <summary>
     /// Set the display text. Called by ConstellationManager after instantiation.

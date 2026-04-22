@@ -4106,6 +4106,9 @@ PrefabInstance:
       addedObject: {fileID: 869564439}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 983951864}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
       insertIndex: -1
       addedObject: {fileID: 983951860}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
@@ -4114,9 +4117,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
       insertIndex: -1
       addedObject: {fileID: 983951858}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 983951864}
   m_SourcePrefab: {fileID: 100100000, guid: 1834cf54a82218e46af060a0ba30c356, type: 3}
 --- !u!4 &983951855 stripped
 Transform:
@@ -7269,7 +7269,7 @@ MonoBehaviour:
   orbPrefab: {fileID: 5064596630996765508, guid: a87a8de27c837514aab97e3abba0e1c3, type: 3}
   labelPrefab: {fileID: 2825320089133243862, guid: c27e65fd11b93a647b6a3a905a378e03, type: 3}
   zoneConfig: {fileID: 11400000, guid: 34010aa2a7ef19f41855ed4489ffb00f, type: 2}
-  labelOffset: 0.7
+  labelOffset: 0.279
   equatorSlots: []
   upperSlots: []
   lowerSlots: []

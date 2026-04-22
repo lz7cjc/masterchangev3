@@ -2,10 +2,20 @@
 // ConstellationManager.cs
 // Assets/MCAssets/Migration/Scripts/ConstellationManager.cs
 //
-// VERSION:   3.59
+
+//// ConstellationManager.cs — SURGICAL CHANGES FOR v3.60
 // DATE:      2026-04-22
-// TIMESTAMP: 2026-04-22T00:00:00Z
+// TIMESTAMP: 2026-04-22T12:00:00Z
 //
+// Apply these two find-and-replace operations to ConstellationManager.cs.
+// Update the file header version to v3.60 and add this changelog entry:
+//
+//   v3.60 2026-04-22  LABEL FONT SIZE + ROTATION
+//     - SpawnLabel: added labelRotation (Vector3) and labelFontSize (float) params.
+//       Calls ZoneLabelController.SetLabelRotation() and SetFontSize() after spawn.
+//     - SpawnLabel call site: reads cfg.labelRotation and cfg.labelFontSize,
+//       falls back to Vector3.zero and 0.4f respectively when cfg is null.
+//     - OBSOLETE: ConstellationManager.cs v3.59
 // CHANGE LOG:
 //   v3.59 2026-04-22  FIX DUPLICATE LABELS ON REBUILD
 //     - RebuildDummyOrbs: destroys existing Label_{zone} child before calling
@@ -718,12 +728,16 @@ public class ConstellationManager : MonoBehaviour
         if (spawnedZonePlanet != null)
         {
             Vector3 cfgLabelOffset = cfg != null ? cfg.labelOffset : new Vector3(0f, 1f, 0f);
+            Vector3 cfgLabelRotation = cfg != null ? cfg.labelRotation : Vector3.zero;
+            float cfgLabelFontSize = cfg != null ? cfg.labelFontSize : 0.4f;
             ZoneLabelController lbl = SpawnLabel(spawnedZonePlanet.transform,
                        zoneConfig != null ? zoneConfig.GetDisplayName(zone) : zone.ToString(),
                        $"Label_{zone}", parentIsActive: spawnedZonePlanet.gameObject.activeInHierarchy,
                        planetRadius: colliderRadius,
-                       labelOffset: cfgLabelOffset);
-            Debug.Log($"[ConstellationManager] SpawnLabel: {zone} labelOffset={cfgLabelOffset} parentIsActive={spawnedZonePlanet.gameObject.activeInHierarchy}.");
+                       labelOffset: cfgLabelOffset,
+                       labelRotation: cfgLabelRotation,
+                       labelFontSize: cfgLabelFontSize);
+            Debug.Log($"[ConstellationManager] SpawnLabel: {zone} offset={cfgLabelOffset} rotation={cfgLabelRotation} fontSize={cfgLabelFontSize} parentIsActive={spawnedZonePlanet.gameObject.activeInHierarchy}.");
         }
         else
         {
@@ -1984,7 +1998,7 @@ public class ConstellationManager : MonoBehaviour
 
     // ── Label spawn ───────────────────────────────────────────────────────────
 
-    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive, float planetRadius = 1f, Vector3 labelOffset = default)
+    private ZoneLabelController SpawnLabel(Transform parent, string text, string goName, bool parentIsActive, float planetRadius = 1f, Vector3 labelOffset = default, Vector3 labelRotation = default, float labelFontSize = 0.4f)
     {
         if (labelPrefab == null) return null;
         GameObject go = Instantiate(labelPrefab, parent.position, Quaternion.identity, parent);
@@ -1994,14 +2008,17 @@ public class ConstellationManager : MonoBehaviour
         {
             label.SetPlanetRadius(planetRadius);
             label.SetLabelOffset(labelOffset == default ? new Vector3(0f, 1f, 0f) : labelOffset);
+            label.SetLabelRotation(labelRotation);
+            label.SetFontSize(labelFontSize);
             label.SetLabel(text);
             if (parentIsActive) label.Show(); else label.SetVisibleImmediate(false);
+            Debug.Log($"[ConstellationManager] SpawnLabel: '{goName}' fontSize={labelFontSize} rotation={labelRotation}.");
         }
         else Debug.LogWarning($"[ConstellationManager] labelPrefab missing ZoneLabelController on '{goName}'.");
         return label;
     }
 
-    // ── Crossover connectors ──────────────────────────────────────────────────
+        // ── Crossover connectors ──────────────────────────────────────────────────
 
     private void UpdateCrossoverConnectors()
     {

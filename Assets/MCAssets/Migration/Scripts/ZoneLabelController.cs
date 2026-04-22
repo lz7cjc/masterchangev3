@@ -1,109 +1,56 @@
 // ZoneLabelController.cs
 // Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
 //
-// VERSION : 1.9
+// VERSION : 2.0
 // DATE    : 2026-04-22
-// TIMESTAMP: 2026-04-22T00:00:00Z
+// TIMESTAMP: 2026-04-22T12:00:00Z
 //
 // CHANGE LOG:
+//   v2.0  2026-04-22  FONT SIZE + ROTATION CONTROL
+//     - Added SetFontSize(float): sets TMPro.TextMeshPro.fontSize on the TMP
+//       component. Called by ConstellationManager.SpawnLabel() with
+//       OrbLayoutConfig.labelFontSize. Per-planet font size without touching prefab.
+//     - Added SetLabelRotation(Vector3 euler): stores world-space euler for the label.
+//       Applied in LateUpdate after LookAt so it overrides camera-facing when set.
+//       When _rotationOverride is false (default), behaviour is unchanged — label
+//       faces camera as before. When true, stored euler is applied instead.
+//     - Added GetLabelRotation(): returns current _worldRotation euler for
+//       OrbLayoutEditor to read the live value and save it.
+//     - _rotationOverride bool: false by default. Set true by SetLabelRotation()
+//       when the euler is non-zero; set false when zero vector is passed so camera-
+//       facing behaviour auto-restores when the override is cleared.
+//     - OBSOLETE: ZoneLabelController.cs v1.9
+//
 //   v1.9  2026-04-22  PER-ZONE LABEL OFFSET FROM CONFIG
-//     - Added SetLabelOffset(Vector3): called by ConstellationManager.SpawnLabel()
-//       with the value from OrbLayoutConfig.labelOffset. Overrides _localOffset.
-//     - Added GetLabelOffset(): returns current _localOffset for OrbLayoutEditor
-//       to read the live value and save it.
-//     - _radiusMultiplier and radius-based positioning removed. Position is now
-//       driven entirely by _localOffset (world-space offset from planet centre).
+//     - Added SetLabelOffset(Vector3), GetLabelOffset().
 //     - LateUpdate: transform.position = parent.position + _localOffset.
-//     - _localOffset exposed as [SerializeField] so it is visible and adjustable
-//       on the Label_ child in the Hierarchy during Play Mode.
+//     - _radiusMultiplier removed. Position driven entirely by _localOffset.
 //     - SetPlanetRadius retained as no-op for backward compatibility.
 //
 //   v1.8  2026-04-22  USE WORLD-SPACE POSITION NOT LOCAL
-//     - LateUpdate: switched from localPosition to world-space position.
-//       localPosition Y on a rotated planet moves along the planet's local
-//       Y axis — which points downward on Mindfulness (rotation Z:-29 etc).
-//       World-space position ignores planet rotation entirely, so the label
-//       always appears above the planet in world space regardless of how
-//       the planet is rotated.
-//     - Offset = planet world position + Vector3.up * (planetRadius * multiplier).
-//       planetRadius is already world-space (radius * lossyScale) so no
-//       further scale correction needed.
-//     - Removed parentScale division (was compensating for wrong approach).
-//
 //   v1.7  2026-04-22  DIVIDE LOCAL OFFSET BY PARENT SCALE
-//     - SetPlanetRadius(float): receives world-space collider radius from
-//       ConstellationManager.SpawnLabel(). Stored as _planetRadius.
-//     - LateUpdate: localPosition Y = _planetRadius * _radiusMultiplier.
-//       This scales the offset proportionally per planet so Heights (r~0.75),
-//       WaterWorld (r~0.5), Sharks (r~0.25) all position correctly.
-//     - _localOffset Vector3 removed — replaced by _radiusMultiplier float.
-//     - Start() no longer reads SphereCollider — radius comes from ConstellationManager.
-//
 //   v1.5  2026-04-22  SIMPLIFY TO LOCAL POSITION OFFSET
 //   v1.4  2026-04-22  BIAS LABEL TOWARD WORLD-UP
 //   v1.3  2026-04-22  CAMERA-FACING POSITION ABOVE PLANET
 //   v1.2  2026-04-22  FIX MIRRORED TEXT + LIVE OFFSET
 //   v1.1  2026-03-22  NULL-SAFE _canvasGroup IN SetVisibleImmediate
-//     - Start(): caches SphereCollider from parent to get planet radius.
-//       Falls back to lossyScale.x * 0.5f if no collider found.
-//     - LateUpdate: positions label along the vector from planet centre
-//       toward camera, at distance (radius * _radiusMultiplier). This
-//       ensures the label always appears above the visible top of the
-//       planet from the camera's POV regardless of planet rotation.
-//     - Removed world-space Vector3.up offset — that was wrong for
-//       arbitrarily-rotated planets.
-//     - _heightOffset replaced by _radiusMultiplier (default 1.3).
-//       Increase to push label further from planet surface.
+//   v1.0  2026-03-07  Initial implementation.
 //
-//   v1.2  2026-04-22  FIX MIRRORED TEXT + LIVE OFFSET
-//
-//   v1.1  2026-03-22  NULL-SAFE _canvasGroup IN SetVisibleImmediate
-//     - Awake() does not fire on inactive GameObjects in Unity.
-//     - Session orb labels are children of inactive orbs at spawn time,
-//       so _canvasGroup is null when ConstellationManager calls
-//       SetVisibleImmediate() immediately after Instantiate().
-//     - EnsureCanvasGroup() helper added: resolves _canvasGroup via
-//       GetComponent<CanvasGroup>() if not yet assigned.
-//     - Called at the top of SetVisibleImmediate(), SetLabel(), Show(),
-//       and Hide() so all public entry points are safe regardless of
-//       whether Awake() has run.
-//     - Awake() unchanged — still initialises _canvasGroup when the
-//       object becomes active normally.
-//
-//   v1.0  2026-03-07  Initial implementation (replaces empty Unity stub).
-//                     Implements S3.5 spec from Setup Guide v6.4.
-//
-// OBSOLETE FILES — DELETE THESE:
-//   ZoneLabelController.cs v1.0 (2026-03-07) — canonical filename, replace in place.
+// OBSOLETE FILES:
+//   ZoneLabelController.cs v1.9 (2026-04-22)
 //
 // PURPOSE:
-//   Floating world-space label attached to each zone orb in the Constellation.
-//   Fades in when the player gazes near it, faces the camera each frame.
-//   Assigned and driven by ConstellationManager -- one label per zone cluster root.
+//   Floating world-space label attached to each zone planet in the Constellation.
+//   Fades in when the planet is expanded, faces the camera each frame (unless
+//   rotation override is active). Font size and position are per-planet via config.
 //
-// PREFAB SETUP (S3.5):
-//   1. In Project panel: right-click -> Create -> 3D Object -> Text - TextMeshPro
-//      This creates a world-space TextMeshPro object (TextMeshPro component,
-//      NOT TextMeshProUGUI -- no Canvas required).
-//   2. Set Font Size: 0.4, Alignment: Centre, Font Style: Bold, Color: white #FFFFFF
-//   3. Add a CanvasGroup component to the root GameObject for alpha fade.
-//   4. Rename the root GameObject "ZoneLabel".
-//   5. Attach this script (ZoneLabelController.cs) to the root GameObject.
-//   6. Save as a prefab: Assets/Prefabs/ZoneLabel.prefab
-//
-// USAGE:
-//   ConstellationManager instantiates one ZoneLabel prefab per zone cluster root,
-//   positions it at zoneOrbPosition + Vector3.up * 0.7f, then calls:
-//     label.SetLabel(zone.ToString());
+// FILE LOCATION:
+//   Assets/MCAssets/Migration/Scripts/ZoneLabelController.cs
 // -----------------------------------------------------------------------------
 
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// World-space zone label. Fades in on gaze approach, faces camera each frame.
-/// Attach to a GameObject that also has a CanvasGroup component.
-/// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class ZoneLabelController : MonoBehaviour
 {
@@ -116,14 +63,20 @@ public class ZoneLabelController : MonoBehaviour
     [SerializeField] private float _fadeOutDuration = 0.6f;
 
     [Header("Position")]
-    [Tooltip("World-space offset from planet centre. Adjust X/Y/Z in Play Mode on this component, then Save All in Orb Layout Editor.")]
+    [Tooltip("World-space offset from planet centre. Adjust via Orb Layout Editor scene handle.")]
     [SerializeField] private Vector3 _localOffset = new Vector3(0f, 1f, 0f);
+
+    [Header("Rotation")]
+    [Tooltip("World-space euler rotation override. Zero = face camera (default). " +
+             "Set via Orb Layout Editor scene handle or SetLabelRotation().")]
+    [SerializeField] private Vector3 _worldRotation = Vector3.zero;
 
     // -- Private --------------------------------------------------------------
     private CanvasGroup  _canvasGroup;
     private string       _labelText;
     private bool         _visible;
     private Coroutine    _fadeCoroutine;
+    private bool         _rotationOverride = false;  // true when _worldRotation is non-zero
 
     // -- Lifecycle ------------------------------------------------------------
 
@@ -136,32 +89,35 @@ public class ZoneLabelController : MonoBehaviour
 
     void Start()
     {
-        Debug.Log($"[ZoneLabelController] '{gameObject.name}' Start — localOffset={_localOffset}.");
+        // Apply any serialised rotation override from config
+        _rotationOverride = _worldRotation != Vector3.zero;
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' Start — offset={_localOffset} rotation={_worldRotation} rotOverride={_rotationOverride}.");
     }
 
     void LateUpdate()
     {
-        // Position in world space: planet centre + offset. Ignores planet rotation
-        // so label is always at the configured world-space position regardless of
-        // how the planet mesh is oriented.
+        // Position: planet centre + world-space offset. Ignores planet rotation.
         if (transform.parent != null)
             transform.position = transform.parent.position + _localOffset;
 
-        // Face camera. TMP 3D meshes render on negative-Z, so Rotate 180° on Y.
-        if (Camera.main != null)
+        if (_rotationOverride)
         {
-            transform.LookAt(Camera.main.transform);
-            transform.Rotate(0f, 180f, 0f);
+            // Apply saved world-space euler directly — ignores camera facing.
+            transform.rotation = Quaternion.Euler(_worldRotation);
+        }
+        else
+        {
+            // Default: face camera. TMP 3D meshes render on negative-Z, rotate 180° Y.
+            if (Camera.main != null)
+            {
+                transform.LookAt(Camera.main.transform);
+                transform.Rotate(0f, 180f, 0f);
+            }
         }
     }
 
-    // -- Helpers (private) ----------------------------------------------------
+    // -- Private helpers ------------------------------------------------------
 
-    /// <summary>
-    /// Resolves _canvasGroup if not yet assigned.
-    /// Awake() does not run on inactive GameObjects, so any public method
-    /// that may be called before the object is first activated must call this first.
-    /// </summary>
     private void EnsureCanvasGroup()
     {
         if (_canvasGroup != null) return;
@@ -174,8 +130,8 @@ public class ZoneLabelController : MonoBehaviour
     // -- Public API -----------------------------------------------------------
 
     /// <summary>
-    /// Called by ConstellationManager.SpawnLabel() with the value from
-    /// OrbLayoutConfig.labelOffset. Sets the world-space offset from planet centre.
+    /// Sets the world-space position offset from planet centre.
+    /// Called by ConstellationManager.SpawnLabel() with OrbLayoutConfig.labelOffset.
     /// </summary>
     public void SetLabelOffset(Vector3 offset)
     {
@@ -183,13 +139,38 @@ public class ZoneLabelController : MonoBehaviour
         Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetLabelOffset={offset}.");
     }
 
+    /// <summary>Returns the current world-space position offset.</summary>
+    public Vector3 GetLabelOffset() => _localOffset;
+
     /// <summary>
-    /// Returns the current world-space offset. Read by OrbLayoutEditor to save
-    /// the live value adjusted in Play Mode.
+    /// Sets a world-space euler rotation override for this label.
+    /// Passing Vector3.zero restores camera-facing behaviour.
+    /// Called by ConstellationManager.SpawnLabel() with OrbLayoutConfig.labelRotation.
     /// </summary>
-    public Vector3 GetLabelOffset()
+    public void SetLabelRotation(Vector3 euler)
     {
-        return _localOffset;
+        _worldRotation    = euler;
+        _rotationOverride = (euler != Vector3.zero);
+        Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetLabelRotation={euler} override={_rotationOverride}.");
+    }
+
+    /// <summary>Returns the current world-space euler rotation override.</summary>
+    public Vector3 GetLabelRotation() => _worldRotation;
+
+    /// <summary>
+    /// Sets the TextMeshPro font size for this label.
+    /// Called by ConstellationManager.SpawnLabel() with OrbLayoutConfig.labelFontSize.
+    /// </summary>
+    public void SetFontSize(float size)
+    {
+        var tmp = GetComponentInChildren<TMPro.TextMeshPro>();
+        if (tmp != null)
+        {
+            tmp.fontSize = size;
+            Debug.Log($"[ZoneLabelController] '{gameObject.name}' SetFontSize={size}.");
+        }
+        else
+            Debug.LogWarning($"[ZoneLabelController] SetFontSize: TextMeshPro not found on '{gameObject.name}'.");
     }
 
     /// <summary>Retained for backward compatibility — no longer used.</summary>
@@ -197,23 +178,17 @@ public class ZoneLabelController : MonoBehaviour
 
     /// <summary>
     /// Set the display text. Called by ConstellationManager after instantiation.
-    /// Converts enum names to readable form (e.g. "ClosedSpaces" -> "Closed Spaces").
+    /// Converts PascalCase zone names to readable form (e.g. "ClosedSpaces" → "Closed Spaces").
     /// </summary>
     public void SetLabel(string text)
     {
         EnsureCanvasGroup();
         _labelText = FormatZoneName(text);
-
-        // Find the TextMeshPro component on this or a child object and set text.
-        // Using string-based component lookup to avoid a hard TMPro dependency
-        // in case TMP is not yet imported -- ConstellationManager should check
-        // TMP is installed before calling this.
         var tmp = GetComponentInChildren<TMPro.TextMeshPro>();
         if (tmp != null)
             tmp.text = _labelText;
         else
-            Debug.LogWarning($"[ZoneLabelController] TextMeshPro component not found " +
-                             $"on {gameObject.name} or its children.");
+            Debug.LogWarning($"[ZoneLabelController] TextMeshPro not found on {gameObject.name}.");
     }
 
     /// <summary>Fade the label in.</summary>
@@ -235,8 +210,7 @@ public class ZoneLabelController : MonoBehaviour
     }
 
     /// <summary>
-    /// Show or hide with no coroutine fade — safe to call on inactive GameObjects
-    /// (e.g. session orb labels spawned before the orb is activated).
+    /// Show or hide immediately with no coroutine — safe on inactive GameObjects.
     /// </summary>
     public void SetVisibleImmediate(bool visible)
     {
@@ -260,24 +234,18 @@ public class ZoneLabelController : MonoBehaviour
     {
         float start   = _canvasGroup.alpha;
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed           += Time.deltaTime;
             _canvasGroup.alpha = Mathf.Lerp(start, target, elapsed / duration);
             yield return null;
         }
-
         _canvasGroup.alpha = target;
         _fadeCoroutine     = null;
     }
 
     // -- Helpers --------------------------------------------------------------
 
-    /// <summary>
-    /// Inserts a space before each capital letter in a PascalCase zone name.
-    /// "ClosedSpaces" -> "Closed Spaces", "FoodContamination" -> "Food Contamination"
-    /// </summary>
     private static string FormatZoneName(string name)
     {
         if (string.IsNullOrEmpty(name)) return name;
